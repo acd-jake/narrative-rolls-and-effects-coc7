@@ -3,7 +3,7 @@
 {{else if isPreparingModifiers}}
 {{> roeRollModifierPreparation}}
 {{else}}
-<div class="roe-roll-prompt-frame {{#if compactView}}is-compact{{/if}} {{#unless showPhaseHeaders}}no-phase-headers{{/unless}}" style="background-color: {{themeBackgroundColor}}; background-image: url('modules/narrative-rolls-and-effects/assets/ui/{{theme}}/frame.svg');">
+<div class="roe-roll-prompt-frame {{#if compactView}}is-compact{{/if}} {{#unless showPhaseHeaders}}no-phase-headers{{/unless}}" style="background-color: {{themeBackgroundColor}}; --roe-frame-image: url('/modules/narrative-rolls-and-effects/assets/ui/{{theme}}/frame.svg');">
     <button type="button" class="prompt-close-btn" data-action="closePrompt" title="{{localize 'ROE.RollSession.Close'}}">
         <i class="fa-solid fa-xmark"></i>
     </button>

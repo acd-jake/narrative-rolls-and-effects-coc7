@@ -1,8 +1,7 @@
-import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy } from "../../core-bridge.mjs";
+import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy, DiceVisualizer } from "../../core-bridge.mjs";
 import { DamageRollSubmitter } from "./damage-roll-submitter.mjs";
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
-import { CoC7DiceVisualizer } from "../coc7-dice-visualizer.mjs";
 
 const PHASE_ORDER = ["reaction", "attack", "resolution"];
 const PENDING_PARTICIPANT_BY_PHASE = { reaction: "defender", attack: "attacker", resolution: "damage" };
@@ -44,6 +43,10 @@ export function createRangedPromptApp(core, BasicPromptApp) {
         const canViewAttackerRoll = attacker ? RollVisibilityPolicy.canViewParticipantRoll(attacker, sys) : false;
         const canViewDamage = damageEntry ? RollVisibilityPolicy.canViewParticipantRoll(damageEntry, sys) : false;
         const damageActor = this.#resolveActor(damageEntry);
+        const attackerDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, effectiveMod);
+        const damageDice = canViewDamage
+            ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageEntry?.diceFormula ?? sys.damageFormula })
+            : [];
 
         return {
             ...context,
@@ -71,10 +74,10 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             manualModifierDice: manualMod,
             flagModifierDice: coverPenalty,
             effectiveModifierLabel: this._formatModifierLabel(effectiveMod),
-            attackerDice: CoC7DiceVisualizer.percentile(effectiveMod),
-            attackerDiceLabel: this._formatDiceFormulaLabel(CoC7DiceVisualizer.percentile(effectiveMod)),
-            damageDice: canViewDamage ? CoC7DiceVisualizer.fromFormula(damageEntry?.diceFormula ?? sys.damageFormula) : [],
-            damageDiceLabel: canViewDamage ? this._formatDiceFormulaLabel(CoC7DiceVisualizer.fromFormula(damageEntry?.diceFormula ?? sys.damageFormula)) : "",
+            attackerDice,
+            attackerDiceLabel: this._formatDiceFormulaLabel(attackerDice),
+            damageDice,
+            damageDiceLabel: canViewDamage ? this._formatDiceFormulaLabel(damageDice) : "",
             attackerRollBtnLabel: `${attacker?.label ?? ""} (${attacker?.targetValue ?? 0}%)`,
             attackerResultText: attacker?.hasRolled
                 ? canViewAttackerRoll

@@ -1,7 +1,6 @@
-import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy } from "../../core-bridge.mjs";
+import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy, DiceVisualizer } from "../../core-bridge.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
-import { CoC7DiceVisualizer } from "../coc7-dice-visualizer.mjs";
 
 const OPPOSED_ROLL_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/opposed-roll-prompt.hbs";
 
@@ -39,7 +38,7 @@ export function createOpposedRollPromptApp(core) {
             const isOwner = Boolean(actor?.isOwner);
             const opts = this._evaluateParticipantOptions(p, sys);
             const modDice = p.modifierDice ?? 0;
-            const diceArray = CoC7DiceVisualizer.percentile(modDice);
+            const diceArray = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, modDice);
 
             return {
                 ...p,

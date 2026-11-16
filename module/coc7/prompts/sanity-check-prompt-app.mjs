@@ -1,8 +1,7 @@
-import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy } from "../../core-bridge.mjs";
+import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy, DiceVisualizer } from "../../core-bridge.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 import { CoC7SessionFactory } from "../coc7-session-factory.mjs";
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
-import { CoC7DiceVisualizer } from "../coc7-dice-visualizer.mjs";
 
 const SANITY_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/sanity-check-prompt.hbs";
 
@@ -57,8 +56,8 @@ export function createSanityCheckPromptApp(core, BasicPromptApp) {
             : "";
         const isPhaseInsight = !isPhaseCheck && Boolean(intRoll) && !intRoll.hasRolled;
         const manualMod = Number(sanRoll?.modifierDice ?? 0);
-        const rollDiceArray = CoC7DiceVisualizer.percentile(manualMod);
-        const intDiceArray = CoC7DiceVisualizer.percentile(intRoll?.modifierDice ?? 0);
+        const rollDiceArray = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, manualMod);
+        const intDiceArray = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, intRoll?.modifierDice ?? 0);
 
         return {
             ...context,

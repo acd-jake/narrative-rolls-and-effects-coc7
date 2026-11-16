@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
-  <title>D2</title>
-  <circle cx="48" cy="48" r="39" fill="#34291e" stroke="#c5a059" stroke-width="3"/>
-  <circle cx="48" cy="48" r="33" fill="#1c2526" stroke="#e1c47d" stroke-width="1.5"/>
-  <circle cx="48" cy="48" r="27" fill="none" stroke="#8c713e" stroke-width="1" stroke-dasharray="2 3"/>
-  <path d="M48 18v6M48 72v6M18 48h6M72 48h6" stroke="#c5a059" stroke-width="2"/>
-  <text x="48" y="58" text-anchor="middle" fill="#f2d89a" font-family="Georgia,serif" font-weight="bold" font-size="29">2</text>
-</svg>

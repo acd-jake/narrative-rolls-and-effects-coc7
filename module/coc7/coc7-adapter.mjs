@@ -3,7 +3,6 @@ import { CoC7Interceptor } from "./coc7-interceptor.mjs";
 import { CoC7DataMapper } from "./coc7-data-mapper.mjs";
 import { CoC7CheckResolver } from "./coc7-check-resolver.mjs";
 import { CoC7ResultFormatter } from "./coc7-result-formatter.mjs";
-import { CoC7DiceVisualizer } from "./coc7-dice-visualizer.mjs";
 import { CoC7SessionFactory } from "./coc7-session-factory.mjs";
 import { RollVisibilityPolicy } from "../core-bridge.mjs";
 import { BasicRollStrategy } from "./strategies/basic-roll-strategy.mjs";
@@ -521,8 +520,20 @@ export class CoC7Adapter {
         return parts.join(", ");
     }
 
-    getDiceVisuals(session, mod) {
-        return session?.rollType === "other" ? CoC7DiceVisualizer.fromFormula(session.diceFormula) : CoC7DiceVisualizer.percentile(mod);
+    extendDiceVisuals(dice, session, modifierDice) {
+        if (session?.rollType === "other") return dice;
+        const modifier = Math.clamp(Number(modifierDice) || 0, -2, 2);
+        const modifierVisuals = [];
+        for (let i = 0; i < Math.abs(modifier); i++) {
+            const isBonus = modifier > 0;
+            modifierVisuals.push({
+                src: `modules/narrative-rolls-and-effects/assets/dice/d10-${isBonus ? "bonus" : "penalty"}.svg`,
+                label: isBonus ? "ROE.Roll.BonusDie" : "ROE.Roll.PenaltyDie",
+                count: 1,
+                multiple: false
+            });
+        }
+        return [...dice, ...modifierVisuals];
     }
 
     // Effects engine integration points

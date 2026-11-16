@@ -648,48 +648,6 @@
     color: var(--roe-text-muted);
 }
 
-.roe-overlay[data-nre-system="CoC7"] .prompt-dice-visuals,
-.roe-overlay[data-nre-system="CoC7"] .prompt-dice-display {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 0.3rem;
-}
-
-.roe-overlay[data-nre-system="CoC7"] .prompt-die {
-    position: relative;
-    display: inline-flex;
-    flex: 0 0 40px;
-    width: 40px;
-    height: 40px;
-}
-
-.roe-overlay[data-nre-system="CoC7"] .prompt-die img {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
-    border: 0;
-    box-shadow: none;
-}
-
-.roe-overlay[data-nre-system="CoC7"] .prompt-die-count {
-    position: absolute;
-    right: -0.15rem;
-    bottom: -0.1rem;
-    padding: 0 0.2rem;
-    background: var(--roe-bg-deep);
-    color: var(--roe-gold-bright);
-    border: 1px solid var(--roe-gold-dim);
-    font-size: 0.62rem;
-    line-height: 1.1;
-}
-
-/* Dice Display Tooltip */
-.roe-overlay[data-nre-system="CoC7"] .prompt-dice-display {
-    cursor: help;
-}
-
 /* Collapsible Description Drawer */
 .roe-overlay[data-nre-system="CoC7"] .prompt-title-toggle {
     display: inline-flex;

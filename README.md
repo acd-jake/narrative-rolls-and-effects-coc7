@@ -20,6 +20,15 @@ Install and enable both Narrative Rolls and Effects and this companion module. T
 - System-specific prompt and chat-card layouts
 - Configurable result display mode and success-level format
 - Roll modifiers, Luck decisions, pushed rolls, and optional consequence automation
+- Call of Cthulhu bonus and penalty dice in roll prompts and roll inspection
+
+## Dice visualization
+
+The core Narrative Rolls and Effects module provides the shared dice visualizer, display template, and dice-face images. This companion module extends the core visuals with the CoC7 bonus and penalty dice; its prompts use the shared core display.
+
+## Compatibility
+
+This module requires Foundry VTT v14 or later, the Call of Cthulhu 7th Edition system (`CoC7`), and the Narrative Rolls and Effects core module. It registers its adapter through the core `nre.registerAdapters` hook and is only active in a CoC7 world.
 
 ## License
 

@@ -1,8 +1,7 @@
-import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy } from "../../core-bridge.mjs";
+import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy, DiceVisualizer } from "../../core-bridge.mjs";
 import { DamageRollSubmitter } from "./damage-roll-submitter.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
-import { CoC7DiceVisualizer } from "../coc7-dice-visualizer.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 
 const COMBAT_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/combat-prompt.hbs";
@@ -72,6 +71,11 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
         const canViewDamage = damageEntry ? RollVisibilityPolicy.canViewParticipantRoll(damageEntry, sys) : false;
 
         const damageActor = this.#resolveActor(damageEntry);
+        const attackerDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, effectiveMod);
+        const defenderDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, defenderModifier);
+        const damageDice = canViewDamage
+            ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageEntry?.diceFormula ?? sys.damageFormula })
+            : [];
 
         return {
             ...context,
@@ -106,12 +110,12 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
             defenderModifierLabel: this._formatModifierLabel(defenderModifier),
             flagModifierDice: flagBonus,
             effectiveModifierLabel: this._formatModifierLabel(effectiveMod),
-            attackerDice: CoC7DiceVisualizer.percentile(effectiveMod),
-            attackerDiceLabel: this._formatDiceFormulaLabel(CoC7DiceVisualizer.percentile(effectiveMod)),
-            defenderDice: CoC7DiceVisualizer.percentile(defenderModifier),
-            defenderDiceLabel: this._formatDiceFormulaLabel(CoC7DiceVisualizer.percentile(defenderModifier)),
-            damageDice: canViewDamage ? CoC7DiceVisualizer.fromFormula(damageEntry?.diceFormula ?? sys.damageFormula) : [],
-            damageDiceLabel: canViewDamage ? this._formatDiceFormulaLabel(CoC7DiceVisualizer.fromFormula(damageEntry?.diceFormula ?? sys.damageFormula)) : "",
+            attackerDice,
+            attackerDiceLabel: this._formatDiceFormulaLabel(attackerDice),
+            defenderDice,
+            defenderDiceLabel: this._formatDiceFormulaLabel(defenderDice),
+            damageDice,
+            damageDiceLabel: canViewDamage ? this._formatDiceFormulaLabel(damageDice) : "",
             attackerRollBtnLabel: `${attacker?.label ?? ""} (${attacker?.targetValue ?? 0}%)`,
 
             attackerResultText: attacker?.hasRolled

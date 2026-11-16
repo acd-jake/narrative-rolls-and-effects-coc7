@@ -30,6 +30,7 @@ export const UniversalRollOrchestrator = createServiceFacade("orchestrator");
 export const RollVisibilityPolicy = createServiceFacade("visibility");
 export const EffectsEngine = createServiceFacade("effects");
 export const ActorTargetSelectorApp = createServiceFacade("actorSelector");
+export const DiceVisualizer = createServiceFacade("diceVisualizer");
 
 export function createPromptClass(definition) {
     return getCoreService("createPromptClass")(definition);

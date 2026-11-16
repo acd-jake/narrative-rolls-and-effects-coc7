@@ -10,7 +10,6 @@ Hooks.once("nre.registerAdapters", async (core) => {
 
     await foundry.applications.handlebars.loadTemplates({
         roePromptLayout: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/prompt-layout.hbs`,
-        roeDiceDisplay: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/dice-display.hbs`,
         roePushFailurePhase: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/push-failure-phase.hbs`,
         roeSkillDifficultyControls: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/skill-difficulty-controls.hbs`,
         roeSanityLossControls: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/sanity-loss-controls.hbs`,

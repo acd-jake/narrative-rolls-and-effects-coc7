@@ -1,0 +1,204 @@
+<div
+    class="roe-overlay roe-chat-card combat-protocol-card {{#if isSanity}}sanity-protocol-card{{/if}} {{#if isResolved}}is-resolved{{/if}}">
+    <header class="combat-card-title">
+        <span class="weapon-headline">
+            {{#if isSanity}}<i class="fa-solid fa-eye sanity-emblem"></i> {{/if}}{{title}}
+        </span>
+        <span class="combat-mode-tag">{{rollTypeLabel}}</span>
+    </header>
+
+    {{#if resultBadges.length}}
+    <div class="result-badge-row">
+        {{#each resultBadges}}
+        <span class="result-chip is-compact {{cls}}">{{#if icon}}<i class="fa-solid {{icon}}"></i> {{/if}}{{label}}</span>
+        {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if isResolved}}
+    <button type="button" class="resolved-summary-toggle" data-action="toggleCardDetails" aria-expanded="false">
+        <span class="resolved-summary-text">{{outcomeHeadline}}</span>
+        <i class="fa-solid fa-chevron-down toggle-chevron"></i>
+    </button>
+    {{/if}}
+
+    <div class="card-details-drawer {{#unless isResolved}}is-expanded{{/unless}}">
+        <div class="card-details-inner">
+            {{#if isCombat}}
+            {{!-- PHASE 1: ANGRIFF (INITIATOR) --}}
+            <section class="combat-phase-section is-completed" data-participant-key="attacker">
+                <header class="combat-phase-header">
+                    <span class="phase-title">
+                        <i class="fa-solid fa-crosshairs"></i> {{localize "ROE_COC7.Combat.Phases.Initiator"}}
+                    </span>
+                    <span class="phase-actor-tag">{{attacker.actorName}}</span>
+                </header>
+                <div class="combatant-row">
+                    <img class="combatant-avatar" src="{{attacker.actorImg}}" alt="{{attacker.actorName}}" />
+                    <div class="combatant-details">
+                        <span class="combatant-name">{{attacker.label}}</span>
+                        {{#if attacker.hasRolled}}
+                        <span class="roll-badge {{attacker.successLevel}}">
+                            {{attacker.total}} vs. {{attacker.targetValue}}
+                        </span>
+                        {{else}}
+                        <span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>
+                        {{/if}}
+                    </div>
+                </div>
+            </section>
+
+            {{!-- PHASE 2: REAKTION (OPPONENT) --}}
+            {{#if showCombatOpponentPhase}}
+            <section class="combat-phase-section is-completed" data-participant-key="defender">
+                <header class="combat-phase-header">
+                    <span class="phase-title">
+                        <i class="fa-solid fa-shield-halved"></i> {{localize "ROE_COC7.Combat.Phases.Opponent"}}
+                    </span>
+                    <span class="phase-actor-tag">{{defender.actorName}}</span>
+                </header>
+                <div class="combatant-row">
+                    <img class="combatant-avatar" src="{{defender.actorImg}}" alt="{{defender.actorName}}" />
+                    <div class="combatant-details">
+                        <span class="combatant-name">{{defenderReactionLabel}}</span>
+                        {{#if defender.hasRolled}}
+                        <span class="roll-badge {{defender.successLevel}}">
+                            {{defender.total}} vs. {{defender.targetValue}}
+                        </span>
+                        {{else}}
+                        <span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>
+                        {{/if}}
+                    </div>
+                </div>
+            </section>
+            {{/if}}
+
+            {{!-- PHASE 3: AUFLÖSUNG & SCHADEN --}}
+            {{#if hasResult}}
+            <section class="combat-phase-section is-active result-section">
+                <header class="combat-phase-header">
+                    <span class="phase-title">
+                        <i class="fa-solid fa-gavel"></i> {{localize "ROE_COC7.Combat.Phases.Resolution"}}
+                    </span>
+                </header>
+
+                {{#if damageRoll}}
+                <div class="combined-check-row" data-participant-key="damage">
+                    <span><i class="fa-solid fa-burst"></i> {{damageRoll.label}}</span>
+                    {{#if damageRoll.hasRolled}}
+                    <span class="roll-badge">{{damageRoll.total}} ({{damageRoll.diceFormula}})</span>
+                    {{else}}
+                    <span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>
+                    {{/if}}
+                </div>
+                {{/if}}
+
+                <div class="section-body">
+                    {{> (lookup . "resultPartial")}}
+                </div>
+            </section>
+            {{/if}}
+            {{else if isSanity}}
+            {{!-- PHASE 1: STABILITÄTSPROBE --}}
+            <section class="combat-phase-section is-completed" data-participant-key="p0">
+                <header class="combat-phase-header">
+                    <span class="phase-title">
+                        <i class="fa-solid fa-brain"></i> {{localize "ROE_COC7.Sanity.Phases.Check"}}
+                    </span>
+                    <span class="phase-actor-tag">{{sanityCheck.actorName}}</span>
+                </header>
+                <div class="combatant-row">
+                    <div class="combatant-details">
+                        <span class="combatant-name">{{localize "ROE_COC7.Resources.Sanity"}}</span>
+                        {{#if sanityCheck.hasRolled}}
+                        <span class="roll-badge {{sanityCheck.successLevel}}">
+                            {{sanityCheck.total}} vs. {{sanityCheck.targetValue}}
+                        </span>
+                        {{else}}
+                        <span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>
+                        {{/if}}
+                    </div>
+                </div>
+                {{#unless hasSanityResult}}
+                <div class="sanity-stakes-inline">
+                    <span class="stake-item">
+                        <i class="fa-solid fa-shield-halved"></i> {{localize "ROE_COC7.Sanity.LossSuccessLabel"}}:
+                        <strong>{{sanityLossSuccess}}</strong>
+                    </span>
+                    <span class="stake-item">
+                        <i class="fa-solid fa-skull"></i> {{localize "ROE_COC7.Sanity.LossFailureLabel"}}:
+                        <strong>{{sanityLossFailure}}</strong>
+                    </span>
+                </div>
+                {{/unless}}
+            </section>
+
+            {{!-- PHASE 2: EINSICHT --}}
+            {{#if sanityInsight}}
+            <section class="combat-phase-section is-completed" data-participant-key="insanityInt">
+                <header class="combat-phase-header">
+                    <span class="phase-title">
+                        <i class="fa-solid fa-eye"></i> {{localize "ROE_COC7.Sanity.Phases.Insight"}}
+                    </span>
+                    <span class="phase-actor-tag">{{sanityInsight.label}}</span>
+                </header>
+                <div class="combatant-row">
+                    <div class="combatant-details">
+                        {{#if sanityInsight.hasRolled}}
+                        <span class="roll-badge {{sanityInsight.successLevel}}">
+                            {{sanityInsight.total}} vs. {{sanityInsight.targetValue}}
+                        </span>
+                        {{else}}
+                        <span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>
+                        {{/if}}
+                    </div>
+                </div>
+            </section>
+            {{/if}}
+
+            {{!-- PHASE 3: FOLGEN --}}
+            {{#if hasResult}}
+            <section class="combat-phase-section is-active result-section">
+                <header class="combat-phase-header">
+                    <span class="phase-title">
+                        <i class="fa-solid fa-gavel"></i> {{localize "ROE_COC7.Sanity.Phases.Resolution"}}
+                    </span>
+                </header>
+                <div class="section-body">
+                    <div class="prompt-outcome-badge {{#if sanityInsanityBadge}}is-shattered{{/if}}">{{sanitySummaryText}}</div>
+                </div>
+            </section>
+            {{/if}}
+            {{else}}
+            {{!-- STANDARD-ANSICHT FÜR ALLE ANDEREN PROBEN --}}
+            {{#each participants}}
+            <section class="combat-section {{#if ../hasResult}}is-subtle{{/if}}" data-participant-key="{{key}}">
+                <div class="section-header">{{label}}</div>
+                <div class="combatant-row">
+                    <img class="combatant-avatar" src="{{actorImg}}" alt="{{actorName}}" />
+                    <div class="combatant-details">
+                        <span class="combatant-name">{{actorName}}</span>
+                        {{#if hasRolled}}
+                        <span class="roll-badge {{successLevel}}">
+                            {{total}}{{#if targetValue}} vs. {{targetValue}}{{/if}}
+                        </span>
+                        {{else}}
+                        <span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>
+                        {{/if}}
+                    </div>
+                </div>
+            </section>
+            {{/each}}
+
+            {{#if hasResult}}
+            <section class="combat-section result-section">
+                <div class="section-header">{{localize "ROE_COC7.Combat.Card.Result"}}</div>
+                <div class="section-body">
+                    {{> (lookup . "resultPartial")}}
+                </div>
+            </section>
+            {{/if}}
+            {{/if}}
+        </div>
+    </div>
+</div>

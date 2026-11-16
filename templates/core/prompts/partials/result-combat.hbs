@@ -1,0 +1,20 @@
+{{#if hasCombatDamage}}
+  <div class="sanity-result-showcase">
+    <div class="sanity-result-chips">
+      <span class="result-chip outcome is-failure">
+        <i class="fa-solid fa-burst"></i> -{{finalDamage}} TP
+      </span>
+      <span class="result-chip loss is-safe">
+        <i class="fa-solid fa-shield"></i> {{armorApplied}} Rüstung
+      </span>
+    </div>
+
+    {{#if majorWoundTriggered}}
+      <div class="sanity-madness-stamp">
+        <i class="fa-solid fa-skull-crossbones"></i> {{localize "ROE_COC7.Conditions.MajorWound"}}
+      </div>
+    {{/if}}
+  </div>
+{{else if outcomeHeadline}}
+  <div class="prompt-outcome-banner">{{outcomeHeadline}}</div>
+{{/if}}

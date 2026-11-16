@@ -1,0 +1,162 @@
+{{#> roePromptLayout}}
+{{#*inline "promptHeader"}}
+<div class="combat-header-avatars">
+    <img class="combatant-avatar" src="{{attackerImg}}" alt="{{attackerName}}" />
+    <div class="combat-header-titles">
+        {{#if hasPromptDescription}}
+        <button type="button" class="prompt-skill-name prompt-title-toggle" data-action="toggleDescription"
+            aria-expanded="{{#if isDescriptionExpanded}}true{{else}}false{{/if}}"
+            title="{{localize 'ROE.Roll.ToggleDescription'}}">
+            <span>{{weaponName}}</span>
+            <i class="fa-solid fa-circle-info prompt-desc-icon"></i>
+        </button>
+        {{else}}
+        <div class="prompt-skill-name">{{weaponName}}</div>
+        {{/if}}
+    </div>
+</div>
+{{/inline}}
+
+{{#*inline "promptDetails"}}
+{{> roePromptDescription}}
+
+{{#if phaseSummaryText}}
+<div class="prompt-phase-summary">{{phaseSummaryText}}</div>
+{{/if}}
+
+<section class="combat-phase-section {{#if isPhaseReaction}}is-active{{else}}is-completed{{/if}}">
+    <header class="combat-phase-header">
+        <span class="phase-title">
+            <i class="fa-solid {{#if isPhaseReaction}}fa-person-running{{else}}fa-check-circle{{/if}}"></i>
+            {{localize "ROE_COC7.Ranged.Phases.Reaction"}}
+        </span>
+        <span class="phase-actor-tag">{{targetName}}</span>
+    </header>
+
+    {{#if isPhaseReaction}}
+    {{#if canActAsTarget}}
+    <div class="prompt-player-controls {{#if isTargetDelegated}}gm-delegated-region{{/if}}">
+        <div class="section-header">{{localize "ROE_COC7.Ranged.CoverHint"}}</div>
+        <div class="reaction-grid-2x2">
+            <button type="button" class="tab-btn" data-action="chooseCover" data-cover="true">
+                {{localize "ROE_COC7.Ranged.CoverButton"}}
+            </button>
+            <button type="button" class="tab-btn" data-action="chooseCover" data-cover="false">
+                {{localize "ROE_COC7.Ranged.NoCoverButton"}}
+            </button>
+        </div>
+    </div>
+    {{else}}
+    <div class="pending-badge">
+        <i class="fa-solid fa-hourglass-half"></i>
+        {{localize "ROE_COC7.Ranged.WaitingForTarget" actor=targetName}}
+    </div>
+    {{/if}}
+    {{else}}
+    <div class="combined-check-row">
+        <span>{{targetName}}</span>
+        <strong>{{coverResultText}}</strong>
+    </div>
+    {{/if}}
+</section>
+
+{{#unless isPhaseReaction}}
+<section class="combat-phase-section {{#if isPhaseAttack}}is-active{{else}}is-completed{{/if}}">
+    <header class="combat-phase-header">
+        <span class="phase-title">
+            <i class="fa-solid {{#if isPhaseAttack}}fa-crosshairs{{else}}fa-check-circle{{/if}}"></i>
+            {{localize "ROE_COC7.Ranged.Phases.Attack"}}
+        </span>
+        <span class="phase-actor-tag">{{attackerName}}</span>
+    </header>
+
+    {{#if isPhaseAttack}}
+    {{#if canRollAttack}}
+    <div class="prompt-player-controls {{#if isAttackerDelegated}}gm-delegated-region{{/if}}">
+        {{#if targetTookCover}}
+        <div class="pending-badge">
+            <i class="fa-solid fa-person-running"></i>
+            {{localize "ROE_COC7.Ranged.CoverPenaltyNote"}}
+        </div>
+        {{/if}}
+
+        {{> roeDiceDisplay dice=attackerDice modifierTooltip=effectiveModifierLabel}}
+
+        <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">
+            <i class="fa-solid fa-dice-d20"></i> {{attackerRollBtnLabel}}
+        </button>
+    </div>
+    {{else}}
+    <div class="pending-badge">
+        <i class="fa-solid fa-hourglass-half"></i>
+        {{localize "ROE_COC7.Combat.WaitingForInitiator" actor=attackerName}}
+    </div>
+    {{/if}}
+    {{else}}
+    <div class="combined-check-row">
+        <span>{{weaponName}}</span>
+        <strong data-inspect-key="attacker">{{attackerResultText}}</strong>
+    </div>
+    {{/if}}
+</section>
+{{/unless}}
+{{/inline}}
+
+{{#*inline "promptResults"}}
+{{#if isPhaseResolution}}
+<section class="combat-phase-section is-active">
+    <header class="combat-phase-header">
+        <span class="phase-title">
+            <i class="fa-solid fa-gavel"></i>
+            {{localize "ROE_COC7.Ranged.Phases.Resolution"}}
+        </span>
+    </header>
+
+    {{#if hasDamageStep}}
+    <div class="combined-check-row">
+        <span><i class="fa-solid fa-burst"></i> {{damageLabel}}</span>
+        <strong {{#if damageRolled}}data-inspect-key="damage" {{/if}}>
+            {{#if damageRolled}}
+            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
+            {{else}}
+            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>{{/if}}
+            {{/if}}
+        </strong>
+    </div>
+
+    {{#if canRollDamage}}
+    {{#if canViewDamage}}{{> roeDiceDisplay dice=damageDice modifierTooltip="Damage"}}{{/if}}
+    <button type="button" class="prompt-action-btn push {{#if isDamageDelegated}}gm-delegated{{/if}}" data-action="executeDamageRoll">
+        <i class="fa-solid fa-dice"></i> {{localize "ROE_COC7.Combat.RollDamageBtn"}}
+    </button>
+    {{/if}}
+    {{/if}}
+
+    {{> (lookup . "resultPartial")}}
+
+    {{#if targetTookCover}}
+    <div class="prompt-phase-summary">{{localize "ROE_COC7.Ranged.LosesNextAction" actor=targetName}}</div>
+    {{/if}}
+
+    {{#if canApplyConsequences}}
+    <div class="gm-exclusive-zone">
+        <div class="gm-eye-badge" title="{{localize 'ROE.RollSession.GmOnlyVisibleHint'}}">
+            <i class="fa-solid fa-eye-slash"></i>
+        </div>
+        <button type="button" class="prompt-action-btn luck" data-action="applyConsequences">
+            <i class="fa-solid fa-heart-pulse"></i> {{localize "ROE_COC7.RollSession.ApplyConsequencesBtn"}}
+        </button>
+    </div>
+    {{/if}}
+
+    {{#if canResolve}}
+    <footer class="prompt-footer gm-resolve-footer">
+        <button type="button" class="prompt-action-btn primary" data-action="resolveSession">
+            <i class="fa-solid fa-gavel"></i> {{localize "ROE.RollSession.ResolveBtn"}}
+        </button>
+    </footer>
+    {{/if}}
+</section>
+{{/if}}
+{{/inline}}
+{{/roePromptLayout}}

@@ -1,0 +1,11 @@
+{{#if hasSanityResult}}
+<div class="sanity-result-showcase">
+    <div class="sanity-result-chips">
+        <span class="result-chip outcome {{sanityOutcomeClass}}">{{sanityOutcomeLabel}}</span>
+        <span class="result-chip loss {{#if sanityLost}}is-severe{{else}}is-safe{{/if}}">
+            <i class="fa-solid fa-heart-crack"></i> {{localize "ROE_COC7.Sanity.CardLossSummary" lost=sanityLost}}
+        </span>
+    </div>
+    <div class="prompt-outcome-badge {{#if sanityInsanityBadge}}is-shattered{{/if}}">{{sanitySummaryText}}</div>
+</div>
+{{/if}}

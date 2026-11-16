@@ -1,0 +1,171 @@
+<div class="roe-gm-request-form">
+  {{!-- 1. SKILL / CHARACTERISTIC / LUCK CHECK --}}
+  {{#if isSkill}}
+    <div class="form-group">
+      <label>{{localize "ROE_COC7.RollSession.ActorLabel"}}</label>
+      <select name="actorA">
+        {{#each actors}}
+          <option value="{{id}}" {{#if selectedA}}selected{{/if}}>{{name}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div class="form-group-row">
+      <div class="form-group">
+        <label>{{localize "ROE_COC7.RollRequest.CheckTargetLabel"}}</label>
+        <select name="skillCheck">
+          {{#each checksA}}
+            <option value="{{value}}">{{display}}</option>
+          {{/each}}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "ROE.Roll.DifficultyLabel"}}</label>
+        <select name="difficulty">
+          <option value="regular">{{localize "ROE_COC7.Difficulty.Regular"}}</option>
+          <option value="hard">{{localize "ROE_COC7.Difficulty.Hard"}}</option>
+          <option value="extreme">{{localize "ROE_COC7.Difficulty.Extreme"}}</option>
+        </select>
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- 2. SANITY CHECK --}}
+  {{#if isSanity}}
+    <div class="form-group">
+      <label>{{localize "ROE_COC7.RollSession.ActorLabel"}}</label>
+      <select name="actorA">
+        {{#each actors}}
+          <option value="{{id}}" {{#if selectedA}}selected{{/if}}>{{name}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>{{localize "ROE_COC7.RollRequest.SanityReasonLabel"}}</label>
+      <input type="text" name="sanityLabel" placeholder="{{localize 'ROE_COC7.RollRequest.SanityReasonPlaceholder'}}" />
+    </div>
+
+    <div class="form-group-row">
+      <div class="form-group">
+        <label>{{localize "ROE_COC7.Sanity.LossSuccessLabel"}}</label>
+        <input type="text" name="lossSuccess" value="0" />
+      </div>
+      <div class="form-group">
+        <label>{{localize "ROE_COC7.Sanity.LossFailureLabel"}}</label>
+        <input type="text" name="lossFailure" value="1d6" />
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- 3. COMBINED ROLL --}}
+  {{#if isCombined}}
+    <div class="form-group">
+      <label>{{localize "ROE_COC7.RollSession.ActorLabel"}}</label>
+      <select name="actorA">
+        {{#each actors}}
+          <option value="{{id}}" {{#if selectedA}}selected{{/if}}>{{name}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div class="form-group-row">
+      <div class="form-group">
+        <label>{{localize "ROE_COC7.RollSession.FirstCheck"}}</label>
+        <select name="combinedCheck1">
+          {{#each checksA}}
+            <option value="{{value}}">{{display}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>{{localize "ROE_COC7.RollSession.SecondCheck"}}</label>
+        <select name="combinedCheck2">
+          {{#each checksA}}
+            <option value="{{value}}">{{display}}</option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group-row">
+      <div class="form-group">
+        <label>{{localize "ROE_COC7.RollSession.LogicLabel"}}</label>
+        <select name="combinedMode">
+          <option value="and">{{localize "ROE_COC7.RollSession.ModeAnd"}}</option>
+          <option value="or">{{localize "ROE_COC7.RollSession.ModeOr"}}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>{{localize "ROE.Roll.DifficultyLabel"}}</label>
+        <select name="difficulty">
+          <option value="regular">{{localize "ROE_COC7.Difficulty.Regular"}}</option>
+          <option value="hard">{{localize "ROE_COC7.Difficulty.Hard"}}</option>
+          <option value="extreme">{{localize "ROE_COC7.Difficulty.Extreme"}}</option>
+        </select>
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- 4. OPPOSED ROLL --}}
+  {{#if isOpposed}}
+    <div class="form-group">
+      <label>{{localize "ROE_COC7.RollSession.TitleLabel"}}</label>
+      <input type="text" name="opposedTitle" placeholder="{{localize 'ROE_COC7.RollSession.TitlePlaceholder'}}" />
+    </div>
+
+    <div class="form-group-row">
+      <div class="form-group">
+        <label>{{localize "ROE_COC7.RollSession.ContestantA"}}</label>
+        <select name="actorA">
+          {{#each actors}}
+            <option value="{{id}}" {{#if selectedA}}selected{{/if}}>{{name}}</option>
+          {{/each}}
+        </select>
+        <select name="opposedCheckA">
+          {{#each checksA}}
+            <option value="{{value}}">{{display}}</option>
+          {{/each}}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "ROE_COC7.RollSession.ContestantB"}}</label>
+        <select name="actorB">
+          {{#each actors}}
+            <option value="{{id}}" {{#if selectedB}}selected{{/if}}>{{name}}</option>
+          {{/each}}
+        </select>
+        <select name="opposedCheckB">
+          {{#each checksB}}
+            <option value="{{value}}">{{display}}</option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- 5. OTHER / CUSTOM DICE ROLL --}}
+  {{#if isOther}}
+    <div class="form-group">
+      <label>{{localize "ROE_COC7.RollSession.ActorLabel"}}</label>
+      <select name="actorA">
+        {{#each actors}}
+          <option value="{{id}}" {{#if selectedA}}selected{{/if}}>{{name}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div class="form-group-row">
+      <div class="form-group">
+        <label>{{localize "ROE_COC7.RollSession.TitleLabel"}}</label>
+        <input type="text" name="otherLabel" placeholder="{{localize 'ROE_COC7.RollRequest.OtherLabelPlaceholder'}}" />
+      </div>
+      <div class="form-group">
+        <label>{{localize "ROE.RollRequest.FormulaLabel"}}</label>
+        <input type="text" name="diceFormula" value="1d100" placeholder="3d6*5" />
+      </div>
+    </div>
+  {{/if}}
+</div>

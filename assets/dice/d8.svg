@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <title>D8</title>
+  <path d="M48 7 85 48 48 89 11 48Z" fill="#1b2829" stroke="#c5a059" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M48 7 52 49 11 48Z" fill="#35423f" stroke="#ad8c4e" stroke-width="1.5"/>
+  <path d="M48 7 85 48 52 49Z" fill="#263335" stroke="#ad8c4e" stroke-width="1.5"/>
+  <path d="M11 48 52 49 48 89Z" fill="#293432" stroke="#ad8c4e" stroke-width="1.5"/>
+  <path d="M85 48 48 89 52 49Z" fill="#1b2425" stroke="#ad8c4e" stroke-width="1.5"/>
+  <text x="50" y="57" text-anchor="middle" fill="#f2d89a" stroke="#182426" stroke-width="4" paint-order="stroke" font-family="Georgia,serif" font-weight="bold" font-size="23">8</text>
+</svg>

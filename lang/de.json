@@ -1,0 +1,344 @@
+{
+  "ROE_COC7": {
+    "Settings": {
+      "ResultDisplayMode": {
+        "Name": "Anzeige von Würfelergebnissen",
+        "Hint": "Legt fest, ob im Prompt und auf der Chatkarte Zahlenwerte, der Erfolgsgrad oder beides angezeigt werden.",
+        "Both": "Zahlenwerte und Erfolgsgrad",
+        "Numbers": "Nur Zahlenwerte (z. B. 35 vs. 60)",
+        "Level": "Nur Erfolgsgrad"
+      },
+      "SuccessLevelFormat": {
+        "Name": "Darstellung der Erfolgsgrade",
+        "Hint": "Zeigt Erfolgsgrade entweder als ausgeschriebenen Text oder als kompakte Symbole (* bis *** / - bis ---) an.",
+        "Text": "Text (Regulär, Schwierig, Extrem)",
+        "Symbols": "Symbole (* bis *** / - bis ---)"
+      }
+    },
+    "Roll": {
+      "PushRoll": "Probe forcieren",
+      "PushWarningTitle": "Probe forcieren?",
+      "PushWarning": "Ein erneuter Fehlschlag wird schwerwiegende Konsequenzen haben. Besprich mit der Spielleitung, was dein Charakter anders versucht. Für den forcierten Wurf kann kein Glück eingesetzt werden.",
+      "PushCancel": "Abbrechen",
+      "PushFailureTitle": "Forcierte Probe misslungen",
+      "PushFailureDescription": "Lege die schwerwiegenden Folgen dieser misslungenen Probe fest.",
+      "PushFailureHidden": "Für eine verdeckte Probe ist eine Entscheidung erforderlich.",
+      "PushFailureContinue": "Weiter",
+      "PushFailureAcknowledge": "Folgen festgelegt"
+    },
+    "RollSession": {
+      "LauncherBtn": "Kombinierte / Vergleichende Probe",
+      "LauncherTitle": "Kombinierte oder Vergleichende Probe starten",
+      "ModeCombinedTab": "Kombinierte Probe",
+      "ModeOpposedTab": "Vergleichende Probe",
+      "CombinedTitle": "Kombinierte Probe (1W100)",
+      "OpposedHeader": "VERGLEICHENDE PROBE",
+      "ModeAnd": "Beide müssen gelingen (UND)",
+      "ModeOr": "Eine muss gelingen (ODER)",
+      "ActorLabel": "Ermittler",
+      "FirstCheck": "Erste Teilprobe",
+      "SecondCheck": "Zweite Teilprobe",
+      "LogicLabel": "Bedingung",
+      "TitleLabel": "Bezeichnung der Probe",
+      "TitlePlaceholder": "z. B. Überreden vs. Psychologie",
+      "ContestantA": "Teilnehmer 1",
+      "ContestantB": "Teilnehmer 2",
+      "StartSession": "Probe an Beteiligte senden",
+      "CombinedSuccess": "{actor} besteht die kombinierte Probe ({roll})!",
+      "CombinedFailure": "{actor} scheitert an der kombinierten Probe ({roll}).",
+      "ApplyConsequencesBtn": "Konsequenzen anwenden",
+      "OpposedWinner": "{winner} gewinnt mit {skill} ({level})!",
+      "OpposedTieFailure": "Beide Seiten scheitern – unentschieden.",
+      "Phases": {
+        "Contestant": "Phase {number}: Wurf"
+      },
+      "Summary": {
+        "Opposed": "Vergleichende Probe {title}: {names}"
+      },
+      "DeclineLuckBtn": "Kein Glück einsetzen",
+      "Types": {
+        "basic": "Probe",
+        "other": "Wurf",
+        "combined": "Kombiniert",
+        "opposed": "Vergleichend",
+        "skill": "Fertigkeitsprobe",
+        "sanity": "Stabilitätsprobe",
+        "combat": "Kampfprobe",
+        "ranged": "Fernkampfprobe"
+      }
+    },
+    "RollRequest": {
+      "CheckTargetLabel": "Fertigkeit / Eigenschaft / Glück",
+      "SanityReasonLabel": "Anlass / Grauen",
+      "SanityReasonPlaceholder": "z. B. Anblick des Tiefen Wesens",
+      "OtherLabelPlaceholder": "z. B. Stärke-Wurf (3W6*5)"
+    },
+    "Ranged": {
+      "Phases": {
+        "Reaction": "Phase 1: Reaktion",
+        "Attack": "Phase 2: Fernkampf",
+        "Resolution": "Phase 3: Schaden und Konsequenzen"
+      },
+      "CoverHint": "Das Ziel kann nicht ausweichen, darf sich aber in Deckung werfen: Der Schütze würfelt mit einem Strafwürfel, das Ziel verliert jedoch seine nächste Aktion.",
+      "CoverButton": "In Deckung werfen",
+      "NoCoverButton": "Keine Reaktion",
+      "WaitingForTarget": "Wartet auf die Entscheidung von {actor}...",
+      "CoverTaken": "In Deckung geworfen",
+      "NoCover": "Keine Reaktion",
+      "CoverPenaltyNote": "Strafwürfel: Das Ziel hat sich in Deckung geworfen.",
+      "LosesNextAction": "{actor} verliert die nächste Aktion und geht zu Boden.",
+      "Summary": {
+        "Reaction": "{attacker} schießt mit {weapon} auf {target}",
+        "Cover": "{target} hat sich in Deckung geworfen – Strafwürfel für den Schützen.",
+        "NoCover": "{target} hat nicht reagiert."
+      },
+      "Badges": {
+        "Hit": "Treffer",
+        "Miss": "Fehlschuss",
+        "Cover": "In Deckung"
+      }
+    },
+    "Chat": {
+      "PushRoll": "Probe forcieren",
+      "PushedTag": "Forciert",
+      "PushedWarning": "Forcierter Wurf – ein Misserfolg hat schwerwiegende Konsequenzen!",
+      "SpendLuck": "Glück ausgeben ({cost})",
+      "LuckSpentBadge": "{cost} Glück eingesetzt",
+      "SpendLuckImprove": "{level} ({cost} Glück)"
+    },
+    "Difficulty": {
+      "Regular": "Regulär",
+      "Hard": "Schwierig (1/2)",
+      "Extreme": "Extrem (1/5)"
+    },
+    "Combat": {
+      "MovementAbbr": "BW",
+      "DamageBonusAbbr": "SB",
+      "TargetLabel": "Ziel",
+      "BonusDiceSection": "Taktische Vorteile & Nachteile",
+      "AdditionalDice": "Zusätzliche Würfel",
+      "AutoSuccessBtn": "Automatischer Erfolg",
+      "ChooseReaction": "Reaktion wählen",
+      "ResetPhase": "Auf diese Phase zurücksetzen",
+      "Summary": {
+        "Attack": "Angriff von {attacker} auf {defender} mit {weapon}",
+        "Hit": "{winner} hat {target} getroffen."
+      },
+      "Badges": {
+        "WinnerAttacker": "Angreifer",
+        "WinnerDefender": "Verteidiger",
+        "WinnerDraw": "Unentschieden",
+        "Maneuver": "Manöver: {maneuver}",
+        "Damage": "{damage} Schaden"
+      },
+      "ConfirmNoReaction": "Ohne Gegenwehr fortfahren",
+      "UnarmedBrawl": "Unbewaffnet: Nahkampf (Handgemenge)",
+      "GmApplyDamageBtn": "Schaden zufügen ({damage})",
+      "WaitingForInitiator": "Wartet auf Angriffswurf von {actor}...",
+      "WaitingForOpponent": "Wartet auf Reaktion von {actor}...",
+      "AttackExecutedHidden": "Angriff ausgeführt",
+      "DamageBonus": "Schadensbonus",
+      "Build": "Statur",
+      "Movement": "Bewegung",
+      "Armor": "Rüstung",
+      "Weapons": "Waffen",
+      "Malfunction": "Fehlfunktion!",
+      "ImpaleTriggered": "Aufspießen! (Maximalschaden + Zusatzwurf)",
+      "RollDamage": "Schaden würfeln",
+      "DamageFlavor": "Schaden mit {weapon}",
+      "ImpaleDamageFlavor": "Aufspießender Schaden mit {weapon}",
+      "Phases": {
+        "Initiator": "Angriff",
+        "Opponent": "Reaktion",
+        "Resolution": "Auflösung"
+      },
+      "Modes": {
+        "melee": "Nahkampf (Vergleichend)",
+        "ranged": "Fernkampf",
+        "maneuver": "Kampfmanöver"
+      },
+      "DamageDealt": "Schaden",
+      "ImpaleTag": "Aufspießen",
+      "ManeuverSuccessNote": "Manöver erfolgreich (falls Ziel-Statur nicht +3 höher).",
+      "DefenseModes": {
+        "dodge": "Ausweichen",
+        "fightBack": "Gegenangriff (Handgemenge)",
+        "maneuver": "Kampfmanöver",
+        "none": "Keine Abwehr (Wehrlos)"
+      },
+      "DefenseTabs": {
+        "dodge": "Ausweichen",
+        "fightBack": "Gegenschlag",
+        "maneuver": "Kampfmanöver",
+        "none": "Keine Reaktion"
+      },
+      "Tactical": {
+        "Outnumbered": "In der Unterzahl",
+        "Surprised": "Überrascht",
+        "PointBlank": "Kernschussweite",
+        "Cover": "Ziel in Deckung",
+        "ProneTarget": "Ziel am Boden"
+      },
+      "Maneuvers": {
+        "disarm": "Entwaffnen",
+        "grapple": "Festhalten / Ringen",
+        "knockdown": "Zu Boden werfen",
+        "push": "Wegstoßen"
+      },
+      "DefendAgainst": "Abwehr gegen {attacker} ({weapon})",
+      "CounterTag": "Gegenangriff",
+      "ManeuverBuildTooHigh": "Ziel hat 3+ Statur mehr – Kampfmanöver nicht möglich!",
+      "EvadedAttack": "weicht dem Angriff von {attacker} ({weapon}) aus.",
+      "ManeuverHitProtocol": "{attacker} führt erfolgreich ein Kampfmanöver ({maneuver}) gegen {defender} aus!",
+      "ManeuverFailedProtocol": "{attacker} scheitert mit dem Kampfmanöver gegen {defender}.",
+      "DamageRoll": "Schadenswurf",
+      "ImpalingExtreme": "Durchschlag / Extrem",
+      "RollDamageBtn": "Schaden würfeln",
+      "OutcomeMissOrDodged": "Angriff verfehlt oder ausgewichen.",
+      "UnknownTarget": "das Ziel",
+      "OutcomeDamageSummary": "{winner} trifft {target} und verursacht {damage} TP Schaden.",
+      "OutcomeHitPendingDamage": "{winner} trifft {target} – Schadenswurf ausstehend.",
+      "OutcomeHitHiddenDamage": "{winner} trifft {target} (Schaden verdeckt).",
+      "OutcomeManeuverSuccess": "{winner} führt erfolgreich das Manöver „{maneuver}“ gegen {target} aus.",
+      "Card": {
+        "Attacker": "Angreifer",
+        "Defender": "Verteidiger",
+        "Result": "Resultat",
+        "PendingRoll": "Wartet auf Angriffswurf...",
+        "PendingReaction": "Wartet auf Reaktion...",
+        "RangedTarget": "Fernkampfziel (keine Gegenprobe)",
+        "AwaitingResolution": "Wartet auf Auswertung...",
+        "ApplyDamageBtn": "{target} {hp} TP Schaden zufügen",
+        "DamageApplied": "{hp} TP Schaden auf {target} angewendet",
+        "HitHeadline": "{attacker} trifft!",
+        "MissHeadline": "{attacker} verfehlt das Ziel.",
+        "CounterHeadline": "Gegenangriff von {defender} erfolgreich!",
+        "NoDamageHeadline": "Kein Treffer – {defender} bleibt unverletzt.",
+        "HiddenUntilOwnRoll": "Wurf abgelegt (sichtbar nach eigener Reaktion)",
+        "DamageAppliedSecret": "Schaden auf {target} angewendet",
+        "HiddenResult": "Verdecktes Kampfresultat"
+      }
+    },
+    "Warnings": {
+      "NotEnoughLuck": "Nicht genügend Glückspunkte vorhanden.",
+      "RangedNeedsTarget": "Ein Fernkampfangriff benötigt ein anvisiertes Ziel.",
+      "WeaponSkillMissing": "Verknüpfte Fertigkeit '{skill}' wurde beim Charakter nicht gefunden."
+    },
+    "Conditions": {
+      "MajorWound": "Schwere Wunde",
+      "TemporaryInsanity": "Temporärer Wahnsinn",
+      "IndefiniteInsanity": "Anhaltender Wahnsinn",
+      "Unconscious": "Bewusstlos",
+      "Dying": "Sterbend",
+      "Dead": "Tot"
+    },
+    "SuccessLevels": {
+      "critical": "Kritischer Erfolg",
+      "extreme": "Extremer Erfolg",
+      "hard": "Schwieriger Erfolg",
+      "regular": "Regulärer Erfolg",
+      "failure": "Misserfolg",
+      "fumble": "Patzer",
+      "none": "Keine Reaktion"
+    },
+    "SkillList": {
+      "FightingBrawl": "Nahkampf (Handgemenge)"
+    },
+    "Sanity": {
+      "Target": "Aktuelle Stabilität",
+      "LossOnSuccess": "Verlust bei Erfolg",
+      "LossOnFailure": "Verlust bei Misserfolg",
+      "LossSuccessLabel": "Bei Erfolg",
+      "LossFailureLabel": "Bei Misserfolg",
+      "LostLabel": "Verlust insgesamt",
+      "RollIntForInsanity": "Intelligenz-Probe für Wahnsinn",
+      "TemporaryInsanityIntCheck": "Intelligenz-Probe für temporären Wahnsinn",
+      "BoutWarning": "5+ Stabilität verloren! Intelligenz-Probe (IN) erforderlich:",
+      "RollIntCheck": "Intelligenz-Probe würfeln",
+      "IndefiniteTriggered": "Anhaltender Wahnsinn! ({loss} / {threshold} Tagesverlust erreicht)",
+      "PermanentInsanity": "Stabilität auf 0 gesunken – Dauerhafter Wahnsinn!",
+      "TemporaryInsanitySummary": "Temporärer Wahnsinn ({hours} Std., Anfall {rounds} Runden)",
+      "IntCheckTitle": "Begreifen des Grauens (IN-Probe)",
+      "ComprehendedHorror": "Erfolg – Temporärer Wahnsinn (1W10 Std.)!",
+      "RepressedHorror": "Misserfolg – Das Grauen wird verdrängt.",
+      "IndefiniteShort": "Anhaltender Wahnsinn ausgelöst!",
+      "StakeSuccess": "Gefasst",
+      "StakeFailure": "Erschüttert",
+      "FlavorUnshaken": "Der Verstand bleibt unerschüttert.",
+      "FlavorShakenMinor": "Ein kalter Schauer durchfährt den Geist.",
+      "FlavorShakenMajor": "Der Anblick erschüttert das Weltbild.",
+      "FlavorShattered": "Das Grauen droht den Verstand zu zerreißen!",
+      "RollIntBtn": "IN-Probe gegen Wahnsinn ablegen",
+      "Summary": {
+        "Insight": "{actor} verliert {lost} Stabilität – eine Intelligenzprobe entscheidet, ob der Verstand das Grauen begreift."
+      },
+      "WaitingForCheck": "Wartet auf Wurf von {actor}...",
+      "SummaryLoss": "{actor} verliert {lost} Stabilitätspunkte.",
+      "SummaryNoLoss": "{actor} verliert keine Stabilität.",
+      "Phases": {
+        "Check": "Phase 1: Stabilitätsprobe",
+        "Insight": "Phase 2: Einsicht",
+        "Resolution": "Phase 3: Folgen"
+      },
+      "CardLossSummary": "-{lost} STA",
+      "DailyLossLabel": "Tägl. Verlust",
+      "ResetDailyLoss": "Täglichen Stabilitätsverlust zurücksetzen"
+    },
+    "Characteristics": {
+      "STR": {
+        "Label": "Stärke",
+        "Abbr": "ST"
+      },
+      "CON": {
+        "Label": "Konstitution",
+        "Abbr": "KO"
+      },
+      "SIZ": {
+        "Label": "Körpergröße",
+        "Abbr": "GR"
+      },
+      "DEX": {
+        "Label": "Geschicklichkeit",
+        "Abbr": "GE"
+      },
+      "APP": {
+        "Label": "Erscheinung",
+        "Abbr": "ER"
+      },
+      "INT": {
+        "Label": "Intelligenz",
+        "Abbr": "IN"
+      },
+      "POW": {
+        "Label": "Manakraft",
+        "Abbr": "MA"
+      },
+      "EDU": {
+        "Label": "Bildung",
+        "Abbr": "BI"
+      },
+      "Know": "Wissen",
+      "Idea": "Idee"
+    },
+    "Resources": {
+      "HP": "Trefferpunkte",
+      "MP": "Manapunkte",
+      "Sanity": "Stabilität",
+      "Luck": "Glück",
+      "HPAbbr": "TP",
+      "MPAbbr": "MP",
+      "SanityAbbr": "STA"
+    },
+    "Dice": {
+      "DiceUsed": "Verwendete Würfel",
+      "Coin": "D2, Münze",
+      "D4": "D4",
+      "D6": "D6",
+      "D8": "D8",
+      "D10Units": "D10, Einerstellen",
+      "D10Tens": "D10, Zehnerstellen",
+      "D12": "D12",
+      "D20": "D20"
+    }
+  }
+}

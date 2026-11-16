@@ -1,0 +1,144 @@
+{{#> roePromptLayout}}
+{{#*inline "promptHeader"}}
+<div class="prompt-actor-name">{{actorName}}</div>
+{{#if hasPromptDescription}}
+<button type="button" class="prompt-skill-name prompt-title-toggle" data-action="toggleDescription"
+    aria-expanded="{{#if isDescriptionExpanded}}true{{else}}false{{/if}}"
+    title="{{localize 'ROE.Roll.ToggleDescription'}}">
+    <span>{{title}}</span>
+    <i class="fa-solid fa-circle-info prompt-desc-icon"></i>
+</button>
+{{else}}
+<div class="prompt-skill-name">{{title}}</div>
+{{/if}}
+{{#if sanityReason}}
+<div class="sanity-narrative-quote">„{{sanityReason}}“</div>
+{{/if}}
+{{/inline}}
+
+{{#*inline "promptDetails"}}
+{{> roePromptDescription}}
+
+{{#if phaseSummaryText}}
+<div class="prompt-phase-summary">{{phaseSummaryText}}</div>
+{{/if}}
+
+<section class="combat-phase-section {{#if isPhaseCheck}}is-active{{else}}is-completed{{/if}}">
+    <header class="combat-phase-header">
+        <span class="phase-title">
+            <i class="fa-solid {{#if isPhaseCheck}}fa-brain{{else}}fa-check-circle{{/if}}"></i>
+            {{localize "ROE_COC7.Sanity.Phases.Check"}}
+        </span>
+        {{#if isGM}}{{#unless isPhaseCheck}}
+        <button type="button" class="phase-reset-btn" data-action="resetSanityPhase" data-phase="check"
+            title="{{localize 'ROE_COC7.Combat.ResetPhase'}}">
+            <i class="fa-solid fa-rotate-left"></i>
+        </button>
+        {{/unless}}{{/if}}
+    </header>
+
+    {{#if isPhaseCheck}}
+    <div class="sanity-stakes-grid">
+        <div class="stake-pill success-side">
+            <span class="stake-label"><i class="fa-solid fa-shield-halved"></i> {{localize "ROE_COC7.Sanity.LossSuccessLabel"}}</span>
+            <span class="stake-formula">{{sanityLossSuccess}}</span>
+        </div>
+        <div class="stake-pill failure-side">
+            <span class="stake-label"><i class="fa-solid fa-skull"></i> {{localize "ROE_COC7.Sanity.LossFailureLabel"}}</span>
+            <span class="stake-formula">{{sanityLossFailure}}</span>
+        </div>
+    </div>
+
+    {{#if canRoll}}
+    <div class="prompt-player-controls {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
+        {{> roeDiceDisplay dice=rollDice modifierTooltip=effectiveModifierLabel}}
+
+        <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">
+            <i class="fa-solid fa-dice-d20"></i> {{title}} ({{displayTarget}}%)
+        </button>
+    </div>
+    {{else}}
+    <div class="pending-badge">
+        <i class="fa-solid fa-hourglass-half"></i>
+        {{localize "ROE_COC7.Sanity.WaitingForCheck" actor=actorName}}
+    </div>
+    {{/if}}
+    {{else}}
+    <div class="combined-check-row">
+        <span>{{localize "ROE_COC7.Resources.Sanity"}}</span>
+        <strong data-inspect-key="{{participantKey}}">{{sanityCheckOutcome}}</strong>
+    </div>
+    <div class="sanity-flavor-line">{{sanityFlavorText}}</div>
+    {{/if}}
+</section>
+
+{{#if hasIntCheck}}
+<section class="combat-phase-section {{#if isPhaseInsight}}is-active{{else}}is-completed{{/if}}">
+    <header class="combat-phase-header">
+        <span class="phase-title">
+            <i class="fa-solid {{#if isPhaseInsight}}fa-eye{{else}}fa-check-circle{{/if}}"></i>
+            {{localize "ROE_COC7.Sanity.Phases.Insight"}}
+        </span>
+        <span class="phase-actor-tag">{{intCheckLabel}}</span>
+        {{#if isGM}}{{#if isPhaseResolution}}
+        <button type="button" class="phase-reset-btn" data-action="resetSanityPhase" data-phase="insight"
+            title="{{localize 'ROE_COC7.Combat.ResetPhase'}}">
+            <i class="fa-solid fa-rotate-left"></i>
+        </button>
+        {{/if}}{{/if}}
+    </header>
+
+    {{#if isPhaseInsight}}
+    {{#if canRollIntCheck}}
+    {{> roeDiceDisplay dice=intDice modifierTooltip=intModifierLabel}}
+    <button type="button" class="prompt-action-btn sanity-int-btn {{#if isIntDelegatedToPlayer}}gm-delegated{{/if}}"
+        data-action="executeIntCheck">
+        <i class="fa-solid fa-dice-d20"></i> {{intCheckLabel}} ({{intTargetValue}}%)
+    </button>
+    {{else}}
+    <div class="pending-badge">
+        <i class="fa-solid fa-hourglass-half"></i>
+        {{localize "ROE_COC7.Sanity.WaitingForCheck" actor=actorName}}
+    </div>
+    {{/if}}
+    {{else}}
+    <div class="combined-check-row">
+        <span>{{intCheckLabel}}</span>
+        <strong data-inspect-key="insanityInt">{{intOutcome}}</strong>
+    </div>
+    {{/if}}
+</section>
+{{/if}}
+{{/inline}}
+
+{{#*inline "promptResults"}}
+{{#if isPhaseResolution}}
+<section class="combat-phase-section is-active">
+    <header class="combat-phase-header">
+        <span class="phase-title">
+            <i class="fa-solid fa-gavel"></i>
+            {{localize "ROE_COC7.Sanity.Phases.Resolution"}}
+        </span>
+    </header>
+
+    {{> (lookup . "resultPartial")}}
+
+    {{#if canApplyConsequences}}
+    <footer class="prompt-footer">
+        <button type="button" class="prompt-action-btn luck" data-action="applyConsequences">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "ROE_COC7.RollSession.ApplyConsequencesBtn"}}
+        </button>
+    </footer>
+    {{/if}}
+
+    {{#if canResolve}}
+    <footer class="prompt-footer gm-resolve-footer">
+        <button type="button" class="prompt-action-btn primary" data-action="resolveSession">
+            <i class="fa-solid fa-gavel"></i> {{localize "ROE.RollSession.ResolveBtn"}}
+        </button>
+    </footer>
+    {{/if}}
+</section>
+{{/if}}
+{{/inline}}
+{{/roePromptLayout}}

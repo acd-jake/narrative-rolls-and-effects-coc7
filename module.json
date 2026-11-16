@@ -1,0 +1,50 @@
+{
+  "id": "narrative-rolls-and-effects-coc7",
+  "title": "Narrative Rolls and Effects - Call of Cthulhu 7e",
+  "description": "Call of Cthulhu 7th Edition integration for Narrative Rolls and Effects.",
+  "version": "#{VERSION}#",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "CoC7",
+        "type": "system",
+        "compatibility": {}
+      }
+    ],
+    "requires": [
+      {
+        "id": "narrative-rolls-and-effects",
+        "type": "module",
+        "compatibility": {}
+      }
+    ]
+  },
+  "authors": [
+    {
+      "name": "Acd-Jake",
+      "discord": "Acd-Jake",
+      "flags": {
+        "github": "acd-jake"
+      }
+    }
+  ],
+  "esmodules": [
+    "module/main.mjs"
+  ],
+  "styles": [
+    "styles/coc7.css"
+  ],
+  "languages": [
+    { "lang": "en", "name": "English", "path": "lang/en.json" },
+    { "lang": "de", "name": "Deutsch", "path": "lang/de.json" }
+  ],
+  "url": "#{URL}#",
+  "download": "#{DOWNLOAD}#",
+  "manifest": "#{MANIFEST}#",
+  "bugs": "https://github.com"
+
+}

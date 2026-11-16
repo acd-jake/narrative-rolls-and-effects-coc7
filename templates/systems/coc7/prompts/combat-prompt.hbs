@@ -1,0 +1,202 @@
+{{#> roePromptLayout}}
+{{#*inline "promptHeader"}}
+<div class="combat-header-avatars">
+    <img class="combatant-avatar" src="{{attackerImg}}" alt="{{attackerName}}" />
+    <div class="combat-header-titles">
+        {{#if hasPromptDescription}}
+        <button type="button" class="prompt-skill-name prompt-title-toggle" data-action="toggleDescription"
+            aria-expanded="{{#if isDescriptionExpanded}}true{{else}}false{{/if}}"
+            title="{{localize 'ROE.Roll.ToggleDescription'}}">
+            <span>{{weaponName}}</span>
+            <i class="fa-solid fa-circle-info prompt-desc-icon"></i>
+        </button>
+        {{else}}
+        <div class="prompt-skill-name">{{weaponName}}</div>
+        {{/if}}
+        {{#if hasDefender}}
+        <div class="prompt-actor-name">{{localize "ROE_COC7.Combat.TargetLabel"}}: {{defenderName}}</div>
+        {{/if}}
+    </div>
+</div>
+{{/inline}}
+
+{{#*inline "promptDetails"}}
+{{> roePromptDescription}}
+
+{{#if phaseSummaryText}}
+<div class="prompt-phase-summary">{{phaseSummaryText}}</div>
+{{/if}}
+
+<section class="combat-phase-section {{#if isPhaseInitiator}}is-active{{else}}is-completed{{/if}} {{#if hideInitiatorInCompact}}is-compact-hidden{{/if}}">
+    <header class="combat-phase-header">
+        <span class="phase-title">
+            <i class="fa-solid {{#if isPhaseInitiator}}fa-crosshairs{{else}}fa-check-circle{{/if}}"></i>
+            {{localize "ROE_COC7.Combat.Phases.Initiator"}}
+        </span>
+        <span class="phase-actor-tag">{{attackerName}}</span>
+        {{#if isGM}}{{#unless isPhaseInitiator}}
+        <button type="button" class="phase-reset-btn" data-action="resetCombatPhase" data-phase="initiator"
+            title="{{localize 'ROE_COC7.Combat.ResetPhase'}}">
+            <i class="fa-solid fa-rotate-left"></i>
+        </button>
+        {{/unless}}{{/if}}
+    </header>
+
+    {{#if isPhaseInitiator}}
+    {{#if canActAsInitiator}}
+    {{#if isGM}}
+    <div class="gm-exclusive-zone">
+        <div class="gm-eye-badge" title="{{localize 'ROE.RollSession.GmOnlyVisibleHint'}}">
+            <i class="fa-solid fa-eye-slash"></i>
+        </div>
+        <button type="button" class="prompt-action-btn secondary compact" data-action="gmForceAutoSuccess">
+            {{localize "ROE_COC7.Combat.AutoSuccessBtn"}}
+        </button>
+    </div>
+    {{/if}}
+
+    <div class="prompt-player-controls {{#if isAttackerDelegated}}gm-delegated-region{{/if}}">
+        {{#each tacticalOptions}}{{#if active}}
+        <div class="section-header">{{label}}</div>
+        {{/if}}{{/each}}
+        {{> roeDiceDisplay dice=attackerDice modifierTooltip=effectiveModifierLabel}}
+
+        <button type="button" class="prompt-action-btn roll-now" data-action="rollInitiatorAttack">
+            <i class="fa-solid fa-dice-d20"></i> {{attackerRollBtnLabel}}
+        </button>
+    </div>
+    {{else}}
+    <div class="pending-badge">
+        <i class="fa-solid fa-hourglass-half"></i>
+        {{localize "ROE_COC7.Combat.WaitingForInitiator" actor=attackerName}}
+    </div>
+    {{/if}}
+    {{else}}
+    <div class="combined-check-row">
+        <span>{{weaponName}}</span>
+        <strong {{#if canSeeAttackerResult}}data-inspect-key="attacker" {{/if}}>
+            {{#if canSeeAttackerResult}}
+            {{attackerResultText}}
+            {{else}}
+            <span class="pending-badge">{{localize "ROE_COC7.Combat.AttackExecutedHidden"}}</span>
+            {{/if}}
+        </strong>
+    </div>
+    {{/if}}
+</section>
+
+{{#if showPhaseOpponent}}
+<section class="combat-phase-section {{#if isPhaseOpponent}}is-active{{else}}is-completed{{/if}} {{#if hideOpponentInCompact}}is-compact-hidden{{/if}}">
+    <header class="combat-phase-header">
+        <span class="phase-title">
+            <i class="fa-solid {{#if isPhaseOpponent}}fa-shield-halved{{else}}fa-check-circle{{/if}}"></i>
+            {{localize "ROE_COC7.Combat.Phases.Opponent"}}
+        </span>
+        <span class="phase-actor-tag">{{defenderName}}</span>
+        {{#if isGM}}{{#unless isPhaseOpponent}}
+        <button type="button" class="phase-reset-btn" data-action="resetCombatPhase" data-phase="opponent"
+            title="{{localize 'ROE_COC7.Combat.ResetPhase'}}">
+            <i class="fa-solid fa-rotate-left"></i>
+        </button>
+        {{/unless}}{{/if}}
+    </header>
+
+    {{#if isPhaseOpponent}}
+    {{#if canActAsOpponent}}
+    <div class="prompt-player-controls {{#if isDefenderDelegated}}gm-delegated-region{{/if}}">
+        <div class="section-header">{{localize "ROE_COC7.Combat.ChooseReaction"}}</div>
+        <div class="reaction-grid-2x2">
+            {{#each reactionTabs}}
+            <button type="button" class="tab-btn {{#if active}}active{{/if}}" data-action="setDefenderReaction"
+                data-reaction="{{id}}">
+                {{label}}
+            </button>
+            {{/each}}
+        </div>
+
+        {{#if hasDefenderDetails}}
+        <select name="defenderDetailSelect" class="roe-select-full">
+            {{#each defenderDetailOptions}}
+            <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+        </select>
+        {{/if}}
+
+        {{#unless isNoneReaction}}
+        {{> roeDiceDisplay dice=defenderDice modifierTooltip=defenderModifierLabel}}
+        {{/unless}}
+
+        <button type="button" class="prompt-action-btn roll-now" data-action="rollOpponentReaction">
+            <i class="fa-solid fa-shield-halved"></i> {{defenderRollBtnLabel}}
+        </button>
+    </div>
+    {{else}}
+    <div class="pending-badge">
+        <i class="fa-solid fa-hourglass-half"></i>
+        {{localize "ROE_COC7.Combat.WaitingForOpponent" actor=defenderName}}
+    </div>
+    {{/if}}
+    {{else}}
+    <div class="combined-check-row">
+        <span>{{defenderReactionLabel}}</span>
+        <strong data-inspect-key="defender">{{defenderResultText}}</strong>
+    </div>
+    {{/if}}
+</section>
+{{/if}}
+{{/inline}}
+
+{{#*inline "promptResults"}}
+{{#if isPhaseResolution}}
+<section class="combat-phase-section is-active">
+    <header class="combat-phase-header">
+        <span class="phase-title">
+            <i class="fa-solid fa-gavel"></i>
+            {{localize "ROE_COC7.Combat.Phases.Resolution"}}
+        </span>
+    </header>
+
+    {{#if hasDamageStep}}
+    <div class="combined-check-row">
+        <span><i class="fa-solid fa-burst"></i> {{damageLabel}}</span>
+        <strong {{#if damageRolled}}data-inspect-key="damage" {{/if}}>
+            {{#if damageRolled}}
+            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
+            {{else}}
+            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>{{/if}}
+            {{/if}}
+        </strong>
+    </div>
+
+    {{#if canRollDamage}}
+    {{#if canViewDamage}}{{> roeDiceDisplay dice=damageDice modifierTooltip="Damage"}}{{/if}}
+    <button type="button" class="prompt-action-btn push {{#if isDamageDelegated}}gm-delegated{{/if}}" data-action="executeDamageRoll">
+        <i class="fa-solid fa-dice"></i> {{localize "ROE_COC7.Combat.RollDamageBtn"}}
+    </button>
+    {{/if}}
+    {{/if}}
+
+    {{> (lookup . "resultPartial")}}
+
+    {{#if canApplyConsequences}}
+    <div class="gm-exclusive-zone">
+        <div class="gm-eye-badge" title="{{localize 'ROE.RollSession.GmOnlyVisibleHint'}}">
+            <i class="fa-solid fa-eye-slash"></i>
+        </div>
+        <button type="button" class="prompt-action-btn luck" data-action="applyConsequences">
+            <i class="fa-solid fa-heart-pulse"></i> {{gmApplyDamageLabel}}
+        </button>
+    </div>
+    {{/if}}
+
+    {{#if canResolve}}
+    <footer class="prompt-footer gm-resolve-footer">
+        <button type="button" class="prompt-action-btn primary" data-action="resolveSession">
+            <i class="fa-solid fa-gavel"></i> {{localize "ROE.RollSession.ResolveBtn"}}
+        </button>
+    </footer>
+    {{/if}}
+</section>
+{{/if}}
+{{/inline}}
+{{/roePromptLayout}}

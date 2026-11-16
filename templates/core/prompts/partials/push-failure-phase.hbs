@@ -1,0 +1,11 @@
+{{#if showPushFailurePhase}}
+<section class="combat-phase-section is-active">
+    <header class="combat-phase-header">
+        <span class="phase-title"><i class="fa-solid fa-triangle-exclamation"></i> {{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureTitle"}}{{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}</span>
+    </header>
+    <div>{{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureDescription"}}{{else}}{{localize "ROE_COC7.Roll.PushFailureHidden"}}{{/if}}</div>
+    <button type="button" class="prompt-action-btn primary" data-action="acknowledgePushFailure">
+        <i class="fa-solid fa-check"></i> {{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureAcknowledge"}}{{else}}{{localize "ROE_COC7.Roll.PushFailureContinue"}}{{/if}}
+    </button>
+</section>
+{{/if}}

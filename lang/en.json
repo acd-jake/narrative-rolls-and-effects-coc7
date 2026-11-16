@@ -1,0 +1,344 @@
+{
+  "ROE_COC7": {
+    "Settings": {
+      "ResultDisplayMode": {
+        "Name": "Roll Result Display Mode",
+        "Hint": "Determines whether prompts and chat cards show numeric values, success levels, or both.",
+        "Both": "Numbers and Success Level",
+        "Numbers": "Numbers Only (e.g., 35 vs. 60)",
+        "Level": "Success Level Only"
+      },
+      "SuccessLevelFormat": {
+        "Name": "Success Level Format",
+        "Hint": "Displays success levels either as full text or compact symbols (* to *** / - to ---).",
+        "Text": "Text (Regular, Hard, Extreme)",
+        "Symbols": "Symbols (* to *** / - to ---)"
+      }
+    },
+    "Roll": {
+      "PushRoll": "Push Roll",
+      "PushWarningTitle": "Push this roll?",
+      "PushWarning": "Another failure will have serious consequences. Discuss with the Keeper what your character does differently. Luck cannot be spent on the pushed roll.",
+      "PushCancel": "Cancel",
+      "PushFailureTitle": "Pushed roll failed",
+      "PushFailureDescription": "Decide the serious consequences of this failed roll.",
+      "PushFailureHidden": "A private roll requires a decision.",
+      "PushFailureContinue": "Continue",
+      "PushFailureAcknowledge": "Consequences decided"
+    },
+    "RollSession": {
+      "LauncherBtn": "Combined / Opposed Roll",
+      "LauncherTitle": "Start Combined or Opposed Roll",
+      "ModeCombinedTab": "Combined Roll",
+      "ModeOpposedTab": "Opposed Roll",
+      "CombinedTitle": "Combined Roll (1d100)",
+      "OpposedHeader": "OPPOSED ROLL",
+      "ModeAnd": "Both must succeed (AND)",
+      "ModeOr": "Either must succeed (OR)",
+      "ActorLabel": "Investigator",
+      "FirstCheck": "First Check",
+      "SecondCheck": "Second Check",
+      "LogicLabel": "Condition",
+      "TitleLabel": "Roll Title",
+      "TitlePlaceholder": "e.g., Fast Talk vs. Psychology",
+      "ContestantA": "Contestant 1",
+      "ContestantB": "Contestant 2",
+      "StartSession": "Send Roll to Participants",
+      "CombinedSuccess": "{actor} passes the combined roll ({roll})!",
+      "CombinedFailure": "{actor} fails the combined roll ({roll}).",
+      "ApplyConsequencesBtn": "Apply Consequences",
+      "OpposedWinner": "{winner} wins with {skill} ({level})!",
+      "OpposedTieFailure": "Both sides fail – tie.",
+      "Phases": {
+        "Contestant": "Phase {number}: Roll"
+      },
+      "Summary": {
+        "Opposed": "Opposed roll {title}: {names}"
+      },
+      "DeclineLuckBtn": "Decline Luck",
+      "Types": {
+        "basic": "Check",
+        "other": "Roll",
+        "combined": "Combined",
+        "opposed": "Opposed",
+        "skill": "Skill Check",
+        "sanity": "Sanity Check",
+        "combat": "Combat Roll",
+        "ranged": "Ranged Attack"
+      }
+    },
+    "RollRequest": {
+      "CheckTargetLabel": "Skill / Characteristic / Luck",
+      "SanityReasonLabel": "Source of Horror",
+      "SanityReasonPlaceholder": "e.g., Sighting a Deep One",
+      "OtherLabelPlaceholder": "e.g., STR Roll (3d6*5)"
+    },
+    "Ranged": {
+      "Phases": {
+        "Reaction": "Phase 1: Reaction",
+        "Attack": "Phase 2: Ranged Attack",
+        "Resolution": "Phase 3: Damage and Consequences"
+      },
+      "CoverHint": "The target cannot dodge normally but may dive for cover: the shooter rolls with a penalty die, but the target loses their next action.",
+      "CoverButton": "Dive for cover",
+      "NoCoverButton": "No reaction",
+      "WaitingForTarget": "Waiting for the decision of {actor}...",
+      "CoverTaken": "Dove for cover",
+      "NoCover": "No reaction",
+      "CoverPenaltyNote": "Penalty die: the target dove for cover.",
+      "LosesNextAction": "{actor} loses their next action and goes prone.",
+      "Summary": {
+        "Reaction": "{attacker} shoots at {target} with {weapon}",
+        "Cover": "{target} dove for cover – penalty die for the shooter.",
+        "NoCover": "{target} did not react."
+      },
+      "Badges": {
+        "Hit": "Hit",
+        "Miss": "Miss",
+        "Cover": "In cover"
+      }
+    },
+    "Chat": {
+      "PushRoll": "Push Roll",
+      "PushedTag": "Pushed",
+      "PushedWarning": "Pushed Roll – failure carries dire consequences!",
+      "SpendLuck": "Spend Luck ({cost})",
+      "LuckSpentBadge": "{cost} Luck Spent",
+      "SpendLuckImprove": "{level} ({cost} Luck)"
+    },
+    "Difficulty": {
+      "Regular": "Regular",
+      "Hard": "Hard (1/2)",
+      "Extreme": "Extreme (1/5)"
+    },
+    "Combat": {
+      "MovementAbbr": "MOV",
+      "DamageBonusAbbr": "DB",
+      "TargetLabel": "Target",
+      "BonusDiceSection": "Tactical Modifiers",
+      "AdditionalDice": "Additional Dice",
+      "AutoSuccessBtn": "Automatic Success",
+      "ChooseReaction": "Choose Reaction",
+      "ResetPhase": "Reset to this phase",
+      "Summary": {
+        "Attack": "Attack by {attacker} on {defender} with {weapon}",
+        "Hit": "{winner} hit {target}."
+      },
+      "Badges": {
+        "WinnerAttacker": "Attacker",
+        "WinnerDefender": "Defender",
+        "WinnerDraw": "Draw",
+        "Maneuver": "Maneuver: {maneuver}",
+        "Damage": "{damage} damage"
+      },
+      "ConfirmNoReaction": "Proceed Without Reaction",
+      "UnarmedBrawl": "Unarmed: Fighting (Brawl)",
+      "GmApplyDamageBtn": "Apply Damage ({damage})",
+      "WaitingForInitiator": "Waiting for attack roll from {actor}...",
+      "WaitingForOpponent": "Waiting for reaction from {actor}...",
+      "AttackExecutedHidden": "Attack Executed",
+      "DamageBonus": "Damage Bonus",
+      "Build": "Build",
+      "Movement": "Movement",
+      "Armor": "Armor",
+      "Weapons": "Weapons",
+      "Malfunction": "Malfunction!",
+      "ImpaleTriggered": "Impale! (Max Damage + Extra Roll)",
+      "RollDamage": "Roll Damage",
+      "DamageFlavor": "Damage with {weapon}",
+      "ImpaleDamageFlavor": "Impaling damage with {weapon}",
+      "Phases": {
+        "Initiator": "Attack",
+        "Opponent": "Reaction",
+        "Resolution": "Resolution"
+      },
+      "Modes": {
+        "melee": "Melee (Opposed)",
+        "ranged": "Ranged",
+        "maneuver": "Combat Maneuver"
+      },
+      "DamageDealt": "Damage",
+      "ImpaleTag": "Impale",
+      "ManeuverSuccessNote": "Maneuver succeeds (unless target Build is +3 higher).",
+      "DefenseModes": {
+        "dodge": "Dodge",
+        "fightBack": "Fight Back (Brawl)",
+        "maneuver": "Combat Maneuver",
+        "none": "No Defense (Helpless)"
+      },
+      "DefenseTabs": {
+        "dodge": "Dodge",
+        "fightBack": "Fight Back",
+        "maneuver": "Maneuver",
+        "none": "No Reaction"
+      },
+      "Tactical": {
+        "Outnumbered": "Outnumbered",
+        "Surprised": "Surprised",
+        "PointBlank": "Point-Blank Range",
+        "Cover": "Target in Cover",
+        "ProneTarget": "Prone Target"
+      },
+      "Maneuvers": {
+        "disarm": "Disarm",
+        "grapple": "Grapple / Restrain",
+        "knockdown": "Knockdown",
+        "push": "Push Back"
+      },
+      "DefendAgainst": "Defend against {attacker} ({weapon})",
+      "CounterTag": "Fight Back",
+      "ManeuverBuildTooHigh": "Target has 3+ higher Build – maneuver impossible!",
+      "EvadedAttack": "dodges the attack from {attacker} ({weapon}).",
+      "ManeuverHitProtocol": "{attacker} successfully executes a combat maneuver ({maneuver}) against {defender}!",
+      "ManeuverFailedProtocol": "{attacker} fails the combat maneuver against {defender}.",
+      "DamageRoll": "Damage Roll",
+      "ImpalingExtreme": "Impaling / Extreme",
+      "RollDamageBtn": "Roll Damage",
+      "OutcomeMissOrDodged": "Attack missed or dodged.",
+      "UnknownTarget": "the target",
+      "OutcomeDamageSummary": "{winner} hits {target} and deals {damage} HP damage.",
+      "OutcomeHitPendingDamage": "{winner} hits {target} – damage roll pending.",
+      "OutcomeHitHiddenDamage": "{winner} hits {target} (damage hidden).",
+      "OutcomeManeuverSuccess": "{winner} successfully executes “{maneuver}” against {target}.",
+      "Card": {
+        "Attacker": "Attacker",
+        "Defender": "Defender",
+        "Result": "Result",
+        "PendingRoll": "Awaiting attack roll...",
+        "PendingReaction": "Awaiting reaction...",
+        "RangedTarget": "Ranged target (no opposed roll)",
+        "AwaitingResolution": "Awaiting resolution...",
+        "ApplyDamageBtn": "Deal {hp} HP Damage to {target}",
+        "DamageApplied": "{hp} HP damage applied to {target}",
+        "HitHeadline": "{attacker} hits!",
+        "MissHeadline": "{attacker} misses the target.",
+        "CounterHeadline": "Counterattack by {defender} succeeds!",
+        "NoDamageHeadline": "No hit – {defender} remains unharmed.",
+        "HiddenUntilOwnRoll": "Roll submitted (visible after own reaction)",
+        "DamageAppliedSecret": "Damage applied to {target}",
+        "HiddenResult": "Hidden Combat Result"
+      }
+    },
+    "Warnings": {
+      "NotEnoughLuck": "Not enough Luck points available.",
+      "RangedNeedsTarget": "A ranged attack needs a targeted token.",
+      "WeaponSkillMissing": "Linked skill '{skill}' was not found on the character."
+    },
+    "Conditions": {
+      "MajorWound": "Major Wound",
+      "TemporaryInsanity": "Temporary Insanity",
+      "IndefiniteInsanity": "Indefinite Insanity",
+      "Unconscious": "Unconscious",
+      "Dying": "Dying",
+      "Dead": "Dead"
+    },
+    "SuccessLevels": {
+      "critical": "Critical Success",
+      "extreme": "Extreme Success",
+      "hard": "Hard Success",
+      "regular": "Regular Success",
+      "failure": "Failure",
+      "fumble": "Fumble",
+      "none": "No Reaction"
+    },
+    "SkillList": {
+      "FightingBrawl": "Fighting (Brawl)"
+    },
+    "Sanity": {
+      "Target": "Current Sanity",
+      "LossOnSuccess": "Loss on Success",
+      "LossOnFailure": "Loss on Failure",
+      "LossSuccessLabel": "On Success",
+      "LossFailureLabel": "On Failure",
+      "LostLabel": "Total Sanity Lost",
+      "RollIntForInsanity": "Roll INT for Insanity",
+      "TemporaryInsanityIntCheck": "Intelligence Check (Temporary Insanity)",
+      "BoutWarning": "Lost 5+ Sanity! Intelligence (INT) check required:",
+      "RollIntCheck": "Roll Intelligence Check",
+      "IndefiniteTriggered": "Indefinite Insanity! ({loss} / {threshold} daily loss reached)",
+      "PermanentInsanity": "Sanity reduced to 0 – Permanent Insanity!",
+      "TemporaryInsanitySummary": "Temporary Insanity ({hours} hrs, bout {rounds} rounds)",
+      "IntCheckTitle": "Comprehending the Horror (INT Check)",
+      "ComprehendedHorror": "Success – Temporary Insanity (1d10 hrs)!",
+      "RepressedHorror": "Failure – The horror is repressed.",
+      "IndefiniteShort": "Indefinite Insanity triggered!",
+      "StakeSuccess": "Composed",
+      "StakeFailure": "Shaken",
+      "FlavorUnshaken": "The mind remains unshaken.",
+      "FlavorShakenMinor": "A cold chill runs through the mind.",
+      "FlavorShakenMajor": "The sight shakes your grip on reality.",
+      "FlavorShattered": "The horror threatens to shatter your sanity!",
+      "RollIntBtn": "Roll INT Against Madness",
+      "Summary": {
+        "Insight": "{actor} loses {lost} Sanity – an Intelligence roll decides whether the mind comprehends the horror."
+      },
+      "WaitingForCheck": "Waiting for roll from {actor}...",
+      "SummaryLoss": "{actor} loses {lost} Sanity points.",
+      "SummaryNoLoss": "{actor} loses no Sanity.",
+      "Phases": {
+        "Check": "Phase 1: Sanity Check",
+        "Insight": "Phase 2: Insight",
+        "Resolution": "Phase 3: Consequences"
+      },
+      "CardLossSummary": "-{lost} SAN",
+      "DailyLossLabel": "Daily Loss",
+      "ResetDailyLoss": "Reset daily Sanity loss"
+    },
+    "Characteristics": {
+      "STR": {
+        "Label": "Strength",
+        "Abbr": "STR"
+      },
+      "CON": {
+        "Label": "Constitution",
+        "Abbr": "CON"
+      },
+      "SIZ": {
+        "Label": "Size",
+        "Abbr": "SIZ"
+      },
+      "DEX": {
+        "Label": "Dexterity",
+        "Abbr": "DEX"
+      },
+      "APP": {
+        "Label": "Appearance",
+        "Abbr": "APP"
+      },
+      "INT": {
+        "Label": "Intelligence",
+        "Abbr": "INT"
+      },
+      "POW": {
+        "Label": "Power",
+        "Abbr": "POW"
+      },
+      "EDU": {
+        "Label": "Education",
+        "Abbr": "EDU"
+      },
+      "Know": "Know",
+      "Idea": "Idea"
+    },
+    "Resources": {
+      "HP": "Hit Points",
+      "MP": "Magic Points",
+      "Sanity": "Sanity",
+      "Luck": "Luck",
+      "HPAbbr": "HP",
+      "MPAbbr": "MP",
+      "SanityAbbr": "SAN"
+    },
+    "Dice": {
+      "DiceUsed": "Dice used",
+      "Coin": "D2, coin",
+      "D4": "D4",
+      "D6": "D6",
+      "D8": "D8",
+      "D10Units": "D10, units",
+      "D10Tens": "D10, tens",
+      "D12": "D12",
+      "D20": "D20"
+    }
+  }
+}

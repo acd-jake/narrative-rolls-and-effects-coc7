@@ -1,0 +1,93 @@
+{{#> roePromptLayout}}
+{{#*inline "promptHeader"}}
+<div class="prompt-actor-name">{{actorName}}</div>
+{{#if hasPromptDescription}}
+<button type="button" class="prompt-skill-name prompt-title-toggle" data-action="toggleDescription"
+    aria-expanded="{{#if isDescriptionExpanded}}true{{else}}false{{/if}}"
+    title="{{localize 'ROE.Roll.ToggleDescription'}}">
+    <span>{{title}}</span>
+    <i class="fa-solid fa-circle-info prompt-desc-icon"></i>
+</button>
+{{else}}
+<div class="prompt-skill-name">{{title}}</div>
+{{/if}}
+{{/inline}}
+
+{{#*inline "promptDetails"}}
+{{> roePromptDescription}}
+
+{{#if showLevel}}
+<div class="prompt-outcome-badge {{successLevel}}">{{formattedLevel}}</div>
+{{/if}}
+
+{{> roeSanityLossControls}}
+
+{{#if isCombined}}
+<div class="prompt-sub-box">
+    {{#each combinedChecks}}
+    <div class="combined-check-row">
+        <span>{{label}}</span>
+        <strong {{#if ../hasRolled}}data-inspect-key="{{key}}" {{/if}}>
+            {{#if ../hasRolled}}{{outcome}}{{else}}? vs. {{targetValue}}{{/if}}
+        </strong>
+    </div>
+    {{/each}}
+</div>
+{{/if}}
+
+{{#if canRoll}}
+<div class="prompt-player-controls {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
+    {{> roeSkillDifficultyControls}}
+    {{> roeDiceDisplay dice=rollDice modifierTooltip=modifierDisplay}}
+
+    <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">
+        <i class="fa-solid fa-dice-d20"></i>
+        {{#if isOther}}{{localize "ROE.Roll.Execute"}}{{else}}{{rollLabel}} ({{displayTarget}}%){{/if}}
+    </button>
+</div>
+{{/if}}
+
+{{#if canSpendLuck}}
+<div class="luck-decision-row {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
+    <button type="button" class="prompt-action-btn luck"
+        data-action="spendLuck" data-key="{{participantKey}}" data-cost="{{luckCost}}" data-level="{{luckTargetLevel}}">
+        <i class="fa-solid fa-clover"></i> {{localize "ROE_COC7.Chat.SpendLuckImprove" level=luckTargetLabel
+        cost=luckCost}}
+    </button>
+    <button type="button" class="prompt-action-btn secondary"
+        data-action="declineLuck" data-key="{{participantKey}}">
+        {{localize "ROE_COC7.RollSession.DeclineLuckBtn"}}
+    </button>
+</div>
+{{/if}}
+
+{{#if canPush}}
+{{> roeDiceDisplay dice=rollDice modifierTooltip=modifierDisplay}}
+<button type="button" class="prompt-action-btn push {{#if isDelegatedToPlayer}}gm-delegated{{/if}}"
+    data-action="pushRoll" data-key="{{participantKey}}">
+    <i class="fa-solid fa-rotate-right"></i> {{localize "ROE_COC7.Chat.PushRoll"}}
+</button>
+{{/if}}
+{{/inline}}
+
+{{#*inline "promptResults"}}
+{{> (lookup . "resultPartial")}}
+{{> roePushFailurePhase}}
+
+{{#if canApplyConsequences}}
+<footer class="prompt-footer">
+    <button type="button" class="prompt-action-btn luck" data-action="applyConsequences">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "ROE_COC7.RollSession.ApplyConsequencesBtn"}}
+    </button>
+</footer>
+{{/if}}
+
+{{#if canResolve}}
+<footer class="prompt-footer gm-resolve-footer">
+    <button type="button" class="prompt-action-btn primary" data-action="resolveSession">
+        <i class="fa-solid fa-gavel"></i> {{localize "ROE.RollSession.ResolveBtn"}}
+    </button>
+</footer>
+{{/if}}
+{{/inline}}
+{{/roePromptLayout}}

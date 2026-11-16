@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <title>D12</title>
+  <path d="M48 7 73 15 88 37 84 65 64 85 35 85 12 65 8 37 23 15Z" fill="#1d292a" stroke="#c5a059" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M48 7 62 25 48 30 34 25Z" fill="#46504a" stroke="#ad8c4e" stroke-width="1.4"/>
+  <path d="M23 15 34 25 30 47 8 37Z M73 15 88 37 66 47 62 25Z" fill="#33403d" stroke="#ad8c4e" stroke-width="1.4"/>
+  <path d="M30 47 34 25 48 30 62 25 66 47 57 65 39 65Z" fill="#263231" stroke="#ad8c4e" stroke-width="1.4"/>
+  <path d="M8 37 30 47 39 65 35 85 12 65Z M88 37 84 65 64 85 57 65 66 47Z" fill="#202b2b" stroke="#ad8c4e" stroke-width="1.4"/>
+  <path d="M35 85 39 65 57 65 64 85Z" fill="#3c3025" stroke="#ad8c4e" stroke-width="1.4"/>
+  <text x="48" y="56" text-anchor="middle" fill="#f2d89a" font-family="Georgia,serif" font-weight="bold" font-size="20">12</text>
+</svg>

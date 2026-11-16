@@ -1,0 +1,45 @@
+{{#if isSanityCheck}}
+<div
+    class="sanity-immersion-panel {{#if hasSanityLossResult}}is-evaluated{{/if}} {{#if isInsanityTriggered}}is-shattered{{/if}}">
+    {{#if sanityReason}}
+    <div class="sanity-narrative-quote">„{{sanityReason}}“</div>
+    {{/if}}
+
+    {{#unless hasSanityLossResult}}
+    <div class="sanity-stakes-grid">
+        <div class="stake-pill success-side">
+            <span class="stake-label"><i class="fa-solid fa-shield-halved"></i> {{localize
+                "ROE_COC7.Sanity.LossSuccessLabel"}}</span>
+            <span class="stake-formula">{{sanityLossSuccess}}</span>
+        </div>
+        <div class="stake-pill failure-side">
+            <span class="stake-label"><i class="fa-solid fa-skull"></i> {{localize
+                "ROE_COC7.Sanity.LossFailureLabel"}}</span>
+            <span class="stake-formula">{{sanityLossFailure}}</span>
+        </div>
+    </div>
+    {{else}}
+    <div class="sanity-flavor-line">{{sanityFlavorText}}</div>
+    {{/unless}}
+
+    {{#if hasIntCheck}}
+    <div class="sanity-int-callout">
+        <div class="int-callout-header">
+            <span><i class="fa-solid fa-brain"></i> {{intCheckLabel}}</span>
+            <strong {{#if intHasRolled}}data-inspect-key="insanityInt" {{/if}}>
+                {{#if intHasRolled}}{{intOutcome}}{{else}}? vs. {{intTargetValue}}{{/if}}
+            </strong>
+        </div>
+
+        {{#if canRollIntCheck}}
+        {{> roeDiceVisuals dice=intDice}}
+        <button type="button"
+            class="prompt-action-btn sanity-int-btn compact {{#if isIntDelegatedToPlayer}}gm-delegated{{/if}}"
+            data-action="executeIntCheck">
+            <i class="fa-solid fa-dice-d20"></i> {{intCheckLabel}} ({{intTargetValue}}%)
+        </button>
+        {{/if}}
+    </div>
+    {{/if}}
+</div>
+{{/if}}

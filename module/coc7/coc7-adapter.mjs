@@ -540,7 +540,7 @@ export class CoC7Adapter {
         for (const die of diceArray) this.#accumulateDiceLabel(die, counts, otherDice);
 
         const parts = [];
-        if (counts.units) parts.push(`${counts.units}d10`);
+        if (counts.units) parts.push(`${counts.units}D10`);
         this.#appendTensLabel(parts, counts);
         for (const die of otherDice) parts.push(`${die.count}d${this.#extractDiceSides(die.label)}`);
         return parts.join(", ");
@@ -700,6 +700,8 @@ export class CoC7Adapter {
     #accumulateDiceLabel(die, counts, otherDice) {
         const count = die.count || 1;
         const labels = {
+            "ROE.Dice.D10Units": "units",
+            "ROE.Dice.D10Tens": "tens",
             "ROE_COC7.Dice.D10Units": "units",
             "ROE_COC7.Dice.D10Tens": "tens",
             "ROE.Roll.BonusDie": "bonus",
@@ -713,7 +715,7 @@ export class CoC7Adapter {
     #appendTensLabel(parts, counts) {
         const total = counts.tens + counts.bonus + counts.penalty;
         if (!total) return;
-        let label = `${total} ${game.i18n.localize("ROE_COC7.Dice.D10Tens")}`;
+        let label = `${total}D10 ${game.i18n.localize("ROE_COC7.Dice.Tens")}`;
         const modifiers = [];
         if (counts.bonus) modifiers.push(`${counts.bonus} ${game.i18n.localize(counts.bonus === 1 ? "ROE.Roll.BonusDie" : "ROE.Roll.BonusDice")}`);
         if (counts.penalty) modifiers.push(`${counts.penalty} ${game.i18n.localize(counts.penalty === 1 ? "ROE.Roll.PenaltyDie" : "ROE.Roll.PenaltyDice")}`);

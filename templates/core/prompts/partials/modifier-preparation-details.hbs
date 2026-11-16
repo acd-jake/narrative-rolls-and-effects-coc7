@@ -1,0 +1,24 @@
+{{#if preparationDifficulties.length}}
+<div class="prompt-sub-box">
+    <div class="section-header">{{localize "ROE.Roll.DifficultyLabel"}}</div>
+    <div class="modifier-difficulty-options">
+        {{#each preparationDifficulties}}
+        <button type="button" class="tab-btn {{#if selected}}active{{/if}}" data-action="setPreparedDifficulty" data-difficulty="{{value}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}">{{label}}</button>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+{{#each preparationParticipants}}
+<div class="prompt-sub-box">
+    <div class="combined-check-row"><span>{{actorName}}</span><strong>{{preparationLabel}}</strong></div>
+    {{> roeModifierSlider manualModifierDice=modifierDice effectiveModifierLabel=modifierDisplay flagModifierDice=0 participantKey=key}}
+</div>
+{{/each}}
+{{#if preparationTactics.length}}
+<div class="section-header">{{localize "ROE.Roll.ModifierDice"}}</div>
+<div class="tactical-flags-grid">
+    {{#each preparationTactics}}
+    <button type="button" class="tab-btn tactical-toggle {{#if active}}active{{/if}}" data-action="togglePreparedTactical" data-flag="{{key}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{label}}</button>
+    {{/each}}
+</div>
+{{/if}}

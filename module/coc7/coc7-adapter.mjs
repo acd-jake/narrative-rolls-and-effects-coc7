@@ -22,6 +22,9 @@ const EFFECT_PRESETS = {
     dying: { color: 0x8a1c1c, secondaryColor: 0x1a0000, count: 20, durationMs: 1800, gravity: 0.18, spread: 1.8 }
 };
 
+const PREPARATION_DIFFICULTIES = ["regular", "hard", "extreme"];
+const DIFFICULTY_PREPARATION_ROLL_TYPES = new Set(["basic", "skill", "combined"]);
+
 export class CoC7Adapter {
     #strategies;
 
@@ -466,6 +469,28 @@ export class CoC7Adapter {
         return session.pushFailurePending ? "pushConsequences" : allRolled ? "awaitingResolution" : "rolling";
     }
 
+    getModifierPreparationPartials(session) {
+        if (!session?.isPreparingModifiers) return {};
+        return {
+            header: "roeCocModifierPreparationHeader",
+            details: "roeCocModifierPreparationDetails"
+        };
+    }
+
+    buildPreparationDifficulties(session) {
+        if (
+            !session?.isPreparingModifiers ||
+            session.canChangeDifficulty === false ||
+            !DIFFICULTY_PREPARATION_ROLL_TYPES.has(session.rollType)
+        ) return [];
+
+        return PREPARATION_DIFFICULTIES.map((difficulty) => ({
+            value: difficulty,
+            label: game.i18n.localize(`ROE_COC7.Difficulty.${difficulty.capitalize()}`),
+            selected: session.difficulty === difficulty
+        }));
+    }
+
     getModifierParticipantKeys(session, participantKey) {
         return session.rollType === "combined"
             ? session.participants.map((participant) => participant.key)
@@ -478,7 +503,8 @@ export class CoC7Adapter {
             declineLuck: () => this.#declineLuck(prompt, target),
             pushRoll: () => this.#pushRoll(prompt, target),
             acknowledgePushFailure: () => this.#acknowledgePushFailure(prompt),
-            togglePreparedTactical: () => this.#togglePreparedTactical(prompt, target)
+            togglePreparedTactical: () => this.#togglePreparedTactical(prompt, target),
+            setPreparedDifficulty: () => this.#setPreparedDifficulty(prompt, target)
         };
         const handler = handlers[actionName];
         if (handler) return handler();
@@ -744,6 +770,20 @@ export class CoC7Adapter {
         if (!game.user.isGM || !session?.isPreparingModifiers || !["outnumbered", "surprised", "proneTarget"].includes(key)) return;
         const tacticalFlags = { ...session.tacticalFlags, [key]: !session.tacticalFlags?.[key] };
         await UniversalRollOrchestrator.updateSessionPatch(prompt._messageId, { tacticalFlags });
+    }
+
+    async #setPreparedDifficulty(prompt, target) {
+        const session = prompt.session;
+        const difficulty = target.dataset.difficulty;
+        if (
+            !game.user.isGM ||
+            !session?.isPreparingModifiers ||
+            session.canChangeDifficulty === false ||
+            !DIFFICULTY_PREPARATION_ROLL_TYPES.has(session.rollType) ||
+            !PREPARATION_DIFFICULTIES.includes(difficulty) ||
+            difficulty === session.difficulty
+        ) return;
+        await UniversalRollOrchestrator.updateSessionPatch(prompt._messageId, { difficulty });
     }
 
     #registerEffectPresets() {

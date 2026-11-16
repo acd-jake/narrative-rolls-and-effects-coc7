@@ -532,6 +532,12 @@
     gap: 0.3rem;
 }
 
+.roe-overlay[data-nre-system="CoC7"] .modifier-difficulty-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.3rem;
+}
+
 .roe-overlay[data-nre-system="CoC7"] .tab-btn {
     padding: 0.25rem 0.35rem;
     background: var(--roe-bg-panel);

@@ -21,10 +21,13 @@ Install and enable both Narrative Rolls and Effects and this companion module. T
 - Configurable result display mode and success-level format
 - Roll modifiers, Luck decisions, pushed rolls, and optional consequence automation
 - Call of Cthulhu bonus and penalty dice in roll prompts and roll inspection
+- Difficulty selection during modifier preparation for eligible checks
 
 ## Dice visualization
 
 The core Narrative Rolls and Effects module provides the shared dice visualizer, display template, and dice-face images. This companion module extends the core visuals with the CoC7 bonus and penalty dice; its prompts use the shared core display.
+
+The core also manages the modifier-preparation prompt shell, while this module supplies its header and details.
 
 ## Compatibility
 

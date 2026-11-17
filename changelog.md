@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - CoC7 dice tooltips now group percentile units, tens, and bonus/penalty dice into one formula.
 - Simplified resolved roll prompts across all CoC7 check types (skill, characteristic, custom, combined, opposed, sanity, and combat) to show context headers and color-coded outcomes without duplicate text.
 - Allowed players to inspect roll details by clicking their visible success-level outcome during the waiting phase.
+- Displayed the opponent's success level in prompts and chat cards regardless of roll visibility mode, while keeping rolled numbers and dice-breakdown inspection restricted.
 
 ### Fixed
 - Kept modifier sliders in preparation and summarized active bonus or penalty dice in roll prompts.

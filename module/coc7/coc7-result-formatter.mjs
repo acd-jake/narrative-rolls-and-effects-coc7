@@ -21,7 +21,11 @@ export class CoC7ResultFormatter {
     static formatRollOutcome({ total, targetValue, successLevel, allowNumbers = true }) {
         const mode = game.settings?.get(COC7_MODULE_ID, "resultDisplayMode") || "both";
         const levelText = this.formatSuccessLevel(successLevel);
-        if (!allowNumbers || mode === "level") return levelText || String(total ?? "");
+        if (!allowNumbers) {
+            if (mode === "numbers" || !levelText) return game.i18n.localize("ROE.RollSession.HiddenRoll");
+            return levelText;
+        }
+        if (mode === "level") return levelText || String(total ?? "");
         const numberPart = targetValue ? `${total} vs. ${targetValue}` : `${total}`;
         if (mode === "numbers" || !levelText) return numberPart;
         return `${numberPart} • ${levelText}`;

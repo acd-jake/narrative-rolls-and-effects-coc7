@@ -28,7 +28,7 @@
 {{/if}}
 
 <section
-    class="combat-phase-section {{#if isPhaseInitiator}}is-active{{else}}is-completed{{/if}} {{#if hideInitiatorInCompact}}is-compact-hidden{{/if}}">
+    class="combat-phase-section {{#if isPhaseInitiator}}is-active{{else}}is-completed{{/if}} {{#if isPhaseInitiator}}{{#unless canActAsInitiator}}is-compact-hidden{{/unless}}{{else}}{{#if hideInitiatorInCompact}}is-compact-hidden{{/if}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseInitiator}}fa-crosshairs{{else}}fa-check-circle{{/if}}"></i>
@@ -67,11 +67,6 @@
             <i class="fa-solid fa-dice-d20"></i> {{attackerRollBtnLabel}}
         </button>
     </div>
-    {{else}}
-    <div class="pending-badge">
-        <i class="fa-solid fa-hourglass-half"></i>
-        {{localize "ROE_COC7.Combat.WaitingForInitiator" actor=attackerName}}
-    </div>
     {{/if}}
     {{else}}
     <div class="combined-check-row">
@@ -89,7 +84,7 @@
 
 {{#if showPhaseOpponent}}
 <section
-    class="combat-phase-section {{#if isPhaseOpponent}}is-active{{else}}is-completed{{/if}} {{#if hideOpponentInCompact}}is-compact-hidden{{/if}}">
+    class="combat-phase-section {{#if isPhaseOpponent}}is-active{{else}}is-completed{{/if}} {{#if isPhaseOpponent}}{{#unless canActAsOpponent}}is-compact-hidden{{/unless}}{{else}}{{#if hideOpponentInCompact}}is-compact-hidden{{/if}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseOpponent}}fa-shield-halved{{else}}fa-check-circle{{/if}}"></i>
@@ -133,11 +128,6 @@
         <button type="button" class="prompt-action-btn roll-now" data-action="rollOpponentReaction">
             <i class="fa-solid fa-shield-halved"></i> {{defenderRollBtnLabel}}
         </button>
-    </div>
-    {{else}}
-    <div class="pending-badge">
-        <i class="fa-solid fa-hourglass-half"></i>
-        {{localize "ROE_COC7.Combat.WaitingForOpponent" actor=defenderName}}
     </div>
     {{/if}}
     {{else}}

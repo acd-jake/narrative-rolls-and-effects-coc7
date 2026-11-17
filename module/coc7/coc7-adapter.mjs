@@ -418,9 +418,6 @@ export class CoC7Adapter {
     }
     /** Builds a permission-aware result badge for a participant in a chat card. */
     formatParticipantBadge(participant, session, permissions) {
-        if (!permissions.canViewRoll) {
-            return { text: game.i18n.localize("ROE.RollSession.HiddenRoll"), className: "pending-badge" };
-        }
         if (!permissions.showDetails) {
             return { text: game.i18n.localize("ROE_COC7.Combat.Card.HiddenUntilOwnRoll"), className: "pending-badge" };
         }
@@ -428,10 +425,16 @@ export class CoC7Adapter {
             return { text: game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none"), className: "pending-badge" };
         }
         if (participant.key === "damage") {
-            return { text: `${participant.total} (${participant.diceFormula})` };
+            return permissions.canViewRoll
+                ? { text: `${participant.total} (${participant.diceFormula})` }
+                : { text: game.i18n.localize("ROE.RollSession.HiddenRoll"), className: "pending-badge" };
         }
-        if (session.rollType === "other") return { text: String(participant.total) };
-        const allowNumbers = permissions.isGM || Boolean(permissions.actor?.testUserPermission(game.user, "OBSERVER"));
+        if (session.rollType === "other") {
+            return permissions.canViewRoll
+                ? { text: String(participant.total) }
+                : { text: game.i18n.localize("ROE.RollSession.HiddenRoll"), className: "pending-badge" };
+        }
+        const allowNumbers = permissions.canViewRoll && (permissions.isGM || Boolean(permissions.actor?.testUserPermission(game.user, "OBSERVER")));
         return {
             text: this.formatRollOutcome({
                 total: participant.total,
@@ -710,11 +713,14 @@ export class CoC7Adapter {
                 actorName: p.actorName,
                 label: p.label,
                 canView,
-                isWinner: canView && session.winnerKey === p.key,
-                successLevel: canView ? p.successLevel : "",
-                result: canView
-                    ? this.formatRollOutcome({ total: p.total, targetValue: p.targetValue, successLevel: p.successLevel })
-                    : game.i18n.localize("ROE.RollSession.HiddenRoll")
+                isWinner: session.winnerKey === p.key,
+                successLevel: p.successLevel ?? "",
+                result: this.formatRollOutcome({
+                    total: p.total,
+                    targetValue: p.targetValue,
+                    successLevel: p.successLevel,
+                    allowNumbers: canView
+                })
             };
         });
         return {
@@ -776,7 +782,6 @@ export class CoC7Adapter {
 
         const formatCombatantOutcome = (participant, canView) => {
             if (!participant) return "";
-            if (!canView) return game.i18n.localize("ROE.RollSession.HiddenRoll");
             if (participant.key === "defender" && session.rollType === "ranged") {
                 return game.i18n.localize(participant.tookCover ? "ROE_COC7.Ranged.CoverTaken" : "ROE_COC7.Ranged.NoCover");
             }
@@ -784,12 +789,13 @@ export class CoC7Adapter {
             return this.formatRollOutcome({
                 total: participant.total,
                 targetValue: participant.targetValue,
-                successLevel: participant.successLevel
+                successLevel: participant.successLevel,
+                allowNumbers: canView
             });
         };
 
-        const chipClass = (level, canView) => {
-            if (!canView || !level || level === "none") return "";
+        const chipClass = (level) => {
+            if (!level || level === "none") return "";
             return ["regular", "hard", "extreme", "critical"].includes(level) ? "outcome is-success" : "outcome is-failure";
         };
 
@@ -806,9 +812,9 @@ export class CoC7Adapter {
             resolvedAttackerLabel: attacker?.label ?? "",
             resolvedCanViewAttacker: canViewAtt,
             resolvedAttackerWon: session.hitWinnerKey === "attacker",
-            resolvedAttackerLevel: canViewAtt ? attacker.successLevel : "",
+            resolvedAttackerLevel: attacker?.successLevel ?? "",
             resolvedAttackerOutcome: formatCombatantOutcome(attacker, canViewAtt),
-            resolvedAttackerChipClass: chipClass(attacker?.successLevel, canViewAtt),
+            resolvedAttackerChipClass: chipClass(attacker?.successLevel),
             resolvedHasDefender: Boolean(defender),
             resolvedDefenderName: defender?.actorName ?? "",
             resolvedDefenderImg: defender?.actorImg ?? "",
@@ -817,9 +823,9 @@ export class CoC7Adapter {
                 : game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${session.defenderReaction || "dodge"}`),
             resolvedCanViewDefender: Boolean(canViewDef && defender?.total !== null),
             resolvedDefenderWon: session.hitWinnerKey === "defender",
-            resolvedDefenderLevel: canViewDef && defender?.total !== null ? defender.successLevel : "",
+            resolvedDefenderLevel:  defender?.total !== null ? (defender?.successLevel ?? "") : "",
             resolvedDefenderOutcome: formatCombatantOutcome(defender, canViewDef),
-            resolvedDefenderChipClass: chipClass(defender?.successLevel, canViewDef),
+            resolvedDefenderChipClass: chipClass(defender?.successLevel),
             resolvedHasConsequences: hasDamage || isManeuverWin || targetTookCover,
             resolvedHasDamage: hasDamage,
             resolvedCanViewDamage: canViewDmg,

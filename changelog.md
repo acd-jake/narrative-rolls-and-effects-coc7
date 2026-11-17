@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Configurable resolved combat prompt layout setting (`combatResolvedLayout`) supporting both narrative scene summaries and side-by-side duel comparisons with separated mechanical consequences.
 
 ### Changed
+- Declining Luck now finalizes the post-roll step so eligible sessions can resolve automatically.
 - Refactored the CoC7 adapter into focused services while preserving its existing integration behavior.
 - Dice-face images, formula visualization, and the shared dice display are provided by the core module; CoC7 prompts now use that shared implementation.
 - CoC7 dice tooltips now group percentile units, tens, and bonus/penalty dice into one formula.

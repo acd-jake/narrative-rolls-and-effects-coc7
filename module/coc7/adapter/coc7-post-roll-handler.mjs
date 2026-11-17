@@ -43,7 +43,7 @@ export class CoC7PostRollHandler {
             const participants = session.participants.map((p) =>
                 p.key === participantKey ? { ...p, luckDecided: true } : p
             );
-            return { session: { ...session, participants }, finalize: false };
+            return { session: { ...session, participants }, finalize: true };
         }
         if (actionId === "pushRoll") {
             const participants = CoC7CheckResolver.buildPushedParticipants(session, participantKey, payload.rollData);

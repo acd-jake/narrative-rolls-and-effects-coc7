@@ -27,7 +27,8 @@
 <div class="prompt-phase-summary">{{phaseSummaryText}}</div>
 {{/if}}
 
-<section class="combat-phase-section {{#if isPhaseInitiator}}is-active{{else}}is-completed{{/if}} {{#if hideInitiatorInCompact}}is-compact-hidden{{/if}}">
+<section
+    class="combat-phase-section {{#if isPhaseInitiator}}is-active{{else}}is-completed{{/if}} {{#if hideInitiatorInCompact}}is-compact-hidden{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseInitiator}}fa-crosshairs{{else}}fa-check-circle{{/if}}"></i>
@@ -87,7 +88,8 @@
 </section>
 
 {{#if showPhaseOpponent}}
-<section class="combat-phase-section {{#if isPhaseOpponent}}is-active{{else}}is-completed{{/if}} {{#if hideOpponentInCompact}}is-compact-hidden{{/if}}">
+<section
+    class="combat-phase-section {{#if isPhaseOpponent}}is-active{{else}}is-completed{{/if}} {{#if hideOpponentInCompact}}is-compact-hidden{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseOpponent}}fa-shield-halved{{else}}fa-check-circle{{/if}}"></i>
@@ -163,19 +165,29 @@
         <span><i class="fa-solid fa-burst"></i> {{damageLabel}}</span>
         <strong {{#if damageRolled}}data-inspect-key="damage" {{/if}}>
             {{#if damageRolled}}
-            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
+            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize
+            "ROE.RollSession.HiddenRoll"}}{{/if}}
             {{else}}
-            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>{{/if}}
+            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize
+                "ROE.RollSession.PendingRoll"}}</span>{{/if}}
             {{/if}}
         </strong>
     </div>
 
     {{#if canRollDamage}}
     {{#if canViewDamage}}{{> roeDiceDisplay dice=damageDice modifierTooltip="Damage"}}{{/if}}
-    <button type="button" class="prompt-action-btn push {{#if isDamageDelegated}}gm-delegated{{/if}}" data-action="executeDamageRoll">
+    <button type="button" class="prompt-action-btn push {{#if isDamageDelegated}}gm-delegated{{/if}}"
+        data-action="executeDamageRoll">
         <i class="fa-solid fa-dice"></i> {{localize "ROE_COC7.Combat.RollDamageBtn"}}
     </button>
     {{/if}}
+
+    {{#if showPlayerWaitingHint}}
+    <div class="prompt-phase-summary">
+        <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+    </div>
+    {{/if}}
+
     {{/if}}
 
     {{> (lookup . "resultPartial")}}

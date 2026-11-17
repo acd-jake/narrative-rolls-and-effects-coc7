@@ -70,6 +70,15 @@
         "sanity": "Sanity Check",
         "combat": "Combat Roll",
         "ranged": "Ranged Attack"
+      },
+      "WaitingHints": {
+        "skill": "Your attempt is made—in a moment you will know if your skills suffice...",
+        "basic": "The dice have been cast—fate weighs the outcome...",
+        "other": "The roll is submitted—the Keeper is evaluating the result...",
+        "combined": "Both checks hang in the balance—in a moment you will know if your effort succeeds...",
+        "opposed": "Both sides have tested their mettle—in a moment the victor will be clear...",
+        "combat": "Steel and reflexes clash—the outcome of the exchange is being resolved...",
+        "ranged": "The shot echoes out—in a moment you will see if it found its mark..."
       }
     },
     "RollRequest": {

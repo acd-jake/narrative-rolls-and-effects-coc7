@@ -1,4 +1,6 @@
 import { MODULE_ID, EffectsEngine, SessionStore, UniversalRollOrchestrator, getPromptFactory } from "../core-bridge.mjs";
+import { COC7_MODULE_ID } from "./coc7-settings.mjs";
+
 import { CoC7Interceptor } from "./coc7-interceptor.mjs";
 import { CoC7DataMapper } from "./coc7-data-mapper.mjs";
 import { CoC7CheckResolver } from "./coc7-check-resolver.mjs";
@@ -29,6 +31,7 @@ const SINGLE_ACTOR_RESOLVED_ROLL_TYPES = new Set(["basic", "skill", "other", "co
 /** Connects CoC7 roll creation, prompts, consequences, and Foundry sheet interactions to the core API. */
 export class CoC7Adapter {
     #strategies;
+    #waitingHintsBySession = new Map()
 
     /** Creates the strategy instances used to resolve each supported roll type. */
     constructor() {
@@ -439,7 +442,7 @@ export class CoC7Adapter {
         };
     }
 
-        /** Adds push-failure warning, visibility, and resolved result fields to a prompt's prepared context. */
+    /** Adds push-failure warning, visibility, and resolved result fields to a prompt's prepared context. */
     preparePromptContext(prompt, session, context) {
         const pushedParticipants = (session?.participants ?? []).filter((participant) => participant.isPushed);
         const base = {
@@ -485,6 +488,25 @@ export class CoC7Adapter {
         };
         const body = bodyByType[session.rollType];
         return body ? { header: "roeCocResolvedSingleHeader", body } : {};
+    }
+
+    /** Returns an atmospheric waiting hint for players while the Keeper resolves the check. */
+    getPlayerWaitingHint(session) {
+        if (!session) return "";
+        if (session.rollType === "sanity") {
+            const cacheKey = `${session.initiatorUserId}:${session.title}:${session.participants?.at(0)?.actorId ?? ""}`;
+            if (this.#waitingHintsBySession.has(cacheKey)) return this.#waitingHintsBySession.get(cacheKey);
+            const configured = game.settings?.get(COC7_MODULE_ID, "sanityEvaluationHints")?.trim();
+            const raw = configured || game.i18n.localize("ROE_COC7.Settings.SanityEvaluationHints.Default");
+            const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+            const chosen = lines.length
+                ? lines[Math.floor(Math.random() * lines.length)]
+                : game.i18n.localize("ROE.RollSession.AwaitingResolution");
+            this.#waitingHintsBySession.set(cacheKey, chosen);
+            return chosen;
+        }
+        const key = `ROE_COC7.RollSession.WaitingHints.${session.rollType}`;
+        return game.i18n.has(key) ? game.i18n.localize(key) : "";
     }
 
     /** Returns the difficulty choices allowed in the current modifier-preparation phase. */
@@ -660,7 +682,7 @@ export class CoC7Adapter {
         };
     }
 
-        #buildResolvedOpposedContext(session) {
+    #buildResolvedOpposedContext(session) {
         const contestants = (session.participants ?? []).map((p) => {
             const canView = RollVisibilityPolicy.canViewParticipantRoll(p, session);
             return {

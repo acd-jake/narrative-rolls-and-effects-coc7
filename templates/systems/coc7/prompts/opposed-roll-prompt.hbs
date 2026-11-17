@@ -71,6 +71,12 @@
 {{> (lookup . "resultPartial")}}
 {{> roePushFailurePhase}}
 
+{{#if showPlayerWaitingHint}}
+<div class="prompt-phase-summary">
+    <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+</div>
+{{/if}}
+
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">
     <button type="button" class="prompt-action-btn primary" data-action="resolveSession">

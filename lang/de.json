@@ -70,6 +70,15 @@
         "sanity": "Stabilitätsprobe",
         "combat": "Kampfprobe",
         "ranged": "Fernkampfprobe"
+      },
+      "WaitingHints": {
+        "skill": "Dein Versuch ist unternommen – gleich zeigt sich, ob deine Fähigkeiten ausreichen...",
+        "basic": "Die Würfel sind gefallen – das Schicksal wägt das Ergebnis ab...",
+        "other": "Der Wurf ist abgelegt – die Spielleitung wertet das Ergebnis aus...",
+        "combined": "Beide Teilproben stehen auf dem Prüfstand – gleich entscheidet sich, ob dein Vorhaben gelingt...",
+        "opposed": "Beide Seiten haben ihre Kräfte gemessen – gleich steht fest, wer die Oberhand behält...",
+        "combat": "Stahl und Reflexe prallen aufeinander – der Ausgang des Schlagabtauschs wird ausgewertet...",
+        "ranged": "Der Schuss hallt nach – gleich zeigt sich, ob er sein Ziel gefunden hat..."
       }
     },
     "RollRequest": {

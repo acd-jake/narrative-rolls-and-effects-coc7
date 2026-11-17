@@ -159,5 +159,12 @@
     {{/if}}
 </section>
 {{/if}}
+
+{{#if showPlayerWaitingHint}}
+<div class="prompt-phase-summary">
+    <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+</div>
+{{/if}}
+
 {{/inline}}
 {{/roePromptLayout}}

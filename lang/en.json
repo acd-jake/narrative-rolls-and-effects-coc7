@@ -83,7 +83,11 @@
         "other": "The roll is submitted—the Keeper is evaluating the result...",
         "combined": "Both checks hang in the balance—in a moment you will know if your effort succeeds...",
         "opposed": "Both sides have tested their mettle—in a moment the victor will be clear...",
+        "combatInitiator": "Your opponent winds up to strike—prepare to react...",
+        "combatOpponent": "Your attack is launched—in a moment you will see how your opponent reacts...",
         "combat": "Steel and reflexes clash—the outcome of the exchange is being resolved...",
+        "rangedReaction": "You take aim—in a moment you will see if your target reacts in time...",
+        "rangedAttack": "You have made your choice—the shot is imminent...",
         "ranged": "The shot echoes out—in a moment you will see if it found its mark..."
       }
     },

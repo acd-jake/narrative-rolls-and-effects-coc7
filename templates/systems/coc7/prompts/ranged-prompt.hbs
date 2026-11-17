@@ -13,6 +13,9 @@
         {{else}}
         <div class="prompt-skill-name">{{weaponName}}</div>
         {{/if}}
+        {{#if targetName}}
+        <div class="prompt-actor-name">{{localize "ROE_COC7.Combat.TargetLabel"}}: {{targetName}}</div>
+        {{/if}}
     </div>
 </div>
 {{/inline}}
@@ -24,7 +27,7 @@
 <div class="prompt-phase-summary">{{phaseSummaryText}}</div>
 {{/if}}
 
-<section class="combat-phase-section {{#if isPhaseReaction}}is-active{{else}}is-completed{{/if}}">
+<section class="combat-phase-section {{#if isPhaseReaction}}is-active{{else}}is-completed{{/if}} {{#if isPhaseReaction}}{{#unless canActAsTarget}}is-compact-hidden{{/unless}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseReaction}}fa-person-running{{else}}fa-check-circle{{/if}}"></i>
@@ -46,11 +49,6 @@
             </button>
         </div>
     </div>
-    {{else}}
-    <div class="pending-badge">
-        <i class="fa-solid fa-hourglass-half"></i>
-        {{localize "ROE_COC7.Ranged.WaitingForTarget" actor=targetName}}
-    </div>
     {{/if}}
     {{else}}
     <div class="combined-check-row">
@@ -61,7 +59,7 @@
 </section>
 
 {{#unless isPhaseReaction}}
-<section class="combat-phase-section {{#if isPhaseAttack}}is-active{{else}}is-completed{{/if}}">
+<section class="combat-phase-section {{#if isPhaseAttack}}is-active{{else}}is-completed{{/if}} {{#if isPhaseAttack}}{{#unless canRollAttack}}is-compact-hidden{{/unless}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseAttack}}fa-crosshairs{{else}}fa-check-circle{{/if}}"></i>
@@ -86,11 +84,6 @@
         <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">
             <i class="fa-solid fa-dice-d20"></i> {{attackerRollBtnLabel}}
         </button>
-    </div>
-    {{else}}
-    <div class="pending-badge">
-        <i class="fa-solid fa-hourglass-half"></i>
-        {{localize "ROE_COC7.Combat.WaitingForInitiator" actor=attackerName}}
     </div>
     {{/if}}
     {{else}}

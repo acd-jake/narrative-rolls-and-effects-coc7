@@ -83,7 +83,11 @@
         "other": "Der Wurf ist abgelegt – die Spielleitung wertet das Ergebnis aus...",
         "combined": "Beide Teilproben stehen auf dem Prüfstand – gleich entscheidet sich, ob dein Vorhaben gelingt...",
         "opposed": "Beide Seiten haben ihre Kräfte gemessen – gleich steht fest, wer die Oberhand behält...",
+        "combatInitiator": "Dein Gegner holt zum Schlag aus – mache dich bereit zu reagieren...",
+        "combatOpponent": "Dein Angriff ist geführt – gleich zeigt sich, wie dein Gegner reagiert...",
         "combat": "Stahl und Reflexe prallen aufeinander – der Ausgang des Schlagabtauschs wird ausgewertet...",
+        "rangedReaction": "Du legst an – gleich zeigt sich, ob dein Ziel noch rechtzeitig reagiert...",
+        "rangedAttack": "Du hast deine Entscheidung getroffen – der Schuss steht unmittelbar bevor...",
         "ranged": "Der Schuss hallt nach – gleich zeigt sich, ob er sein Ziel gefunden hat..."
       }
     },

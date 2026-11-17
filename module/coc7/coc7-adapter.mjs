@@ -507,6 +507,24 @@ export class CoC7Adapter {
             this.#waitingHintsBySession.set(cacheKey, chosen);
             return chosen;
         }
+        if (session.rollType === "combat") {
+            const attacker = session.participants?.find((p) => p.key === "attacker");
+            const combatKey = session.combatPhase === "resolution"
+                ? "ROE_COC7.RollSession.WaitingHints.combat"
+                : !attacker?.hasRolled
+                    ? "ROE_COC7.RollSession.WaitingHints.combatInitiator"
+                    : "ROE_COC7.RollSession.WaitingHints.combatOpponent";
+            return game.i18n.localize(combatKey);
+        }
+        if (session.rollType === "ranged") {
+            const phase = session.combatPhase || "reaction";
+            const rangedKey = phase === "reaction"
+                ? "ROE_COC7.RollSession.WaitingHints.rangedReaction"
+                : phase === "attack"
+                    ? "ROE_COC7.RollSession.WaitingHints.rangedAttack"
+                    : "ROE_COC7.RollSession.WaitingHints.ranged";
+            return game.i18n.localize(rangedKey);
+        }
         const key = `ROE_COC7.RollSession.WaitingHints.${session.rollType}`;
         return game.i18n.has(key) ? game.i18n.localize(key) : "";
     }

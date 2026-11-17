@@ -937,3 +937,66 @@
 .roe-overlay[data-nre-system="CoC7"] .card-details-drawer.is-expanded .card-details-inner {
     padding-top: 0.35rem;
 }
+
+/* Resolved Single-Actor Check Result */
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-result {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.25rem 0.15rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-outcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    text-align: center;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-numbers {
+    font-size: 0.85rem;
+    color: var(--roe-text-muted);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-level {
+    font-family: var(--roe-font-display);
+    font-size: 1.05rem;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    color: var(--roe-text-main);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-combined-list {
+    width: 100%;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-outcome.critical .resolved-single-level,
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-level.critical,
+.roe-overlay[data-nre-system="CoC7"] .resolved-level-text.critical {
+    color: var(--roe-critical);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-outcome.extreme .resolved-single-level,
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-level.extreme,
+.roe-overlay[data-nre-system="CoC7"] .resolved-level-text.extreme {
+    color: var(--roe-extreme);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-outcome.hard .resolved-single-level,
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-outcome.regular .resolved-single-level,
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-level.regular,
+.roe-overlay[data-nre-system="CoC7"] .resolved-level-text.hard,
+.roe-overlay[data-nre-system="CoC7"] .resolved-level-text.regular {
+    color: #7ee2a8;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-outcome.failure .resolved-single-level,
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-outcome.fumble .resolved-single-level,
+.roe-overlay[data-nre-system="CoC7"] .resolved-single-level.failure,
+.roe-overlay[data-nre-system="CoC7"] .resolved-level-text.failure,
+.roe-overlay[data-nre-system="CoC7"] .resolved-level-text.fumble {
+    color: #f29b9b;
+}

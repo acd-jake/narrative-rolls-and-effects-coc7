@@ -1,0 +1,24 @@
+<div class="resolved-single-result">
+    {{#if isResolvedCombined}}
+    <div class="prompt-sub-box resolved-combined-list">
+        {{#each resolvedCombinedChecks}}
+        <div class="combined-check-row">
+            <span>{{label}}</span>
+            <strong class="resolved-level-text {{successLevel}}" {{#if canView}}data-inspect-key="{{key}}"{{/if}}>{{result}}</strong>
+        </div>
+        {{/each}}
+    </div>
+    {{#if resolvedCombinedSummary}}
+    <div class="resolved-single-level {{resolvedSuccessLevel}}">{{resolvedCombinedSummary}}</div>
+    {{/if}}
+    {{else}}
+    <div class="resolved-single-outcome {{resolvedSuccessLevel}}" {{#if resolvedCanInspect}}data-inspect-key="{{resolvedParticipantKey}}"{{/if}}>
+        {{#if resolvedNumberText}}
+        <span class="resolved-single-numbers">{{resolvedNumberText}}</span>
+        {{/if}}
+        {{#if resolvedLevelText}}
+        <span class="resolved-single-level">{{resolvedLevelText}}</span>
+        {{/if}}
+    </div>
+    {{/if}}
+</div>

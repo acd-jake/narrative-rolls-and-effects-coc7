@@ -24,6 +24,7 @@ const EFFECT_PRESETS = {
 
 const PREPARATION_DIFFICULTIES = ["regular", "hard", "extreme"];
 const DIFFICULTY_PREPARATION_ROLL_TYPES = new Set(["basic", "skill", "combined"]);
+const SINGLE_ACTOR_RESOLVED_ROLL_TYPES = new Set(["basic", "skill", "other", "combined"]);
 
 /** Connects CoC7 roll creation, prompts, consequences, and Foundry sheet interactions to the core API. */
 export class CoC7Adapter {
@@ -437,17 +438,20 @@ export class CoC7Adapter {
             })
         };
     }
-    /** Adds push-failure warning and visibility fields to a prompt's prepared context. */
+    /** Adds push-failure warning, visibility, and resolved single-actor fields to a prompt's prepared context. */
     preparePromptContext(prompt, session, context) {
         const pushedParticipants = (session?.participants ?? []).filter((participant) => participant.isPushed);
-        return {
+        const base = {
             ...context,
             showPushFailureWarning: Boolean(game.user.isGM && session?.pushFailurePending),
             canViewPushFailure: pushedParticipants.length > 0 && pushedParticipants.every((participant) =>
                 RollVisibilityPolicy.canViewParticipantRoll(participant, session)
             )
         };
+        if (!session?.isResolved || !SINGLE_ACTOR_RESOLVED_ROLL_TYPES.has(session.rollType)) return base;
+        return { ...base, ...this.#buildResolvedSingleActorContext(session) };
     }
+
     /** Returns the registered Handlebars partials to include during modifier preparation. */
     getModifierPreparationPartials(session) {
         if (!session?.isPreparingModifiers) return {};
@@ -456,6 +460,16 @@ export class CoC7Adapter {
             details: "roeCocModifierPreparationDetails"
         };
     }
+
+    /** Returns the registered Handlebars partials to include when displaying resolved single-actor checks. */
+    getResolvedResultPartials(session) {
+        if (!session?.isResolved || !SINGLE_ACTOR_RESOLVED_ROLL_TYPES.has(session.rollType)) return {};
+        return {
+            header: "roeCocResolvedSingleHeader",
+            body: "roeCocResolvedSingleBody"
+        };
+    }
+
     /** Returns the difficulty choices allowed in the current modifier-preparation phase. */
     buildPreparationDifficulties(session) {
         if (
@@ -555,6 +569,80 @@ export class CoC7Adapter {
         const newSanity = changed.system?.attribs?.san?.value;
         return typeof newSanity === "number" && newSanity <= 20;
     }
+
+        #buildResolvedSingleActorContext(session) {
+        const participants = session.participants ?? [];
+        const first = participants.at(0);
+        const actorName = first?.actorName?.toUpperCase() ?? "";
+
+        if (session.rollType === "combined") {
+            const checks = participants.map((p) => {
+                const canView = RollVisibilityPolicy.canViewParticipantRoll(p, session);
+                return {
+                    key: p.key,
+                    label: p.label,
+                    canView,
+                    successLevel: canView ? p.successLevel : "",
+                    result: canView
+                        ? this.formatRollOutcome({ total: p.total, targetValue: p.targetValue, successLevel: p.successLevel })
+                        : game.i18n.localize("ROE.RollSession.HiddenRoll")
+                };
+            });
+            const allVisible = checks.every((c) => c.canView);
+            const passed = session.combinedMode === "or"
+                ? participants.some((p) => p.isSuccess)
+                : participants.every((p) => p.isSuccess);
+            return {
+                resolvedActorName: actorName,
+                isResolvedCombined: true,
+                resolvedCombinedChecks: checks,
+                resolvedSuccessLevel: allVisible ? (passed ? "regular" : "failure") : "",
+                resolvedCombinedSummary: allVisible
+                    ? game.i18n.localize(passed ? "ROE_COC7.SuccessLevels.regular" : "ROE_COC7.SuccessLevels.failure")
+                    : ""
+            };
+        }
+
+        const canView = Boolean(first && RollVisibilityPolicy.canViewParticipantRoll(first, session));
+        if (!canView) {
+            return {
+                resolvedActorName: actorName,
+                isResolvedCombined: false,
+                resolvedCanInspect: false,
+                resolvedParticipantKey: first?.key ?? "",
+                resolvedSuccessLevel: "",
+                resolvedNumberText: "",
+                resolvedLevelText: game.i18n.localize("ROE.RollSession.HiddenRoll")
+            };
+        }
+
+        if (session.rollType === "other") {
+            return {
+                resolvedActorName: actorName,
+                isResolvedCombined: false,
+                resolvedCanInspect: true,
+                resolvedParticipantKey: first.key,
+                resolvedSuccessLevel: "",
+                resolvedNumberText: "",
+                resolvedLevelText: String(first.total ?? "")
+            };
+        }
+
+        const displayMode = game.settings?.get("narrative-rolls-and-effects-coc7", "resultDisplayMode") || "both";
+        const numberPart = first.targetValue ? `${first.total} vs. ${first.targetValue}` : `${first.total}`;
+        const levelPart = CoC7ResultFormatter.formatSuccessLevel(first.successLevel);
+
+        return {
+            resolvedActorName: actorName,
+            isResolvedCombined: false,
+            resolvedCanInspect: true,
+            resolvedParticipantKey: first.key,
+            resolvedSuccessLevel: first.successLevel ?? "",
+            resolvedNumberText: displayMode !== "level" ? numberPart : "",
+            resolvedLevelText: displayMode !== "numbers" ? levelPart : ""
+        };
+    }
+
     #isLuckImprovementAllowed() {
         for (const key of ["spendLuck", "luckImprovement", "allowLuckImprovement"]) {
             if (game.settings?.settings.has(`CoC7.${key}`)) {

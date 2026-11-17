@@ -15,6 +15,8 @@ Hooks.once("nre.registerAdapters", async (core) => {
         roePromptLayout: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/prompt-layout.hbs`,
         roeCocModifierPreparationHeader: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/modifier-preparation-header.hbs`,
         roeCocModifierPreparationDetails: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/modifier-preparation-details.hbs`,
+        roeCocResolvedSingleHeader: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/resolved-single-header.hbs`,
+        roeCocResolvedSingleBody: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/resolved-single-body.hbs`,
         roePushFailurePhase: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/push-failure-phase.hbs`,
         roeSkillDifficultyControls: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/skill-difficulty-controls.hbs`,
         roeSanityLossControls: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/sanity-loss-controls.hbs`,

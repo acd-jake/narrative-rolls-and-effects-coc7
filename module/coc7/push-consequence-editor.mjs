@@ -96,12 +96,12 @@ export function createPushConsequenceEditor() {
             const skills = [...this.#skills.values()].sort((a, b) => a.name.localeCompare(b.name, game.i18n.lang));
             if (!this.#selected && skills.length) this.#selected = skills[0].key;
             const current = this.#skills.get(this.#selected);
-            const entries = await Promise.all((current ? this.#entries(current) : []).map(async entry => {
+            const entries = await Promise.all((current ? this.#entries(current) : []).map(async (entry, index) => {
                 const editable = editorEntry(entry);
                 const [enrichedDescription, enrichedNarration, enrichedForeshadowing] = await Promise.all(
                     TEXT_FIELDS.map(field => enrichText(editable[field]))
                 );
-                return { ...editable, enrichedDescription, enrichedNarration, enrichedForeshadowing };
+                return { ...editable, number: index + 1, enrichedDescription, enrichedNarration, enrichedForeshadowing };
             }));
             return { ...context, skills: skills.map(skill => ({ ...skill, selected: skill.key === this.#selected })), entries, hasSkill: Boolean(current) };
         }

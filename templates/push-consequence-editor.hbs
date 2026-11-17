@@ -16,23 +16,27 @@
     {{#if hasSkill}}
     <div class="push-editor-entries">
         {{#each entries}}
-        <fieldset data-consequence>
-            <legend>{{localize "ROE_COC7.PushEditor.Consequence"}} {{@index}}</legend>
-            <label>{{localize "ROE_COC7.PushEditor.EntryTitle"}} <input name="title" type="text" value="{{title}}"></label>
-            <label class="push-editor-checkbox"><input name="insane" type="checkbox" {{#if insane}}checked{{/if}}> {{localize "ROE_COC7.PushEditor.Insane"}}</label>
-            <div class="push-editor-field">
-                <span id="push-description-{{@index}}">{{localize "ROE_COC7.PushEditor.Description"}}</span>
-                <prose-mirror name="description" aria-labelledby="push-description-{{@index}}" value="{{description}}" toggled>{{{enrichedDescription}}}</prose-mirror>
+        <fieldset class="push-editor-card" data-consequence>
+            <legend>{{localize "ROE_COC7.PushEditor.Consequence"}} {{number}}</legend>
+            <div class="push-editor-heading">
+                <label>{{localize "ROE_COC7.PushEditor.EntryTitle"}} <input name="title" type="text" value="{{title}}"></label>
+                <label class="push-editor-checkbox"><input name="insane" type="checkbox" {{#if insane}}checked{{/if}}> {{localize "ROE_COC7.PushEditor.Insane"}}</label>
             </div>
-            <div class="push-editor-field">
-                <span id="push-narration-{{@index}}">{{localize "ROE_COC7.PushEditor.Narration"}}</span>
-                <prose-mirror name="narration" aria-labelledby="push-narration-{{@index}}" value="{{narration}}" toggled>{{{enrichedNarration}}}</prose-mirror>
+            <div class="push-editor-texts">
+                <div class="push-editor-field">
+                    <span id="push-description-{{@index}}">{{localize "ROE_COC7.PushEditor.Description"}}</span>
+                    <prose-mirror name="description" aria-labelledby="push-description-{{@index}}" value="{{description}}" toggled>{{{enrichedDescription}}}</prose-mirror>
+                </div>
+                <div class="push-editor-field">
+                    <span id="push-narration-{{@index}}">{{localize "ROE_COC7.PushEditor.Narration"}}</span>
+                    <prose-mirror name="narration" aria-labelledby="push-narration-{{@index}}" value="{{narration}}" toggled>{{{enrichedNarration}}}</prose-mirror>
+                </div>
+                <div class="push-editor-field push-editor-foreshadowing">
+                    <span id="push-foreshadowing-{{@index}}">{{localize "ROE_COC7.PushEditor.Foreshadowing"}}</span>
+                    <prose-mirror name="foreshadowing" aria-labelledby="push-foreshadowing-{{@index}}" value="{{foreshadowing}}" toggled>{{{enrichedForeshadowing}}}</prose-mirror>
+                </div>
             </div>
-            <div class="push-editor-field">
-                <span id="push-foreshadowing-{{@index}}">{{localize "ROE_COC7.PushEditor.Foreshadowing"}}</span>
-                <prose-mirror name="foreshadowing" aria-labelledby="push-foreshadowing-{{@index}}" value="{{foreshadowing}}" toggled>{{{enrichedForeshadowing}}}</prose-mirror>
-            </div>
-            <button type="button" data-action="remove" data-index="{{@index}}"><i class="fa-solid fa-trash"></i> {{localize "ROE_COC7.PushEditor.Remove"}}</button>
+            <button class="push-editor-remove" type="button" data-action="remove" data-index="{{@index}}"><i class="fa-solid fa-trash"></i> {{localize "ROE_COC7.PushEditor.Remove"}}</button>
         </fieldset>
         {{/each}}
     </div>

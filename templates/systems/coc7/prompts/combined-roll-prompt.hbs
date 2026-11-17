@@ -89,7 +89,12 @@
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">
     <button type="button" class="prompt-action-btn primary" data-action="resolveSession">
-        <i class="fa-solid fa-gavel"></i> {{localize "ROE.RollSession.ResolveBtn"}}
+        <i class="fa-solid fa-gavel"></i>
+        {{#if showPushFailureWarning}}
+        {{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureAcknowledge"}}{{else}}{{localize "ROE_COC7.Roll.PushFailureContinue"}}{{/if}}
+        {{else}}
+        {{localize "ROE.RollSession.ResolveBtn"}}
+        {{/if}}
     </button>
 </footer>
 {{/if}}

@@ -323,13 +323,6 @@ export class CoC7Adapter {
             return { session: { ...session, participants }, finalize: true };
         }
 
-        if (actionId === "acknowledgePushFailure" && game.user.isGM) {
-            return {
-                session: { ...session, pushFailurePending: false, phase: "awaitingResolution" },
-                finalize: false
-            };
-        }
-
         return null;
     }
 
@@ -437,36 +430,15 @@ export class CoC7Adapter {
         };
     }
 
-    getPhases(session) {
-        if (!session?.pushFailurePending || !["basic", "skill", "combined"].includes(session.rollType)) return null;
-        return [
-            { id: "roll", isActive: false, isCompleted: true },
-            { id: "pushConsequences", isActive: true, isCompleted: false }
-        ];
-    }
-
-    buildPhaseSummary(session) {
-        if (!session?.pushFailurePending) return "";
-        return game.i18n.localize("ROE_COC7.Roll.PushFailureDescription");
-    }
-
     preparePromptContext(prompt, session, context) {
         const pushedParticipants = (session?.participants ?? []).filter((participant) => participant.isPushed);
         return {
             ...context,
-            showPushFailurePhase: Boolean(game.user.isGM && session?.pushFailurePending),
+            showPushFailureWarning: Boolean(game.user.isGM && session?.pushFailurePending),
             canViewPushFailure: pushedParticipants.length > 0 && pushedParticipants.every((participant) =>
                 RollVisibilityPolicy.canViewParticipantRoll(participant, session)
             )
         };
-    }
-
-    canResolveSession(session) {
-        return !session?.pushFailurePending;
-    }
-
-    getSessionPhase(session, allRolled) {
-        return session.pushFailurePending ? "pushConsequences" : allRolled ? "awaitingResolution" : "rolling";
     }
 
     getModifierPreparationPartials(session) {
@@ -502,7 +474,6 @@ export class CoC7Adapter {
             spendLuck: () => this.#spendLuck(prompt, target),
             declineLuck: () => this.#declineLuck(prompt, target),
             pushRoll: () => this.#pushRoll(prompt, target),
-            acknowledgePushFailure: () => this.#acknowledgePushFailure(prompt),
             togglePreparedTactical: () => this.#togglePreparedTactical(prompt, target),
             setPreparedDifficulty: () => this.#setPreparedDifficulty(prompt, target)
         };
@@ -757,12 +728,6 @@ export class CoC7Adapter {
         const rollData = await this.executePushRoll(session, key);
         if (rollData) {
             await UniversalRollOrchestrator.executePostRollAction(prompt._messageId, key, "pushRoll", { rollData });
-        }
-    }
-
-    async #acknowledgePushFailure(prompt) {
-        if (game.user.isGM) {
-            await UniversalRollOrchestrator.executePostRollAction(prompt._messageId, "p0", "acknowledgePushFailure");
         }
     }
 

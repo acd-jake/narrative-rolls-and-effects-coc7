@@ -22,3 +22,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Kept modifier sliders in preparation and summarized active bonus or penalty dice in roll prompts.
 - Pointed bonus and penalty dice visuals to this module's assets and marked chat cards with the CoC7 system identifier.
 - Showed failed forced-roll consequences in the normal resolution step instead of a separate phase.
+- Restored the expandable skill description in skill-check prompts.

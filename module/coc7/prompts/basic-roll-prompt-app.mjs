@@ -27,6 +27,8 @@ export function createBasicRollPromptApp(core) {
         const formattedLevel = p?.successLevel ? CoC7ResultFormatter.formatSuccessLevel(p.successLevel) : "";
         const modDice = p?.modifierDice ?? 0;
         const rollDiceArray = context.rollDice ?? [];
+        const skillDescription = await this.#getSkillDescription(p, sys?.rollType);
+        const promptDescriptions = skillDescription ? [{ html: skillDescription }] : [];
 
         return {
             ...context,
@@ -50,8 +52,18 @@ export function createBasicRollPromptApp(core) {
             canChangeDifficulty: false,
             modifierDisplay: this._formatModifierLabel(modDice),
             rollDiceLabel: this._formatDiceFormulaLabel(rollDiceArray),
+            hasPromptDescription: promptDescriptions.length > 0,
+            promptDescriptions,
             ...opts
         };
+    }
+
+    async #getSkillDescription(participant, rollType) {
+        if (rollType !== "skill" || !participant?.itemId) return "";
+        const actor = SessionStore.resolveActor(participant);
+        const description = actor?.items?.get(participant.itemId)?.system?.description?.value;
+        if (typeof description !== "string" || !description.trim()) return "";
+        return foundry.applications.ux.TextEditor.implementation.enrichHTML(description);
     }
 
     static async #onExecuteRoll() {

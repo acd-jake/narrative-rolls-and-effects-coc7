@@ -20,7 +20,8 @@ export class CoC7DicePresenter {
         }
         if (participant.total === null) return game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none");
         if (session.rollType === "other" || participant.key === "damage") return String(participant.total ?? "");
-        return CoC7ResultFormatter.formatRollOutcome(participant);
+        const outcome = CoC7ResultFormatter.formatRollOutcome(participant);
+        return CoC7ResultFormatter.formatPushedOutcome(outcome, participant, true, session);
     }
 
     /** Builds a permission-aware result badge for a participant in a chat card. */
@@ -42,14 +43,16 @@ export class CoC7DicePresenter {
                 : { text: game.i18n.localize("ROE.RollSession.HiddenRoll"), className: "pending-badge" };
         }
         const allowNumbers = permissions.canViewRoll && (permissions.isGM || Boolean(permissions.actor?.testUserPermission(game.user, "OBSERVER")));
-        return {
-            text: CoC7ResultFormatter.formatRollOutcome({
-                total: participant.total,
-                targetValue: participant.targetValue,
-                successLevel: participant.successLevel,
-                allowNumbers
-            })
-        };
+        const outcome = CoC7ResultFormatter.formatRollOutcome({
+            total: participant.total,
+            targetValue: participant.targetValue,
+            successLevel: participant.successLevel,
+            allowNumbers
+        });
+        const text = CoC7ResultFormatter.formatPushedOutcome(outcome, participant, permissions.canViewRoll, session);
+        const isPushFailure = CoC7ResultFormatter.isVisiblePushFailure(participant, session, permissions.canViewRoll);
+        const className = `roll-badge ${participant.successLevel ?? ""}${isPushFailure ? " is-pushed-failure" : ""}`;
+        return { text, className };
     }
 
     /** Renders regular, hard, and extreme target numbers for the roll-inspection view. */

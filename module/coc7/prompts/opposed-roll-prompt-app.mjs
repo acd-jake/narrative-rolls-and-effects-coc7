@@ -29,6 +29,7 @@ export function createOpposedRollPromptApp(core) {
             return game.i18n.format("ROE_COC7.RollSession.Summary.Opposed", { title: sys.title ?? "", names });
         }
 
+        /** Prepares each contestant's controls and visible result for the opposed prompt. */
         async _prepareContext(options) {
             const context = await super._prepareContext(options);
             const sys = this.session;
@@ -71,14 +72,15 @@ export function createOpposedRollPromptApp(core) {
                     hiddenInCompact: p.hasRolled ? (!p.canSpendLuck && !p.canPush && !isOwnParticipant) : !canRoll,
                     canRoll,
                     canInspect: p.hasRolled && (canView || isOwnParticipant),
+                    isPushFailure: showDetails && CoC7ResultFormatter.isVisiblePushFailure(p, sys, canView),
                     statusText: p.hasRolled
                         ? showDetails
-                            ? CoC7ResultFormatter.formatRollOutcome({
+                            ? CoC7ResultFormatter.formatPushedOutcome(CoC7ResultFormatter.formatRollOutcome({
                                 total: p.total,
                                 targetValue: p.targetValue,
                                 successLevel: p.successLevel,
                                 allowNumbers: canView || isOwnParticipant
-                            })
+                            }), p, canView, sys)
                             : game.i18n.localize("ROE_COC7.Combat.Card.HiddenUntilOwnRoll")
                         : game.i18n.localize("ROE_COC7.Combat.Card.PendingRoll")
                 };

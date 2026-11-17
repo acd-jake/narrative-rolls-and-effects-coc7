@@ -1000,6 +1000,19 @@
     color: #f29b9b;
 }
 
+.roe-overlay[data-nre-system="CoC7"] .is-pushed-failure,
+.roe-overlay[data-nre-system="CoC7"] .roll-badge.is-pushed-failure,
+.roe-overlay[data-nre-system="CoC7"] .resolved-level-text.is-pushed-failure {
+    display: inline-block;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid #ffaaa0;
+    border-radius: 0.25rem;
+    background: #651d20;
+    color: #fff1ed;
+    font-weight: bold;
+    font-style: normal;
+}
+
 /* Resolved Opposed, Sanity & Combat Results */
 .roe-overlay[data-nre-system="CoC7"] .combined-check-row.is-opposed-winner {
     padding: 0.15rem 0.3rem;

@@ -32,6 +32,7 @@
       "PushWarning": "Ein erneuter Fehlschlag wird schwerwiegende Konsequenzen haben. Besprich mit der Spielleitung, was dein Charakter anders versucht. Für den forcierten Wurf kann kein Glück eingesetzt werden.",
       "PushCancel": "Abbrechen",
       "PushFailureTitle": "Forcierte Probe misslungen",
+      "PushFailureResult": "Forcierte Probe misslungen – Konsequenzen",
       "PushFailureDescription": "Lege die schwerwiegenden Folgen dieser misslungenen Probe fest.",
       "PushFailureHidden": "Für eine verdeckte Probe ist eine Entscheidung erforderlich.",
       "PushFailureContinue": "Weiter",

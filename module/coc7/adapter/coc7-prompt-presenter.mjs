@@ -225,6 +225,8 @@ export class CoC7PromptPresenter {
             resolvedCanInspect: true,
             resolvedParticipantKey: first.key,
             resolvedSuccessLevel: first.successLevel ?? "",
+            resolvedIsPushed: Boolean(first.hasRolled && first.isPushed),
+            resolvedIsPushFailure: CoC7ResultFormatter.isVisiblePushFailure(first, session, canView),
             resolvedNumberText: displayMode !== "level" ? numberPart : "",
             resolvedLevelText: displayMode !== "numbers" ? levelPart : ""
         };
@@ -236,13 +238,14 @@ export class CoC7PromptPresenter {
             key: participant.key,
             label: participant.label,
             canView,
+            isPushFailure: CoC7ResultFormatter.isVisiblePushFailure(participant, session, canView),
             successLevel: canView ? participant.successLevel : "",
             result: canView
-                ? CoC7ResultFormatter.formatRollOutcome({
+                ? CoC7ResultFormatter.formatPushedOutcome(CoC7ResultFormatter.formatRollOutcome({
                     total: participant.total,
                     targetValue: participant.targetValue,
                     successLevel: participant.successLevel
-                })
+                }), participant, canView, session)
                 : game.i18n.localize("ROE.RollSession.HiddenRoll")
         };
     }
@@ -263,14 +266,15 @@ export class CoC7PromptPresenter {
             actorName: participant.actorName,
             label: participant.label,
             canView,
+            isPushFailure: CoC7ResultFormatter.isVisiblePushFailure(participant, session, canView),
             isWinner: session.winnerKey === participant.key,
             successLevel: participant.successLevel ?? "",
-            result: CoC7ResultFormatter.formatRollOutcome({
+            result: CoC7ResultFormatter.formatPushedOutcome(CoC7ResultFormatter.formatRollOutcome({
                 total: participant.total,
                 targetValue: participant.targetValue,
                 successLevel: participant.successLevel,
                 allowNumbers: canView
-            })
+            }), participant, canView, session)
         };
     }
 

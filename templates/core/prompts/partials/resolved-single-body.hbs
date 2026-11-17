@@ -4,7 +4,7 @@
         {{#each resolvedCombinedChecks}}
         <div class="combined-check-row">
             <span>{{label}}</span>
-            <strong class="resolved-level-text {{successLevel}}" {{#if canView}}data-inspect-key="{{key}}"{{/if}}>{{result}}</strong>
+            <strong class="resolved-level-text {{successLevel}} {{#if isPushFailure}}is-pushed-failure{{/if}}" {{#if canView}}data-inspect-key="{{key}}"{{/if}}>{{result}}</strong>
         </div>
         {{/each}}
     </div>
@@ -18,6 +18,9 @@
         {{/if}}
         {{#if resolvedLevelText}}
         <span class="resolved-single-level">{{resolvedLevelText}}</span>
+        {{/if}}
+        {{#if resolvedIsPushed}}
+        <span class="{{#if resolvedIsPushFailure}}is-pushed-failure{{/if}}">{{#if resolvedIsPushFailure}}{{localize "ROE_COC7.Roll.PushFailureResult"}}{{else}}{{localize "ROE_COC7.Chat.PushedTag"}}{{/if}}</span>
         {{/if}}
     </div>
     {{/if}}

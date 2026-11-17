@@ -36,7 +36,7 @@
             </div>
 
             {{#unless canRoll}}
-            <span class="pending-badge" {{#if canInspect}}data-inspect-key="{{key}}"{{/if}}>
+            <span class="pending-badge {{#if isPushFailure}}is-pushed-failure{{/if}}" {{#if canInspect}}data-inspect-key="{{key}}"{{/if}}>
                 {{statusText}}
             </span>
             {{/unless}}

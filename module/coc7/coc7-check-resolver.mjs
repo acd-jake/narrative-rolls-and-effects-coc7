@@ -97,7 +97,7 @@ export class CoC7CheckResolver {
         const keys = new Set(targets.map((e) => e.key));
         const requiredRank = this.LEVEL_RANK[state.difficulty] ?? 2;
 
-        return state.participants.map((p) => {
+        const participants = state.participants.map((p) => {
             if (!keys.has(p.key)) return p;
             const target = Number(p.targetValue ?? 0);
             const successLevel = this.evaluateResult(total, target);
@@ -108,11 +108,36 @@ export class CoC7CheckResolver {
                 successLevel,
                 isSuccess: (this.LEVEL_RANK[successLevel] ?? 0) >= requiredRank,
                 isPushed: true,
+                pushFailed: undefined,
                 luckDecided: true,
                 rollMode: rollData.rollMode || state.rollMode || "publicroll",
                 rollerUserId: rollData.rollerUserId || "",
                 rollBreakdown: { ...rollData.rollBreakdown, total, targetValue: target, successLevel, modifierDice }
             };
         });
+        const pushFailed = this.didPushFail({ ...state, participants }, participantKey);
+        return participants.map((participant) =>
+            keys.has(participant.key) ? { ...participant, pushFailed } : participant
+        );
+    }
+
+    /** Reports whether a pushed check failed, including combined and opposed outcomes. */
+    static didPushFail(state, participantKey) {
+        const participants = state?.participants ?? [];
+        const participant = participants.find((entry) => entry.key === participantKey);
+        if (!participant?.hasRolled || !participant.isPushed) return false;
+        if (typeof participant.pushFailed === "boolean") return participant.pushFailed;
+        if (state.rollType === "combined") {
+            if (!participants.length || participants.some((entry) => !entry.hasRolled || !entry.isPushed)) return false;
+            const passed = state.combinedMode === "or"
+                ? participants.some((entry) => entry.isSuccess)
+                : participants.every((entry) => entry.isSuccess);
+            return !passed;
+        }
+        if (state.rollType === "opposed") {
+            if (participants.length < 2 || participants.some((entry) => !entry.hasRolled)) return false;
+            return this.#determineOpposedWinnerKey(participants) !== participantKey;
+        }
+        return !participant.isSuccess;
     }
 }

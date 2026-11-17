@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Configurable resolved combat prompt layout setting (`combatResolvedLayout`) supporting both narrative scene summaries and side-by-side duel comparisons with separated mechanical consequences.
 
 ### Changed
+- Failed pushed checks are highlighted in prompts and chat cards to draw attention to their consequences.
+- Pushed checks are now identified in roll prompts and chat cards.
 - Declining Luck now finalizes the post-roll step so eligible sessions can resolve automatically.
 - Refactored the CoC7 adapter into focused services while preserving its existing integration behavior.
 - Dice-face images, formula visualization, and the shared dice display are provided by the core module; CoC7 prompts now use that shared implementation.

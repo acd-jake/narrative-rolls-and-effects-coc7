@@ -32,6 +32,7 @@
       "PushWarning": "Another failure will have serious consequences. Discuss with the Keeper what your character does differently. Luck cannot be spent on the pushed roll.",
       "PushCancel": "Cancel",
       "PushFailureTitle": "Pushed roll failed",
+      "PushFailureResult": "Pushed roll failed — consequences",
       "PushFailureDescription": "Decide the serious consequences of this failed roll.",
       "PushFailureHidden": "A private roll requires a decision.",
       "PushFailureContinue": "Continue",

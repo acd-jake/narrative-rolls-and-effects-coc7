@@ -21,6 +21,9 @@
 {{#if showLevel}}
 <div class="prompt-outcome-badge {{successLevel}}" data-inspect-key="{{participantKey}}">{{formattedLevel}}</div>
 {{/if}}
+{{#if showPushedTag}}
+<div class="prompt-phase-summary {{#if isPushFailure}}is-pushed-failure{{/if}}">{{#if isPushFailure}}{{localize "ROE_COC7.Roll.PushFailureResult"}}{{else}}{{localize "ROE_COC7.Chat.PushedTag"}}{{/if}}</div>
+{{/if}}
 {{else}}
 <div class="prompt-sub-box">
     <span class="pending-badge">{{localize "ROE.RollSession.HiddenRoll"}}</span>

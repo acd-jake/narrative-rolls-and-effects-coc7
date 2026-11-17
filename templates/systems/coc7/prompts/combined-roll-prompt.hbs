@@ -19,8 +19,8 @@
 <div class="prompt-sub-box combined-checks-list {{#if outcomeHeadline}}is-subtle{{/if}}">
     <div class="combined-check-row">
         <span>{{first.label}}</span>
-        <strong {{#if first.hasRolled}}data-inspect-key="{{first.key}}"{{/if}}>{{#if first.hasRolled}}{{first.total}} vs.
-            {{first.targetValue}}{{else}}{{first.targetValue}}%{{/if}}</strong>
+        <strong class="{{#if first.isPushFailure}}is-pushed-failure{{/if}}" {{#if first.hasRolled}}data-inspect-key="{{first.key}}"{{/if}}>{{#if first.hasRolled}}{{first.total}} vs.
+            {{first.targetValue}}{{#if first.showPushedTag}} ({{#if first.isPushFailure}}{{localize "ROE_COC7.Roll.PushFailureResult"}}{{else}}{{localize "ROE_COC7.Chat.PushedTag"}}{{/if}}){{/if}}{{else}}{{first.targetValue}}%{{/if}}</strong>
     </div>
     {{#if first.canSpendLuck}}
     <button type="button"
@@ -34,8 +34,8 @@
 
     <div class="combined-check-row">
         <span>{{second.label}}</span>
-        <strong {{#if second.hasRolled}}data-inspect-key="{{second.key}}"{{/if}}>{{#if second.hasRolled}}{{second.total}} vs.
-            {{second.targetValue}}{{else}}{{second.targetValue}}%{{/if}}</strong>
+        <strong class="{{#if second.isPushFailure}}is-pushed-failure{{/if}}" {{#if second.hasRolled}}data-inspect-key="{{second.key}}"{{/if}}>{{#if second.hasRolled}}{{second.total}} vs.
+            {{second.targetValue}}{{#if second.showPushedTag}} ({{#if second.isPushFailure}}{{localize "ROE_COC7.Roll.PushFailureResult"}}{{else}}{{localize "ROE_COC7.Chat.PushedTag"}}{{/if}}){{/if}}{{else}}{{second.targetValue}}%{{/if}}</strong>
     </div>
     {{#if second.canSpendLuck}}
     <button type="button"

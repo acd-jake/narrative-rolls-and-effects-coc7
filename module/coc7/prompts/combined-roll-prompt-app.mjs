@@ -1,5 +1,6 @@
 import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy } from "../../core-bridge.mjs";
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
+import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 
 const COMBINED_ROLL_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/combined-roll-prompt.hbs";
 
@@ -13,6 +14,7 @@ export function createCombinedRollPromptApp(core) {
         }
     };
 
+    /** Prepares the combined prompt's shared roll and participant results. */
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
         const sys = this.session;
@@ -52,8 +54,8 @@ export function createCombinedRollPromptApp(core) {
             combinedModeLabel: game.i18n.localize(
                 sys?.combinedMode === "or" ? "ROE_COC7.RollSession.ModeOr" : "ROE_COC7.RollSession.ModeAnd"
             ),
-            first: first ? { ...first, ...firstOpts } : null,
-            second: second ? { ...second, ...secondOpts } : null,
+            first: this.#prepareParticipant(first, firstOpts, sys),
+            second: this.#prepareParticipant(second, secondOpts, sys),
             canPushCombined,
             modifierDice: modDice,
             modifierDisplay: this._formatModifierLabel(modDice),
@@ -63,6 +65,14 @@ export function createCombinedRollPromptApp(core) {
             hasPendingCombinedAction,
             declineCombinedLabel
         };
+    }
+
+    #prepareParticipant(participant, options, session) {
+        if (!participant) return null;
+        const showPushedTag = Boolean(participant.hasRolled && participant.isPushed &&
+            RollVisibilityPolicy.canViewParticipantRoll(participant, session));
+        const isPushFailure = CoC7ResultFormatter.isVisiblePushFailure(participant, session, showPushedTag);
+        return { ...participant, ...options, showPushedTag, isPushFailure };
     }
 
     static async #onExecuteCombinedRoll() {

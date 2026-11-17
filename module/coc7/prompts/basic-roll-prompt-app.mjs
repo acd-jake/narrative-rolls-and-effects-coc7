@@ -15,6 +15,7 @@ export function createBasicRollPromptApp(core) {
         }
     };
 
+    /** Prepares the basic prompt's roll controls and visible result. */
     async _prepareContext(options) {
         const context = await super._prepareContext(options);
         const sys = this.session;
@@ -46,6 +47,8 @@ export function createBasicRollPromptApp(core) {
             hasTarget: !isOther && Number(p?.targetValue ?? 0) > 0,
             showNumbers,
             canViewRoll,
+            showPushedTag: Boolean(canViewRoll && p?.isPushed),
+            isPushFailure: CoC7ResultFormatter.isVisiblePushFailure(p, sys, canViewRoll),
             showLevel,
             formattedLevel,
             successLevel: p?.successLevel ?? "",

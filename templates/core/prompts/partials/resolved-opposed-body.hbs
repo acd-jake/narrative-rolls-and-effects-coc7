@@ -6,7 +6,7 @@
                 {{#if isWinner}}<i class="fa-solid fa-trophy resolved-winner-icon"></i> {{/if}}
                 <strong>{{actorName}}</strong> <small>({{label}})</small>
             </span>
-            <strong class="resolved-level-text {{successLevel}}" {{#if canView}}data-inspect-key="{{key}}"{{/if}}>{{result}}</strong>
+            <strong class="resolved-level-text {{successLevel}} {{#if isPushFailure}}is-pushed-failure{{/if}}" {{#if canView}}data-inspect-key="{{key}}"{{/if}}>{{result}}</strong>
         </div>
         {{/each}}
     </div>

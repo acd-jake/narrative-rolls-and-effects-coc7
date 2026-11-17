@@ -68,14 +68,14 @@
 {{/inline}}
 
 {{#*inline "promptResults"}}
-{{> (lookup . "resultPartial")}}
-{{> roePushFailurePhase}}
-
 {{#if showPlayerWaitingHint}}
 <div class="prompt-phase-summary">
     <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
 </div>
+{{else}}
+{{> (lookup . "resultPartial")}}
 {{/if}}
+{{> roePushFailurePhase}}
 
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">

@@ -16,8 +16,16 @@
 {{#*inline "promptDetails"}}
 {{> roePromptDescription}}
 
+{{#if hasRolled}}
+{{#if canViewRoll}}
 {{#if showLevel}}
-<div class="prompt-outcome-badge {{successLevel}}">{{formattedLevel}}</div>
+<div class="prompt-outcome-badge {{successLevel}}" data-inspect-key="{{participantKey}}">{{formattedLevel}}</div>
+{{/if}}
+{{else}}
+<div class="prompt-sub-box">
+    <span class="pending-badge">{{localize "ROE.RollSession.HiddenRoll"}}</span>
+</div>
+{{/if}}
 {{/if}}
 
 {{> roeSanityLossControls}}

@@ -60,5 +60,18 @@ export class CoC7Settings {
             }
         });
 
+        game.settings.register(COC7_MODULE_ID, "combatResolvedLayout", {
+            name: "ROE_COC7.Settings.CombatResolvedLayout.Name",
+            hint: "ROE_COC7.Settings.CombatResolvedLayout.Hint",
+            scope: "world",
+            config: true,
+            type: String,
+            choices: {
+                narrative: "ROE_COC7.Settings.CombatResolvedLayout.Narrative",
+                duel: "ROE_COC7.Settings.CombatResolvedLayout.Duel"
+            },
+            default: "narrative"
+        });
+
     }
 }

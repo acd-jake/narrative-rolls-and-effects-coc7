@@ -22,9 +22,10 @@ export function createBasicRollPromptApp(core) {
         const isOther = sys?.rollType === "other";
         const opts = this._evaluateParticipantOptions(p, sys);
 
+        const canViewRoll = Boolean(p?.hasRolled && RollVisibilityPolicy.canViewParticipantRoll(p, sys));
         const displayMode = game.settings?.get(COC7_MODULE_ID, "resultDisplayMode") || "both";
         const showNumbers = isOther || !p?.hasRolled || displayMode !== "level";
-        const showLevel = !isOther && Boolean(p?.hasRolled) && displayMode !== "numbers";
+        const showLevel = canViewRoll && !isOther && displayMode !== "numbers";
         const formattedLevel = p?.successLevel ? CoC7ResultFormatter.formatSuccessLevel(p.successLevel) : "";
         const modDice = p?.modifierDice ?? 0;
         const rollDiceArray = context.rollDice ?? [];
@@ -44,6 +45,7 @@ export function createBasicRollPromptApp(core) {
             displayTotal: p?.hasRolled ? p.total : "?",
             hasTarget: !isOther && Number(p?.targetValue ?? 0) > 0,
             showNumbers,
+            canViewRoll,
             showLevel,
             formattedLevel,
             successLevel: p?.successLevel ?? "",

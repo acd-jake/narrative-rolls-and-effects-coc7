@@ -1051,3 +1051,103 @@
     font-weight: bold;
     color: var(--roe-critical);
 }
+
+/* Resolved Combat Layouts (Narrative & Duel) */
+.roe-overlay[data-nre-system="CoC7"] .resolved-combat-narrative {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    background: var(--roe-bg-panel);
+    border: 1px solid var(--roe-border-dark);
+    border-left: 3px solid var(--roe-gold);
+    font-style: italic;
+    font-size: 0.78rem;
+    color: var(--roe-text-main);
+    text-align: center;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-combat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: stretch;
+    gap: 0.35rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-grid.is-single {
+    grid-template-columns: 1fr;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-card {
+    position: relative;
+    background: var(--roe-bg-panel);
+    border: 1px solid var(--roe-border-dark);
+    padding: 0.4rem 0.35rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.18rem;
+    text-align: center;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-card.is-winner {
+    border-color: var(--roe-gold);
+    background: rgba(197, 160, 89, 0.1);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-crown {
+    position: absolute;
+    top: 4px;
+    right: 5px;
+    font-size: 0.68rem;
+    color: var(--roe-gold-bright);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-name {
+    font-size: 0.76rem;
+    color: var(--roe-text-main);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-role {
+    font-size: 0.66rem;
+    color: var(--roe-text-muted);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-vs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--roe-font-display);
+    font-size: 0.72rem;
+    font-weight: bold;
+    color: var(--roe-gold);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-consequences-box {
+    width: 100%;
+    margin-top: 0.15rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--roe-gold-dim);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-maneuver-badge {
+    font-family: var(--roe-font-display);
+    font-size: 0.82rem;
+    font-weight: bold;
+    color: #7ee2a8;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-cover-note {
+    font-size: 0.72rem;
+    color: var(--roe-text-muted);
+}

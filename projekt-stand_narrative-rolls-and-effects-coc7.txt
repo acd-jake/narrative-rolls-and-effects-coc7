@@ -41,11 +41,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - CoC7-owned header and details for the core-managed modifier-preparation prompt.
 - Difficulty selection during modifier preparation for eligible CoC7 checks.
 - Pushed-roll support for opposed checks alongside characteristic, skill, and combined checks according to Call of Cthulhu 7e rules.
+- Added atmospheric waiting hints per CoC7 check type while the Keeper resolves the roll session.
 
 ### Changed
 - Dice-face images, formula visualization, and the shared dice display are provided by the core module; CoC7 prompts now use that shared implementation.
 - CoC7 dice tooltips now group percentile units, tens, and bonus/penalty dice into one formula.
 - Simplified resolved roll prompts across all CoC7 check types (skill, characteristic, custom, combined, opposed, sanity, and combat) to show context headers and color-coded outcomes without duplicate text.
+- Allowed players to inspect roll details by clicking their visible success-level outcome during the waiting phase.
 
 ### Fixed
 - Kept modifier sliders in preparation and summarized active bonus or penalty dice in roll prompts.
@@ -391,6 +393,11 @@ jobs:
         "Hint": "Zeigt Erfolgsgrade entweder als ausgeschriebenen Text oder als kompakte Symbole (* bis *** / - bis ---) an.",
         "Text": "Text (Regulär, Schwierig, Extrem)",
         "Symbols": "Symbole (* bis *** / - bis ---)"
+      },
+      "SanityEvaluationHints": {
+        "Name": "Hinweistexte bei Stabilitäts-Auswertung",
+        "Hint": "Atmosphärische Texte (ein Hinweis pro Zeile), die Spielern angezeigt werden, während die Spielleitung die Folgen einer Stabilitätsprobe auswertet.",
+        "Default": "Dein Verstand ringt noch damit, das Gesehene zu begreifen...\nEin kalter Schauer läuft dir über den Rücken – was bedeutet das für deinen Geist?\nDie Bilder brennen sich in dein Gedächtnis ein, während sich der Nebel lichtet...\nStille legt sich über deinen Geist, als die Erkenntnis langsam einsickert...\nDein Herz hämmert – gleich zeigt sich, ob dein Verstand dem Grauen standhält..."
       }
     },
     "Roll": {
@@ -443,6 +450,15 @@ jobs:
         "sanity": "Stabilitätsprobe",
         "combat": "Kampfprobe",
         "ranged": "Fernkampfprobe"
+      },
+      "WaitingHints": {
+        "skill": "Dein Versuch ist unternommen – gleich zeigt sich, ob deine Fähigkeiten ausreichen...",
+        "basic": "Die Würfel sind gefallen – das Schicksal wägt das Ergebnis ab...",
+        "other": "Der Wurf ist abgelegt – die Spielleitung wertet das Ergebnis aus...",
+        "combined": "Beide Teilproben stehen auf dem Prüfstand – gleich entscheidet sich, ob dein Vorhaben gelingt...",
+        "opposed": "Beide Seiten haben ihre Kräfte gemessen – gleich steht fest, wer die Oberhand behält...",
+        "combat": "Stahl und Reflexe prallen aufeinander – der Ausgang des Schlagabtauschs wird ausgewertet...",
+        "ranged": "Der Schuss hallt nach – gleich zeigt sich, ob er sein Ziel gefunden hat..."
       }
     },
     "RollRequest": {
@@ -723,7 +739,6 @@ jobs:
 }
 
 
-
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\lang\en.json ===
 {
   "ROE_COC7": {
@@ -740,6 +755,11 @@ jobs:
         "Hint": "Displays success levels either as full text or compact symbols (* to *** / - to ---).",
         "Text": "Text (Regular, Hard, Extreme)",
         "Symbols": "Symbols (* to *** / - to ---)"
+      },
+      "SanityEvaluationHints": {
+        "Name": "Sanity Evaluation Hints",
+        "Hint": "Atmospheric lines (one per line) shown to players while the Keeper evaluates the consequences of a Sanity check.",
+        "Default": "Your mind struggles to comprehend what you have just witnessed...\nA cold chill runs down your spine as the implications sink in...\nThe images burn into your memory while the fog slowly clears...\nAn eerie silence settles over your thoughts as reality shifts...\nYour heart pounds—in a moment you will know if your sanity holds..."
       }
     },
     "Roll": {
@@ -792,6 +812,15 @@ jobs:
         "sanity": "Sanity Check",
         "combat": "Combat Roll",
         "ranged": "Ranged Attack"
+      },
+      "WaitingHints": {
+        "skill": "Your attempt is made—in a moment you will know if your skills suffice...",
+        "basic": "The dice have been cast—fate weighs the outcome...",
+        "other": "The roll is submitted—the Keeper is evaluating the result...",
+        "combined": "Both checks hang in the balance—in a moment you will know if your effort succeeds...",
+        "opposed": "Both sides have tested their mettle—in a moment the victor will be clear...",
+        "combat": "Steel and reflexes clash—the outcome of the exchange is being resolved...",
+        "ranged": "The shot echoes out—in a moment you will see if it found its mark..."
       }
     },
     "RollRequest": {
@@ -1072,7 +1101,6 @@ jobs:
 }
 
 
-
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\module\coc7 ===
 
 
@@ -1174,6 +1202,8 @@ Hooks.once("nre.registerAdapters", async (core) => {
 
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\module\coc7\coc7-adapter.mjs ===
 import { MODULE_ID, EffectsEngine, SessionStore, UniversalRollOrchestrator, getPromptFactory } from "../core-bridge.mjs";
+import { COC7_MODULE_ID } from "./coc7-settings.mjs";
+
 import { CoC7Interceptor } from "./coc7-interceptor.mjs";
 import { CoC7DataMapper } from "./coc7-data-mapper.mjs";
 import { CoC7CheckResolver } from "./coc7-check-resolver.mjs";
@@ -1204,6 +1234,7 @@ const SINGLE_ACTOR_RESOLVED_ROLL_TYPES = new Set(["basic", "skill", "other", "co
 /** Connects CoC7 roll creation, prompts, consequences, and Foundry sheet interactions to the core API. */
 export class CoC7Adapter {
     #strategies;
+    #waitingHintsBySession = new Map()
 
     /** Creates the strategy instances used to resolve each supported roll type. */
     constructor() {
@@ -1614,7 +1645,7 @@ export class CoC7Adapter {
         };
     }
 
-        /** Adds push-failure warning, visibility, and resolved result fields to a prompt's prepared context. */
+    /** Adds push-failure warning, visibility, and resolved result fields to a prompt's prepared context. */
     preparePromptContext(prompt, session, context) {
         const pushedParticipants = (session?.participants ?? []).filter((participant) => participant.isPushed);
         const base = {
@@ -1645,15 +1676,6 @@ export class CoC7Adapter {
         };
     }
 
-    /** Returns the registered Handlebars partials to include when displaying resolved single-actor checks. */
-    getResolvedResultPartials(session) {
-        if (!session?.isResolved || !SINGLE_ACTOR_RESOLVED_ROLL_TYPES.has(session.rollType)) return {};
-        return {
-            header: "roeCocResolvedSingleHeader",
-            body: "roeCocResolvedSingleBody"
-        };
-    }
-
     /** Returns the registered Handlebars partials to include when displaying resolved checks. */
     getResolvedResultPartials(session) {
         if (!session?.isResolved) return {};
@@ -1669,6 +1691,25 @@ export class CoC7Adapter {
         };
         const body = bodyByType[session.rollType];
         return body ? { header: "roeCocResolvedSingleHeader", body } : {};
+    }
+
+    /** Returns an atmospheric waiting hint for players while the Keeper resolves the check. */
+    getPlayerWaitingHint(session) {
+        if (!session) return "";
+        if (session.rollType === "sanity") {
+            const cacheKey = `${session.initiatorUserId}:${session.title}:${session.participants?.at(0)?.actorId ?? ""}`;
+            if (this.#waitingHintsBySession.has(cacheKey)) return this.#waitingHintsBySession.get(cacheKey);
+            const configured = game.settings?.get(COC7_MODULE_ID, "sanityEvaluationHints")?.trim();
+            const raw = configured || game.i18n.localize("ROE_COC7.Settings.SanityEvaluationHints.Default");
+            const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+            const chosen = lines.length
+                ? lines[Math.floor(Math.random() * lines.length)]
+                : game.i18n.localize("ROE.RollSession.AwaitingResolution");
+            this.#waitingHintsBySession.set(cacheKey, chosen);
+            return chosen;
+        }
+        const key = `ROE_COC7.RollSession.WaitingHints.${session.rollType}`;
+        return game.i18n.has(key) ? game.i18n.localize(key) : "";
     }
 
     /** Returns the difficulty choices allowed in the current modifier-preparation phase. */
@@ -1844,7 +1885,7 @@ export class CoC7Adapter {
         };
     }
 
-        #buildResolvedOpposedContext(session) {
+    #buildResolvedOpposedContext(session) {
         const contestants = (session.participants ?? []).map((p) => {
             const canView = RollVisibilityPolicy.canViewParticipantRoll(p, session);
             return {
@@ -1873,13 +1914,18 @@ export class CoC7Adapter {
         const enriched = CoC7SessionFactory.enrichForTemplate(session);
         const statusText = enriched.sanityInsanityBadge || enriched.sanityRepressedBadge || "";
 
+        const displayMode = game.settings?.get("narrative-rolls-and-effects-coc7", "resultDisplayMode") || "both";
+        const numberPart = sanRoll?.targetValue ? `${sanRoll.total} vs. ${sanRoll.targetValue}` : `${sanRoll?.total ?? ""}`;
+        const levelPart = canViewSan ? CoC7ResultFormatter.formatSuccessLevel(sanRoll?.successLevel) : "";
+
         return {
             resolvedActorName: sanRoll?.actorName?.toUpperCase() ?? "",
             resolvedTitle: game.i18n.localize("ROE_COC7.RollSession.Types.sanity"),
             resolvedCanViewSanity: canViewSan,
-            resolvedSanityLevel: canViewSan ? sanRoll.successLevel : "",
-            resolvedSanityRollText: canViewSan
-                ? this.formatRollOutcome({ total: sanRoll.total, targetValue: sanRoll.targetValue, successLevel: sanRoll.successLevel })
+            resolvedSanityLevel: canViewSan ? (sanRoll?.successLevel ?? "") : "",
+            resolvedSanityNumberText: canViewSan && displayMode !== "level" ? numberPart : "",
+            resolvedSanityLevelText: canViewSan
+                ? (displayMode !== "numbers" ? levelPart : "")
                 : game.i18n.localize("ROE.RollSession.HiddenRoll"),
             resolvedHasIntCheck: Boolean(intRoll),
             resolvedIntLabel: intRoll?.label ?? "",
@@ -2973,6 +3019,37 @@ export class CoC7Settings {
             },
             default: "text"
         });
+
+        game.settings.register(COC7_MODULE_ID, "sanityEvaluationHints", {
+            name: "ROE_COC7.Settings.SanityEvaluationHints.Name",
+            hint: "ROE_COC7.Settings.SanityEvaluationHints.Hint",
+            scope: "world",
+            config: true,
+            type: new foundry.data.fields.StringField({
+                required: false,
+                blank: true,
+                initial: ""
+            }),
+            default: "",
+            input: (field, config) => {
+                const value = config.value || game.i18n.localize("ROE_COC7.Settings.SanityEvaluationHints.Default");
+                return foundry.applications.fields.createTextareaInput({
+                    ...config,
+                    value,
+                    rows: 5
+                });
+            }
+        });
+
+        Hooks.once("i18nInit", () => {
+            const setting = game.settings.settings.get(`${COC7_MODULE_ID}.sanityEvaluationHints`);
+            if (setting) {
+                const defaultHints = game.i18n.localize("ROE_COC7.Settings.SanityEvaluationHints.Default");
+                setting.default = defaultHints;
+                if (setting.type) setting.type.initial = defaultHints;
+            }
+        });
+
     }
 }
 
@@ -3003,9 +3080,10 @@ export function createBasicRollPromptApp(core) {
         const isOther = sys?.rollType === "other";
         const opts = this._evaluateParticipantOptions(p, sys);
 
+        const canViewRoll = Boolean(p?.hasRolled && RollVisibilityPolicy.canViewParticipantRoll(p, sys));
         const displayMode = game.settings?.get(COC7_MODULE_ID, "resultDisplayMode") || "both";
         const showNumbers = isOther || !p?.hasRolled || displayMode !== "level";
-        const showLevel = !isOther && Boolean(p?.hasRolled) && displayMode !== "numbers";
+        const showLevel = canViewRoll && !isOther && displayMode !== "numbers";
         const formattedLevel = p?.successLevel ? CoC7ResultFormatter.formatSuccessLevel(p.successLevel) : "";
         const modDice = p?.modifierDice ?? 0;
         const rollDiceArray = context.rollDice ?? [];
@@ -3025,6 +3103,7 @@ export function createBasicRollPromptApp(core) {
             displayTotal: p?.hasRolled ? p.total : "?",
             hasTarget: !isOther && Number(p?.targetValue ?? 0) > 0,
             showNumbers,
+            canViewRoll,
             showLevel,
             formattedLevel,
             successLevel: p?.successLevel ?? "",
@@ -3698,22 +3777,25 @@ export function createOpposedRollPromptApp(core) {
             game.user.isGM || (context.allRolled && !hasPendingOwnAction) || Boolean(sys?.isResolved);
 
         const participants = enriched.map((p, index) => {
-            const showDetails = game.user.isGM || p.isOwner || canRevealOpposedResults;
+            const canView = RollVisibilityPolicy.canViewParticipantRoll(p, sys);
+            const showDetails = canView && (game.user.isGM || p.isOwner || canRevealOpposedResults);
             const canRoll = !p.hasRolled && (game.user.isGM || p.isOwner);
             return {
                 ...p,
                 phaseNumber: index + 1,
                 isPhaseActive: !p.hasRolled,
-                hiddenInCompact: p.hasRolled ? (!p.canSpendLuck && !p.canPush) : !canRoll,
+                hiddenInCompact: p.hasRolled ? (!p.canSpendLuck && !p.canPush && !p.isOwner) : !canRoll,
                 canRoll,
                 statusText: p.hasRolled
-                    ? showDetails
-                        ? CoC7ResultFormatter.formatRollOutcome({
-                            total: p.total,
-                            targetValue: p.targetValue,
-                            successLevel: p.successLevel
-                        })
-                        : game.i18n.localize("ROE_COC7.Combat.Card.HiddenUntilOwnRoll")
+                    ? !canView
+                        ? game.i18n.localize("ROE.RollSession.HiddenRoll")
+                        : showDetails
+                            ? CoC7ResultFormatter.formatRollOutcome({
+                                total: p.total,
+                                targetValue: p.targetValue,
+                                successLevel: p.successLevel
+                            })
+                            : game.i18n.localize("ROE_COC7.Combat.Card.HiddenUntilOwnRoll")
                     : game.i18n.localize("ROE_COC7.Combat.Card.PendingRoll")
             };
         });
@@ -4001,6 +4083,7 @@ export function createRangedPromptApp(core, BasicPromptApp) {
 
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\module\coc7\prompts\sanity-check-prompt-app.mjs ===
 import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy, DiceVisualizer } from "../../core-bridge.mjs";
+import { COC7_MODULE_ID } from "../coc7-settings.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 import { CoC7SessionFactory } from "../coc7-session-factory.mjs";
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
@@ -4010,158 +4093,177 @@ const SANITY_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templat
 /** Creates the staged Sanity prompt, including its optional Intelligence follow-up. */
 export function createSanityCheckPromptApp(core, BasicPromptApp) {
     const ParentPromptApp = core.extendPromptClass(BasicPromptApp, { template: SANITY_PROMPT_TEMPLATE });
+
     return class SanityCheckPromptApp extends ParentPromptApp {
-    static DEFAULT_OPTIONS = {
-        actions: {
-            executeIntCheck: SanityCheckPromptApp.#onExecuteIntCheck,
-            resetSanityPhase: SanityCheckPromptApp.#onResetSanityPhase
-        }
-    };
+        #evaluationHint = "";
 
-    /** @override */
-    async _prepareContext(options) {
-        const context = await super._prepareContext(options);
-        const sys = this.session;
-        if (!sys) return context;
-
-        const enriched = CoC7SessionFactory.enrichForTemplate(sys);
-        const sanRoll = sys.participants?.find((p) => p.key === "p0") ?? sys.participants?.at(0);
-        const intRoll = sys.participants?.find((p) => p.key === "insanityInt") ?? null;
-
-        const actor = SessionStore.resolveActor(sanRoll);
-        const isOwner = Boolean(actor && (game.user.isGM || actor.isOwner));
-
-        const targetSan = Number(sanRoll?.targetValue ?? 0);
-        const lost = Number(sys.sanityLost ?? 0);
-        const genericLabel = game.i18n.localize("ROE_COC7.Resources.Sanity");
-        const checkTypeLabel = game.i18n.localize("ROE_COC7.RollSession.Types.sanity");
-        const sanityReason = sys.title && sys.title !== genericLabel && sys.title !== checkTypeLabel
-            ? sys.title
-            : "";
-        const intOutcome = intRoll?.hasRolled
-            ? CoC7ResultFormatter.formatRollOutcome({
-                total: intRoll.total,
-                targetValue: intRoll.targetValue,
-                successLevel: intRoll.successLevel
-            })
-            : "";
-
-        const isPhaseCheck = !sanRoll?.hasRolled;
-        const canViewSanRoll = sanRoll ? RollVisibilityPolicy.canViewParticipantRoll(sanRoll, sys) : false;
-        const sanityCheckOutcome = sanRoll?.hasRolled
-            ? canViewSanRoll
-                ? CoC7ResultFormatter.formatRollOutcome({
-                    total: sanRoll.total,
-                    targetValue: sanRoll.targetValue,
-                    successLevel: sanRoll.successLevel
-                })
-                : game.i18n.localize("ROE.RollSession.HiddenRoll")
-            : "";
-        const isPhaseInsight = !isPhaseCheck && Boolean(intRoll) && !intRoll.hasRolled;
-        const manualMod = Number(sanRoll?.modifierDice ?? 0);
-        const rollDiceArray = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, manualMod);
-        const intDiceArray = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, intRoll?.modifierDice ?? 0);
-
-        return {
-            ...context,
-            ...enriched,
-            manualModifierDice: manualMod,
-            flagModifierDice: 0,
-            effectiveModifierLabel: this._formatModifierLabel(manualMod),
-            rollDiceLabel: this._formatDiceFormulaLabel(rollDiceArray),
-            isPhaseCheck,
-            sanityCheckOutcome,
-            isPhaseInsight,
-            isPhaseResolution: !isPhaseCheck && !isPhaseInsight,
-            title: checkTypeLabel,
-            displayTarget: targetSan,
-            targetValue: targetSan,
-            isSanityCheck: true,
-            showLevel: false,
-            canSpendLuck: false,
-            canPush: false,
-            sanityReason,
-            hasSanityLossResult: enriched.hasSanityResult,
-            sanityLost: lost,
-            sanityFlavorText: this.#resolveFlavorText(lost, Boolean(sanRoll?.isSuccess)),
-            isInsanityTriggered: Boolean(enriched.sanityInsanityBadge),
-            hasIntCheck: Boolean(intRoll),
-            intCheckLabel: intRoll?.label ?? "",
-            intTargetValue: intRoll?.targetValue ?? 0,
-            intModifierDice: intRoll?.modifierDice ?? 0,
-            intModifierLabel: this._formatModifierLabel(intRoll?.modifierDice ?? 0),
-            intDice: intDiceArray,
-            intDiceLabel: this._formatDiceFormulaLabel(intDiceArray),
-            intHasRolled: Boolean(intRoll?.hasRolled),
-            intOutcome,
-            canRollIntCheck: Boolean(intRoll && !intRoll.hasRolled && isOwner && !sys.isResolved),
-            isDelegatedToPlayer: this._isDelegatedToActivePlayer(sanRoll),
-            isIntDelegatedToPlayer: this._isDelegatedToActivePlayer(intRoll)
+        static DEFAULT_OPTIONS = {
+            actions: {
+                executeIntCheck: SanityCheckPromptApp.#onExecuteIntCheck,
+                resetSanityPhase: SanityCheckPromptApp.#onResetSanityPhase
+            }
         };
-    }
 
-    /** @override */
-    _getPhases(sys) {
-        const sanRoll = sys?.participants?.find((p) => p.key === "p0") ?? sys?.participants?.at(0);
-        const intRoll = sys?.participants?.find((p) => p.key === "insanityInt");
-        const inCheck = !sanRoll?.hasRolled;
-        const inInsight = !inCheck && Boolean(intRoll) && !intRoll.hasRolled;
+        /** @override */
+        async _prepareContext(options) {
+            const context = await super._prepareContext(options);
+            const sys = this.session;
+            if (!sys) return context;
 
-        const phases = [{ id: "check", isActive: inCheck, isCompleted: !inCheck }];
-        if (intRoll) phases.push({ id: "insight", isActive: inInsight, isCompleted: !inCheck && !inInsight });
-        phases.push({ id: "resolution", isActive: !inCheck && !inInsight, isCompleted: false });
-        return phases;
-    }
+            const enriched = CoC7SessionFactory.enrichForTemplate(sys);
+            const sanRoll = sys.participants?.find((p) => p.key === "p0") ?? sys.participants?.at(0);
+            const intRoll = sys.participants?.find((p) => p.key === "insanityInt") ?? null;
 
-    /** @override */
-    _buildPhaseSummary(sys) {
-        const insight = this._getPhases(sys).find((p) => p.id === "insight");
-        if (!insight?.isActive) return "";
+            const actor = SessionStore.resolveActor(sanRoll);
+            const isOwner = Boolean(actor && (game.user.isGM || actor.isOwner));
 
-        const sanRoll = sys.participants?.find((p) => p.key === "p0") ?? sys.participants?.at(0);
-        return game.i18n.format("ROE_COC7.Sanity.Summary.Insight", {
-            actor: sanRoll?.actorName ?? "",
-            lost: Number(sys.sanityLost ?? 0)
-        });
-    }
+            const targetSan = Number(sanRoll?.targetValue ?? 0);
+            const lost = Number(sys.sanityLost ?? 0);
+            const genericLabel = game.i18n.localize("ROE_COC7.Resources.Sanity");
+            const checkTypeLabel = game.i18n.localize("ROE_COC7.RollSession.Types.sanity");
+            const sanityReason = sys.title && sys.title !== genericLabel && sys.title !== checkTypeLabel
+                ? sys.title
+                : "";
+            const canViewIntRoll = intRoll ? RollVisibilityPolicy.canViewParticipantRoll(intRoll, sys) : false;
+            const intOutcome = intRoll?.hasRolled
+                ? canViewIntRoll
+                    ? CoC7ResultFormatter.formatRollOutcome({
+                        total: intRoll.total,
+                        targetValue: intRoll.targetValue,
+                        successLevel: intRoll.successLevel
+                    })
+                    : game.i18n.localize("ROE.RollSession.HiddenRoll")
+                : "";
 
-    #resolveFlavorText(lost, isSuccess) {
-        if (lost <= 0) return game.i18n.localize("ROE_COC7.Sanity.FlavorUnshaken");
-        if (lost >= 5) return game.i18n.localize("ROE_COC7.Sanity.FlavorShattered");
-        return game.i18n.localize(
-            isSuccess ? "ROE_COC7.Sanity.FlavorShakenMinor" : "ROE_COC7.Sanity.FlavorShakenMajor"
-        );
-    }
+            const isPhaseCheck = !sanRoll?.hasRolled;
+            const canViewSanRoll = sanRoll ? RollVisibilityPolicy.canViewParticipantRoll(sanRoll, sys) : false;
+            const sanityCheckOutcome = sanRoll?.hasRolled
+                ? canViewSanRoll
+                    ? CoC7ResultFormatter.formatRollOutcome({
+                        total: sanRoll.total,
+                        targetValue: sanRoll.targetValue,
+                        successLevel: sanRoll.successLevel
+                    })
+                    : game.i18n.localize("ROE.RollSession.HiddenRoll")
+                : "";
+            const isPhaseInsight = !isPhaseCheck && Boolean(intRoll) && !intRoll.hasRolled;
+            const manualMod = Number(sanRoll?.modifierDice ?? 0);
+            const rollDiceArray = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, manualMod);
+            const intDiceArray = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, intRoll?.modifierDice ?? 0);
 
-    static async #onResetSanityPhase(event, target) {
-        if (!game.user.isGM || !target.dataset.phase) return;
-        await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { resetSanityPhase: target.dataset.phase });
-    }
+            return {
+                ...context,
+                ...enriched,
+                manualModifierDice: manualMod,
+                flagModifierDice: 0,
+                effectiveModifierLabel: this._formatModifierLabel(manualMod),
+                rollDiceLabel: this._formatDiceFormulaLabel(rollDiceArray),
+                isPhaseCheck,
+                sanityCheckOutcome,
+                sanityEvaluationHint: this.#getSanityEvaluationHint(),
+                isPhaseInsight,
+                isPhaseResolution: !isPhaseCheck && !isPhaseInsight,
+                title: checkTypeLabel,
+                displayTarget: targetSan,
+                targetValue: targetSan,
+                isSanityCheck: true,
+                showLevel: false,
+                canSpendLuck: false,
+                canPush: false,
+                sanityReason,
+                hasSanityLossResult: enriched.hasSanityResult,
+                sanityLost: lost,
+                sanityFlavorText: this.#resolveFlavorText(lost, Boolean(sanRoll?.isSuccess)),
+                isInsanityTriggered: Boolean(enriched.sanityInsanityBadge),
+                hasIntCheck: Boolean(intRoll),
+                intCheckLabel: intRoll?.label ?? "",
+                intTargetValue: intRoll?.targetValue ?? 0,
+                intModifierDice: intRoll?.modifierDice ?? 0,
+                intModifierLabel: this._formatModifierLabel(intRoll?.modifierDice ?? 0),
+                intDice: intDiceArray,
+                intDiceLabel: this._formatDiceFormulaLabel(intDiceArray),
+                intHasRolled: Boolean(intRoll?.hasRolled),
+                intOutcome,
+                canRollIntCheck: Boolean(intRoll && !intRoll.hasRolled && isOwner && !sys.isResolved),
+                isDelegatedToPlayer: this._isDelegatedToActivePlayer(sanRoll),
+                isIntDelegatedToPlayer: this._isDelegatedToActivePlayer(intRoll)
+            };
+        }
 
-    static async #onExecuteIntCheck() {
-        const sys = this.session;
-        const intRoll = sys?.participants?.find((p) => p.key === "insanityInt");
-        if (!intRoll || intRoll.hasRolled || sys.isResolved) return;
+        /** @override */
+        _getPhases(sys) {
+            const sanRoll = sys?.participants?.find((p) => p.key === "p0") ?? sys?.participants?.at(0);
+            const intRoll = sys?.participants?.find((p) => p.key === "insanityInt");
+            const inCheck = !sanRoll?.hasRolled;
+            const inInsight = !inCheck && Boolean(intRoll) && !intRoll.hasRolled;
 
-        // The follow-up check resolves temporary-insanity duration after a bout is triggered.
-        const modifierDice = intRoll.modifierDice ?? 0;
-        const formula = CoC7CheckResolver.buildRollFormula(modifierDice);
-        const roll = await new Roll(formula).evaluate();
-        const total = roll.total === 0 ? 100 : roll.total;
-        const successLevel = CoC7CheckResolver.evaluateResult(total, Number(intRoll.targetValue));
-        const rollBreakdown = CoC7CheckResolver.buildBreakdown(roll, Number(intRoll.targetValue), successLevel, { modifierDice });
-        const isSuccess = (CoC7CheckResolver.LEVEL_RANK[successLevel] ?? 0) >= 2;
+            const phases = [{ id: "check", isActive: inCheck, isCompleted: !inCheck }];
+            if (intRoll) phases.push({ id: "insight", isActive: inInsight, isCompleted: !inCheck && !inInsight });
+            phases.push({ id: "resolution", isActive: !inCheck && !inInsight, isCompleted: false });
+            return phases;
+        }
 
-        await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "insanityInt", {
-            total,
-            successLevel,
-            isSuccess,
-            modifierDice,
-            rollMode: RollVisibilityPolicy.getCurrentRollMode(),
-            rollerUserId: game.user.id,
-            rollBreakdown
-        });
-    }
+        /** @override */
+        _buildPhaseSummary(sys) {
+            const insight = this._getPhases(sys).find((p) => p.id === "insight");
+            if (!insight?.isActive) return "";
+
+            const sanRoll = sys.participants?.find((p) => p.key === "p0") ?? sys.participants?.at(0);
+            return game.i18n.format("ROE_COC7.Sanity.Summary.Insight", {
+                actor: sanRoll?.actorName ?? "",
+                lost: Number(sys.sanityLost ?? 0)
+            });
+        }
+
+        #getSanityEvaluationHint() {
+            if (this.#evaluationHint) return this.#evaluationHint;
+            const configured = game.settings?.get(COC7_MODULE_ID, "sanityEvaluationHints")?.trim();
+            const raw = configured || game.i18n.localize("ROE_COC7.Settings.SanityEvaluationHints.Default");
+            const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+            this.#evaluationHint = lines.length
+                ? lines[Math.floor(Math.random() * lines.length)]
+                : game.i18n.localize("ROE_COC7.Combat.Card.AwaitingResolution");
+            return this.#evaluationHint;
+        }
+
+
+        #resolveFlavorText(lost, isSuccess) {
+            if (lost <= 0) return game.i18n.localize("ROE_COC7.Sanity.FlavorUnshaken");
+            if (lost >= 5) return game.i18n.localize("ROE_COC7.Sanity.FlavorShattered");
+            return game.i18n.localize(
+                isSuccess ? "ROE_COC7.Sanity.FlavorShakenMinor" : "ROE_COC7.Sanity.FlavorShakenMajor"
+            );
+        }
+
+        static async #onResetSanityPhase(event, target) {
+            if (!game.user.isGM || !target.dataset.phase) return;
+            await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { resetSanityPhase: target.dataset.phase });
+        }
+
+        static async #onExecuteIntCheck() {
+            const sys = this.session;
+            const intRoll = sys?.participants?.find((p) => p.key === "insanityInt");
+            if (!intRoll || intRoll.hasRolled || sys.isResolved) return;
+
+            // The follow-up check resolves temporary-insanity duration after a bout is triggered.
+            const modifierDice = intRoll.modifierDice ?? 0;
+            const formula = CoC7CheckResolver.buildRollFormula(modifierDice);
+            const roll = await new Roll(formula).evaluate();
+            const total = roll.total === 0 ? 100 : roll.total;
+            const successLevel = CoC7CheckResolver.evaluateResult(total, Number(intRoll.targetValue));
+            const rollBreakdown = CoC7CheckResolver.buildBreakdown(roll, Number(intRoll.targetValue), successLevel, { modifierDice });
+            const isSuccess = (CoC7CheckResolver.LEVEL_RANK[successLevel] ?? 0) >= 2;
+
+            await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "insanityInt", {
+                total,
+                successLevel,
+                isSuccess,
+                modifierDice,
+                rollMode: RollVisibilityPolicy.getCurrentRollMode(),
+                rollerUserId: game.user.id,
+                rollBreakdown
+            });
+        }
     };
 }
 
@@ -6307,6 +6409,37 @@ export class SkillRollStrategy extends BasicRollStrategy {
 
 
 
+=== C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\templates\core\prompts\partials\resolved-sanity-body.hbs ===
+<div class="resolved-single-result">
+    <div class="resolved-single-outcome {{resolvedSanityLevel}}" {{#if resolvedCanViewSanity}}data-inspect-key="p0"{{/if}}>
+        {{#if resolvedSanityNumberText}}
+        <span class="resolved-single-numbers">{{resolvedSanityNumberText}}</span>
+        {{/if}}
+        {{#if resolvedSanityLevelText}}
+        <span class="resolved-single-level">{{resolvedSanityLevelText}}</span>
+        {{/if}}
+    </div>
+
+    <div class="resolved-sanity-loss {{#if resolvedSanityLost}}is-severe{{else}}is-safe{{/if}}">
+        <i class="fa-solid fa-heart-crack"></i> {{localize "ROE_COC7.Sanity.CardLossSummary" lost=resolvedSanityLost}}
+    </div>
+
+    {{#if resolvedHasIntCheck}}
+    <div class="prompt-sub-box resolved-combined-list">
+        <div class="combined-check-row">
+            <span>{{resolvedIntLabel}}</span>
+            <strong class="resolved-level-text {{resolvedIntLevel}}" {{#if resolvedCanViewInt}}data-inspect-key="insanityInt"{{/if}}>{{resolvedIntRollText}}</strong>
+        </div>
+    </div>
+    {{/if}}
+
+    {{#if resolvedSanityStatusText}}
+    <div class="resolved-summary-line {{#if resolvedIsInsane}}is-insane{{/if}}">{{resolvedSanityStatusText}}</div>
+    {{/if}}
+</div>
+
+
+
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\templates\core\prompts\partials\resolved-single-body.hbs ===
 <div class="resolved-single-result">
     {{#if isResolvedCombined}}
@@ -6642,8 +6775,16 @@ export class SkillRollStrategy extends BasicRollStrategy {
 {{#*inline "promptDetails"}}
 {{> roePromptDescription}}
 
+{{#if hasRolled}}
+{{#if canViewRoll}}
 {{#if showLevel}}
-<div class="prompt-outcome-badge {{successLevel}}">{{formattedLevel}}</div>
+<div class="prompt-outcome-badge {{successLevel}}" data-inspect-key="{{participantKey}}">{{formattedLevel}}</div>
+{{/if}}
+{{else}}
+<div class="prompt-sub-box">
+    <span class="pending-badge">{{localize "ROE.RollSession.HiddenRoll"}}</span>
+</div>
+{{/if}}
 {{/if}}
 
 {{> roeSanityLossControls}}
@@ -6701,6 +6842,12 @@ export class SkillRollStrategy extends BasicRollStrategy {
 {{> (lookup . "resultPartial")}}
 {{> roePushFailurePhase}}
 
+{{#if showPlayerWaitingHint}}
+<div class="prompt-phase-summary">
+    <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+</div>
+{{/if}}
+
 {{#if canApplyConsequences}}
 <footer class="prompt-footer">
     <button type="button" class="prompt-action-btn luck" data-action="applyConsequences">
@@ -6756,7 +6903,8 @@ export class SkillRollStrategy extends BasicRollStrategy {
 <div class="prompt-phase-summary">{{phaseSummaryText}}</div>
 {{/if}}
 
-<section class="combat-phase-section {{#if isPhaseInitiator}}is-active{{else}}is-completed{{/if}} {{#if hideInitiatorInCompact}}is-compact-hidden{{/if}}">
+<section
+    class="combat-phase-section {{#if isPhaseInitiator}}is-active{{else}}is-completed{{/if}} {{#if hideInitiatorInCompact}}is-compact-hidden{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseInitiator}}fa-crosshairs{{else}}fa-check-circle{{/if}}"></i>
@@ -6816,7 +6964,8 @@ export class SkillRollStrategy extends BasicRollStrategy {
 </section>
 
 {{#if showPhaseOpponent}}
-<section class="combat-phase-section {{#if isPhaseOpponent}}is-active{{else}}is-completed{{/if}} {{#if hideOpponentInCompact}}is-compact-hidden{{/if}}">
+<section
+    class="combat-phase-section {{#if isPhaseOpponent}}is-active{{else}}is-completed{{/if}} {{#if hideOpponentInCompact}}is-compact-hidden{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseOpponent}}fa-shield-halved{{else}}fa-check-circle{{/if}}"></i>
@@ -6892,19 +7041,29 @@ export class SkillRollStrategy extends BasicRollStrategy {
         <span><i class="fa-solid fa-burst"></i> {{damageLabel}}</span>
         <strong {{#if damageRolled}}data-inspect-key="damage" {{/if}}>
             {{#if damageRolled}}
-            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
+            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize
+            "ROE.RollSession.HiddenRoll"}}{{/if}}
             {{else}}
-            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>{{/if}}
+            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize
+                "ROE.RollSession.PendingRoll"}}</span>{{/if}}
             {{/if}}
         </strong>
     </div>
 
     {{#if canRollDamage}}
     {{#if canViewDamage}}{{> roeDiceDisplay dice=damageDice modifierTooltip="Damage"}}{{/if}}
-    <button type="button" class="prompt-action-btn push {{#if isDamageDelegated}}gm-delegated{{/if}}" data-action="executeDamageRoll">
+    <button type="button" class="prompt-action-btn push {{#if isDamageDelegated}}gm-delegated{{/if}}"
+        data-action="executeDamageRoll">
         <i class="fa-solid fa-dice"></i> {{localize "ROE_COC7.Combat.RollDamageBtn"}}
     </button>
     {{/if}}
+
+    {{#if showPlayerWaitingHint}}
+    <div class="prompt-phase-summary">
+        <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+    </div>
+    {{/if}}
+
     {{/if}}
 
     {{> (lookup . "resultPartial")}}
@@ -6931,7 +7090,6 @@ export class SkillRollStrategy extends BasicRollStrategy {
 {{/if}}
 {{/inline}}
 {{/roePromptLayout}}
-
 
 
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\templates\systems\coc7\prompts\combined-roll-prompt.hbs ===
@@ -7023,6 +7181,12 @@ export class SkillRollStrategy extends BasicRollStrategy {
 {{/if}}
 {{> roePushFailurePhase}}
 
+{{#if showPlayerWaitingHint}}
+<div class="prompt-phase-summary">
+    <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+</div>
+{{/if}}
+
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">
     <button type="button" class="prompt-action-btn primary" data-action="resolveSession">
@@ -7113,6 +7277,12 @@ export class SkillRollStrategy extends BasicRollStrategy {
 {{#*inline "promptResults"}}
 {{> (lookup . "resultPartial")}}
 {{> roePushFailurePhase}}
+
+{{#if showPlayerWaitingHint}}
+<div class="prompt-phase-summary">
+    <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+</div>
+{{/if}}
 
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">
@@ -7293,6 +7463,13 @@ export class SkillRollStrategy extends BasicRollStrategy {
     {{/if}}
 </section>
 {{/if}}
+
+{{#if showPlayerWaitingHint}}
+<div class="prompt-phase-summary">
+    <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+</div>
+{{/if}}
+
 {{/inline}}
 {{/roePromptLayout}}
 
@@ -7416,6 +7593,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
 
 {{#*inline "promptResults"}}
 {{#if isPhaseResolution}}
+{{#if isGM}}
 <section class="combat-phase-section is-active">
     <header class="combat-phase-header">
         <span class="phase-title">
@@ -7442,6 +7620,15 @@ export class SkillRollStrategy extends BasicRollStrategy {
     </footer>
     {{/if}}
 </section>
+{{else}}
+{{else}}
+<div class="sanity-immersion-panel">
+    <div class="sanity-flavor-line">
+        <i class="fa-solid fa-hourglass-half"></i> {{#if playerWaitingHint}}{{playerWaitingHint}}{{else}}{{sanityEvaluationHint}}{{/if}}
+    </div>
+</div>
+{{/if}}
+{{/if}}
 {{/if}}
 {{/inline}}
 {{/roePromptLayout}}

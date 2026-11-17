@@ -1,0 +1,25 @@
+<div class="resolved-single-result">
+    <div class="resolved-duel-grid {{#unless resolvedHasDefender}}is-single{{/unless}}">
+        <div class="resolved-duel-card {{#if resolvedAttackerWon}}is-winner{{/if}}" {{#if resolvedCanViewAttacker}}data-inspect-key="attacker"{{/if}}>
+            {{#if resolvedAttackerWon}}<i class="fa-solid fa-trophy resolved-duel-crown"></i>{{/if}}
+            <img class="combatant-avatar" src="{{resolvedAttackerImg}}" alt="{{resolvedAttackerName}}" />
+            <strong class="resolved-duel-name">{{resolvedAttackerName}}</strong>
+            <small class="resolved-duel-role">{{resolvedAttackerLabel}}</small>
+            <span class="resolved-level-text {{resolvedAttackerLevel}}">{{resolvedAttackerOutcome}}</span>
+        </div>
+
+        {{#if resolvedHasDefender}}
+        <div class="resolved-duel-vs">VS</div>
+
+        <div class="resolved-duel-card {{#if resolvedDefenderWon}}is-winner{{/if}}" {{#if resolvedCanViewDefender}}data-inspect-key="defender"{{/if}}>
+            {{#if resolvedDefenderWon}}<i class="fa-solid fa-trophy resolved-duel-crown"></i>{{/if}}
+            <img class="combatant-avatar" src="{{resolvedDefenderImg}}" alt="{{resolvedDefenderName}}" />
+            <strong class="resolved-duel-name">{{resolvedDefenderName}}</strong>
+            <small class="resolved-duel-role">{{resolvedDefenderLabel}}</small>
+            <span class="resolved-level-text {{resolvedDefenderLevel}}">{{resolvedDefenderOutcome}}</span>
+        </div>
+        {{/if}}
+    </div>
+
+    {{> roeCocResolvedCombatConsequences}}
+</div>

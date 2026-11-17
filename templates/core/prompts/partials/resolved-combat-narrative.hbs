@@ -1,0 +1,16 @@
+<div class="resolved-single-result">
+    <div class="resolved-combat-narrative">{{resolvedCombatNarrative}}</div>
+
+    <div class="resolved-combat-chips">
+        <span class="result-chip is-compact {{resolvedAttackerChipClass}}" {{#if resolvedCanViewAttacker}}data-inspect-key="attacker"{{/if}}>
+            {{resolvedAttackerName}}: {{resolvedAttackerOutcome}}
+        </span>
+        {{#if resolvedHasDefender}}
+        <span class="result-chip is-compact {{resolvedDefenderChipClass}}" {{#if resolvedCanViewDefender}}data-inspect-key="defender"{{/if}}>
+            {{resolvedDefenderName}}: {{resolvedDefenderOutcome}}
+        </span>
+        {{/if}}
+    </div>
+
+    {{> roeCocResolvedCombatConsequences}}
+</div>

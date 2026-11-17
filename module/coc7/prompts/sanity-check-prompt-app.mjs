@@ -40,12 +40,15 @@ export function createSanityCheckPromptApp(core, BasicPromptApp) {
             const sanityReason = sys.title && sys.title !== genericLabel && sys.title !== checkTypeLabel
                 ? sys.title
                 : "";
+            const canViewIntRoll = intRoll ? RollVisibilityPolicy.canViewParticipantRoll(intRoll, sys) : false;
             const intOutcome = intRoll?.hasRolled
-                ? CoC7ResultFormatter.formatRollOutcome({
-                    total: intRoll.total,
-                    targetValue: intRoll.targetValue,
-                    successLevel: intRoll.successLevel
-                })
+                ? canViewIntRoll
+                    ? CoC7ResultFormatter.formatRollOutcome({
+                        total: intRoll.total,
+                        targetValue: intRoll.targetValue,
+                        successLevel: intRoll.successLevel
+                    })
+                    : game.i18n.localize("ROE.RollSession.HiddenRoll")
                 : "";
 
             const isPhaseCheck = !sanRoll?.hasRolled;

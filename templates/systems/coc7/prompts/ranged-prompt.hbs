@@ -133,10 +133,16 @@
     {{/if}}
     {{/if}}
 
+    {{#if showPlayerWaitingHint}}
+    <div class="prompt-phase-summary">
+        <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+    </div>
+    {{else}}
     {{> (lookup . "resultPartial")}}
 
     {{#if targetTookCover}}
     <div class="prompt-phase-summary">{{localize "ROE_COC7.Ranged.LosesNextAction" actor=targetName}}</div>
+    {{/if}}
     {{/if}}
 
     {{#if canApplyConsequences}}
@@ -158,13 +164,10 @@
     </footer>
     {{/if}}
 </section>
-{{/if}}
-
-{{#if showPlayerWaitingHint}}
+{{else if showPlayerWaitingHint}}
 <div class="prompt-phase-summary">
     <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
 </div>
 {{/if}}
-
 {{/inline}}
 {{/roePromptLayout}}

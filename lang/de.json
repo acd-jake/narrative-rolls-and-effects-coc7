@@ -18,6 +18,12 @@
         "Name": "Hinweistexte bei Stabilitäts-Auswertung",
         "Hint": "Atmosphärische Texte (ein Hinweis pro Zeile), die Spielern angezeigt werden, während die Spielleitung die Folgen einer Stabilitätsprobe auswertet.",
         "Default": "Dein Verstand ringt noch damit, das Gesehene zu begreifen...\nEin kalter Schauer läuft dir über den Rücken – was bedeutet das für deinen Geist?\nDie Bilder brennen sich in dein Gedächtnis ein, während sich der Nebel lichtet...\nStille legt sich über deinen Geist, als die Erkenntnis langsam einsickert...\nDein Herz hämmert – gleich zeigt sich, ob dein Verstand dem Grauen standhält..."
+      },
+      "CombatResolvedLayout": {
+        "Name": "Darstellung aufgelöster Kampfproben",
+        "Hint": "Wählt, ob das Ergebnis einer Kampfprobe als atmosphärischer Szenentext oder als direkte Gegenüberstellung beider Kontrahenten angezeigt wird.",
+        "Narrative": "Szenischer Ausgang & Regel-Chips",
+        "Duel": "Duell-Gegenüberstellung mit Sieger-Siegel"
       }
     },
     "Roll": {
@@ -231,6 +237,16 @@
         "HiddenUntilOwnRoll": "Wurf abgelegt (sichtbar nach eigener Reaktion)",
         "DamageAppliedSecret": "Schaden auf {target} angewendet",
         "HiddenResult": "Verdecktes Kampfresultat"
+      },
+      "ResolvedNarrative": {
+        "Hit": "{attacker} durchbricht die Deckung von {defender} und landet einen Treffer.",
+        "HitUnopposed": "{attacker} führt einen gezielten Schlag mit {weapon} aus.",
+        "RangedHit": "{attacker} trifft {defender} mit {weapon}.",
+        "RangedMiss": "Der Schuss von {attacker} verfehlt {defender}.",
+        "Dodged": "{defender} weicht dem Angriff von {attacker} geschickt aus.",
+        "Missed": "{attacker} schlägt ins Leere.",
+        "Counter": "{defender} pariert den Vorstoß und kontert {attacker} blitzschnell.",
+        "Maneuver": "{defender} nutzt die Lücke und überwältigt {attacker} mit einem Manöver ({maneuver})."
       }
     },
     "Warnings": {

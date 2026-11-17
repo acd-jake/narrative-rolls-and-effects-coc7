@@ -476,6 +476,8 @@ export class CoC7Adapter {
     /** Returns the registered Handlebars partials to include when displaying resolved checks. */
     getResolvedResultPartials(session) {
         if (!session?.isResolved) return {};
+        const combatLayout = game.settings?.get(COC7_MODULE_ID, "combatResolvedLayout") || "narrative";
+        const combatBody = combatLayout === "duel" ? "roeCocResolvedCombatDuel" : "roeCocResolvedCombatNarrative";
         const bodyByType = {
             basic: "roeCocResolvedSingleBody",
             skill: "roeCocResolvedSingleBody",
@@ -483,8 +485,8 @@ export class CoC7Adapter {
             combined: "roeCocResolvedSingleBody",
             opposed: "roeCocResolvedOpposedBody",
             sanity: "roeCocResolvedSanityBody",
-            combat: "roeCocResolvedCombatBody",
-            ranged: "roeCocResolvedCombatBody"
+            combat: combatBody,
+            ranged: combatBody
         };
         const body = bodyByType[session.rollType];
         return body ? { header: "roeCocResolvedSingleHeader", body } : {};
@@ -747,42 +749,104 @@ export class CoC7Adapter {
         const canViewDef = Boolean(defender && RollVisibilityPolicy.canViewParticipantRoll(defender, session));
         const canViewDmg = Boolean(damage && RollVisibilityPolicy.canViewParticipantRoll(damage, session));
 
-        const headerActors = defender
-            ? `${attacker?.actorName ?? ""} vs. ${defender.actorName ?? ""}`
-            : (attacker?.actorName ?? "");
+        const combatLayout = game.settings?.get(COC7_MODULE_ID, "combatResolvedLayout") || "narrative";
+        const headerActors = combatLayout === "duel"
+            ? game.i18n.localize(`ROE_COC7.RollSession.Types.${session.rollType}`)
+            : defender
+                ? `${attacker?.actorName ?? ""} vs. ${defender.actorName ?? ""}`
+                : (attacker?.actorName ?? "");
 
-        const defenderResult = !defender
-            ? ""
-            : session.rollType === "ranged"
-                ? game.i18n.localize(defender.tookCover ? "ROE_COC7.Ranged.CoverTaken" : "ROE_COC7.Ranged.NoCover")
-                : defender.total === null
-                    ? game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none")
-                    : canViewDef
-                        ? this.formatRollOutcome({ total: defender.total, targetValue: defender.targetValue, successLevel: defender.successLevel })
-                        : game.i18n.localize("ROE.RollSession.HiddenRoll");
+        const formatCombatantOutcome = (participant, canView) => {
+            if (!participant) return "";
+            if (!canView) return game.i18n.localize("ROE.RollSession.HiddenRoll");
+            if (participant.key === "defender" && session.rollType === "ranged") {
+                return game.i18n.localize(participant.tookCover ? "ROE_COC7.Ranged.CoverTaken" : "ROE_COC7.Ranged.NoCover");
+            }
+            if (participant.total === null) return game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none");
+            return this.formatRollOutcome({
+                total: participant.total,
+                targetValue: participant.targetValue,
+                successLevel: participant.successLevel
+            });
+        };
+
+        const chipClass = (level, canView) => {
+            if (!canView || !level || level === "none") return "";
+            return ["regular", "hard", "extreme", "critical"].includes(level) ? "outcome is-success" : "outcome is-failure";
+        };
+
+        const hasDamage = Boolean(session.finalDamage !== null && session.finalDamage !== undefined);
+        const isManeuverWin = session.hitWinnerKey === "defender" && session.defenderReaction === "maneuver";
+        const targetTookCover = Boolean(session.rollType === "ranged" && defender?.tookCover);
 
         return {
             resolvedActorName: headerActors.toUpperCase(),
             resolvedTitle: session.weaponName || session.title,
+            resolvedCombatNarrative: this.#buildCombatNarrative(session, attacker, defender),
             resolvedAttackerName: attacker?.actorName ?? "",
+            resolvedAttackerImg: attacker?.actorImg ?? "",
             resolvedAttackerLabel: attacker?.label ?? "",
             resolvedCanViewAttacker: canViewAtt,
+            resolvedAttackerWon: session.hitWinnerKey === "attacker",
             resolvedAttackerLevel: canViewAtt ? attacker.successLevel : "",
-            resolvedAttackerResult: canViewAtt
-                ? this.formatRollOutcome({ total: attacker.total, targetValue: attacker.targetValue, successLevel: attacker.successLevel })
-                : game.i18n.localize("ROE.RollSession.HiddenRoll"),
+            resolvedAttackerOutcome: formatCombatantOutcome(attacker, canViewAtt),
+            resolvedAttackerChipClass: chipClass(attacker?.successLevel, canViewAtt),
             resolvedHasDefender: Boolean(defender),
             resolvedDefenderName: defender?.actorName ?? "",
-            resolvedDefenderLabel: game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${session.defenderReaction || "dodge"}`),
+            resolvedDefenderImg: defender?.actorImg ?? "",
+            resolvedDefenderLabel: session.rollType === "ranged"
+                ? game.i18n.localize("ROE_COC7.Combat.TargetLabel")
+                : game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${session.defenderReaction || "dodge"}`),
             resolvedCanViewDefender: Boolean(canViewDef && defender?.total !== null),
+            resolvedDefenderWon: session.hitWinnerKey === "defender",
             resolvedDefenderLevel: canViewDef && defender?.total !== null ? defender.successLevel : "",
-            resolvedDefenderResult: defenderResult,
-            resolvedHasDamage: Boolean(session.finalDamage !== null && session.finalDamage !== undefined),
+            resolvedDefenderOutcome: formatCombatantOutcome(defender, canViewDef),
+            resolvedDefenderChipClass: chipClass(defender?.successLevel, canViewDef),
+            resolvedHasConsequences: hasDamage || isManeuverWin || targetTookCover,
+            resolvedHasDamage: hasDamage,
             resolvedCanViewDamage: canViewDmg,
             resolvedFinalDamage: session.finalDamage ?? 0,
             resolvedArmorApplied: Number(session.armorApplied ?? 0),
-            resolvedMajorWound: Boolean(canViewDmg && session.majorWoundTriggered)
+            resolvedMajorWound: Boolean(canViewDmg && session.majorWoundTriggered),
+            resolvedManeuverLabel: isManeuverWin
+                ? game.i18n.format("ROE_COC7.Combat.Badges.Maneuver", {
+                    maneuver: game.i18n.localize(`ROE_COC7.Combat.Maneuvers.${session.maneuverType || "disarm"}`)
+                })
+                : "",
+            resolvedTargetTookCover: targetTookCover
         };
+    }
+
+    #buildCombatNarrative(session, attacker, defender) {
+        const names = {
+            attacker: attacker?.actorName ?? "",
+            defender: defender?.actorName ?? game.i18n.localize("ROE_COC7.Combat.UnknownTarget"),
+            weapon: session.weaponName || session.title,
+            maneuver: game.i18n.localize(`ROE_COC7.Combat.Maneuvers.${session.maneuverType || "disarm"}`)
+        };
+        if (session.rollType === "ranged") {
+            return game.i18n.format(
+                session.hitWinnerKey === "attacker" ? "ROE_COC7.Combat.ResolvedNarrative.RangedHit" : "ROE_COC7.Combat.ResolvedNarrative.RangedMiss",
+                names
+            );
+        }
+        if (session.hitWinnerKey === "attacker") {
+            return game.i18n.format(
+                defender ? "ROE_COC7.Combat.ResolvedNarrative.Hit" : "ROE_COC7.Combat.ResolvedNarrative.HitUnopposed",
+                names
+            );
+        }
+        if (session.hitWinnerKey === "defender") {
+            return game.i18n.format(
+                session.defenderReaction === "maneuver" ? "ROE_COC7.Combat.ResolvedNarrative.Maneuver" : "ROE_COC7.Combat.ResolvedNarrative.Counter",
+                names
+            );
+        }
+        const wasDodged = defender && session.defenderReaction === "dodge" && defender.isSuccess;
+        return game.i18n.format(
+            wasDodged ? "ROE_COC7.Combat.ResolvedNarrative.Dodged" : "ROE_COC7.Combat.ResolvedNarrative.Missed",
+            names
+        );
     }
 
     #isLuckImprovementAllowed() {

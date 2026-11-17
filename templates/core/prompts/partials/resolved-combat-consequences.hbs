@@ -1,0 +1,33 @@
+{{#if resolvedHasConsequences}}
+<div class="resolved-consequences-box">
+    {{#if resolvedHasDamage}}
+    <div class="resolved-combat-damage" {{#if resolvedCanViewDamage}}data-inspect-key="damage"{{/if}}>
+        <i class="fa-solid fa-burst"></i>
+        {{#if resolvedCanViewDamage}}
+        -{{resolvedFinalDamage}} {{localize "ROE_COC7.Resources.HPAbbr"}}
+        {{#if resolvedArmorApplied}}<small>({{resolvedArmorApplied}} {{localize "ROE_COC7.Combat.Armor"}})</small>{{/if}}
+        {{else}}
+        {{localize "ROE.RollSession.HiddenRoll"}}
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{#if resolvedMajorWound}}
+    <div class="resolved-major-wound">
+        <i class="fa-solid fa-skull-crossbones"></i> {{localize "ROE_COC7.Conditions.MajorWound"}}
+    </div>
+    {{/if}}
+
+    {{#if resolvedManeuverLabel}}
+    <div class="resolved-maneuver-badge">
+        <i class="fa-solid fa-hand-fist"></i> {{resolvedManeuverLabel}}
+    </div>
+    {{/if}}
+
+    {{#if resolvedTargetTookCover}}
+    <div class="resolved-cover-note">
+        <i class="fa-solid fa-person-running"></i> {{localize "ROE_COC7.Ranged.LosesNextAction" actor=resolvedDefenderName}}
+    </div>
+    {{/if}}
+</div>
+{{/if}}

@@ -18,6 +18,12 @@
         "Name": "Sanity Evaluation Hints",
         "Hint": "Atmospheric lines (one per line) shown to players while the Keeper evaluates the consequences of a Sanity check.",
         "Default": "Your mind struggles to comprehend what you have just witnessed...\nA cold chill runs down your spine as the implications sink in...\nThe images burn into your memory while the fog slowly clears...\nAn eerie silence settles over your thoughts as reality shifts...\nYour heart pounds—in a moment you will know if your sanity holds..."
+      },
+      "CombatResolvedLayout": {
+        "Name": "Resolved Combat Prompt Layout",
+        "Hint": "Chooses whether resolved combat prompts display an atmospheric scene summary or a side-by-side duel comparison.",
+        "Narrative": "Narrative Scene & Rule Chips",
+        "Duel": "Side-by-Side Duel Comparison"
       }
     },
     "Roll": {
@@ -231,6 +237,16 @@
         "HiddenUntilOwnRoll": "Roll submitted (visible after own reaction)",
         "DamageAppliedSecret": "Damage applied to {target}",
         "HiddenResult": "Hidden Combat Result"
+      },
+      "ResolvedNarrative": {
+        "Hit": "{attacker} breaks through {defender}'s guard and lands a blow.",
+        "HitUnopposed": "{attacker} strikes cleanly with {weapon}.",
+        "RangedHit": "{attacker} strikes {defender} with {weapon}.",
+        "RangedMiss": "{attacker}'s shot misses {defender}.",
+        "Dodged": "{defender} deftly dodges {attacker}'s attack.",
+        "Missed": "{attacker}'s strike misses its mark.",
+        "Counter": "{defender} turns the assault aside and counters {attacker}.",
+        "Maneuver": "{defender} seizes the opening and overwhelms {attacker} with a maneuver ({maneuver})."
       }
     },
     "Warnings": {

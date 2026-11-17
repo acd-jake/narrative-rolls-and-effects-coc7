@@ -145,7 +145,7 @@
 {{else}}
 <div class="sanity-immersion-panel">
     <div class="sanity-flavor-line">
-        <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+        <i class="fa-solid fa-hourglass-half"></i> {{#if playerWaitingHint}}{{playerWaitingHint}}{{else}}{{sanityEvaluationHint}}{{/if}}
     </div>
 </div>
 {{/if}}

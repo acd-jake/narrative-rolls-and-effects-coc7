@@ -1,6 +1,6 @@
 {{#> roePromptLayout}}
 {{#*inline "promptHeader"}}
-<div class="prompt-actor-name">{{localize "ROE_COC7.RollSession.Types.opposed"}}</div>
+<div class="prompt-actor-name">{{actorName}}</div>
 {{#if hasPromptDescription}}
 <button type="button" class="prompt-skill-name prompt-title-toggle" data-action="toggleDescription"
     aria-expanded="{{#if isDescriptionExpanded}}true{{else}}false{{/if}}"
@@ -81,16 +81,14 @@
 {{/inline}}
 
 {{#*inline "promptResults"}}
-{{#if outcomeHeadline}}
-<div class="prompt-outcome-banner">{{outcomeHeadline}}</div>
-{{/if}}
-{{> roePushFailurePhase}}
-
 {{#if showPlayerWaitingHint}}
 <div class="prompt-phase-summary">
     <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
 </div>
+{{else if outcomeHeadline}}
+<div class="prompt-outcome-banner">{{outcomeHeadline}}</div>
 {{/if}}
+{{> roePushFailurePhase}}
 
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">

@@ -15,11 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Difficulty selection during modifier preparation for eligible CoC7 checks.
 - Pushed-roll support for opposed checks alongside characteristic, skill, and combined checks according to Call of Cthulhu 7e rules.
 - Added atmospheric waiting hints per CoC7 check type while the Keeper resolves the roll session.
+- Configurable resolved combat prompt layout setting (`combatResolvedLayout`) supporting both narrative scene summaries and side-by-side duel comparisons with separated mechanical consequences.
 
 ### Changed
 - Dice-face images, formula visualization, and the shared dice display are provided by the core module; CoC7 prompts now use that shared implementation.
 - CoC7 dice tooltips now group percentile units, tens, and bonus/penalty dice into one formula.
 - Simplified resolved roll prompts across all CoC7 check types (skill, characteristic, custom, combined, opposed, sanity, and combat) to show context headers and color-coded outcomes without duplicate text.
+- Allowed players to inspect roll details by clicking their visible success-level outcome during the waiting phase.
 
 ### Fixed
 - Kept modifier sliders in preparation and summarized active bonus or penalty dice in roll prompts.

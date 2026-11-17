@@ -2,6 +2,7 @@
 <div class="resolved-consequences-box">
     {{#if resolvedHasDamage}}
     <div class="resolved-combat-damage" {{#if resolvedCanViewDamage}}data-inspect-key="damage"{{/if}}>
+        {{#if resolvedCanViewDamage}}{{resolvedDamageTargetName}}: {{/if}}
         <i class="fa-solid fa-burst"></i>
         {{#if resolvedCanViewDamage}}
         -{{resolvedFinalDamage}} {{localize "ROE_COC7.Resources.HPAbbr"}}

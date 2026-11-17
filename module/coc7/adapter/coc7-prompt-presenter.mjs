@@ -2,6 +2,7 @@ import { RollVisibilityPolicy, UniversalRollOrchestrator } from "../../core-brid
 import { COC7_MODULE_ID } from "../coc7-settings.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 import { CoC7SessionFactory } from "../coc7-session-factory.mjs";
+import { CombatRollStrategy } from "../strategies/combat-roll-strategy.mjs";
 
 const PREPARATION_DIFFICULTIES = ["regular", "hard", "extreme"];
 const DIFFICULTY_PREPARATION_ROLL_TYPES = new Set(["basic", "skill", "combined"]);
@@ -341,6 +342,7 @@ export class CoC7PromptPresenter {
                 : (attacker?.actorName ?? "");
 
         const hasDamage = Boolean(session.finalDamage !== null && session.finalDamage !== undefined);
+        const damageTarget = CombatRollStrategy.getDamageTarget(session);
         const isManeuverWin = session.hitWinnerKey === "defender" && session.defenderReaction === "maneuver";
         const targetTookCover = Boolean(session.rollType === "ranged" && defender?.tookCover);
 
@@ -370,6 +372,9 @@ export class CoC7PromptPresenter {
             resolvedHasConsequences: hasDamage || isManeuverWin || targetTookCover,
             resolvedHasDamage: hasDamage,
             resolvedCanViewDamage: canViewDmg,
+            resolvedDamageTargetName: canViewDmg
+                ? damageTarget?.actorName || game.i18n.localize("ROE_COC7.Combat.UnknownTarget")
+                : "",
             resolvedFinalDamage: session.finalDamage ?? 0,
             resolvedArmorApplied: Number(session.armorApplied ?? 0),
             resolvedMajorWound: Boolean(canViewDmg && session.majorWoundTriggered),

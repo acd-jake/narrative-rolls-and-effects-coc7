@@ -17,7 +17,7 @@ export class CombatRollStrategy extends BaseRollStrategy {
 
         // PHASE 3B: Damage roll completed -> compute armor mitigation & HP deduction
         if (participant.key === "damage") {
-            const targetParticipant = this.#getDamageTarget(state);
+            const targetParticipant = CombatRollStrategy.getDamageTarget(state);
             const targetActor = this.#resolveActor(targetParticipant);
             const armor = Number(CoC7DataMapper.getCombatValue(targetActor, "armor") ?? targetActor?.system?.armor?.value ?? 0);
             const rawDamage = Math.max(0, Number(participant.total ?? 0));
@@ -94,7 +94,7 @@ export class CombatRollStrategy extends BaseRollStrategy {
 
     /** @override */
     async applyConsequences(state) {
-        const targetParticipant = this.#getDamageTarget(state);
+        const targetParticipant = CombatRollStrategy.getDamageTarget(state);
         const targetActor = this.#resolveActor(targetParticipant);
         if (!targetActor) return;
 
@@ -137,7 +137,7 @@ export class CombatRollStrategy extends BaseRollStrategy {
         }
 
         const winner = state.participants?.find((p) => p.key === state.hitWinnerKey);
-        const target = this.#getDamageTarget(state);
+        const target = CombatRollStrategy.getDamageTarget(state);
         const targetName = target?.actorName ?? game.i18n.localize("ROE_COC7.Combat.UnknownTarget");
 
         if (!winner) {
@@ -212,7 +212,8 @@ export class CombatRollStrategy extends BaseRollStrategy {
         return "";
     }
 
-    #getDamageTarget(state) {
+    /** Returns the combatant who receives damage or other consequences from the winner. */
+    static getDamageTarget(state) {
         if (state.hitWinnerKey === "defender") {
             return state.participants?.find((p) => p.key === "attacker");
         }

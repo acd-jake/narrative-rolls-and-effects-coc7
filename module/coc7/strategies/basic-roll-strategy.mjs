@@ -1,6 +1,7 @@
 import { BaseRollStrategy } from "./base-roll-strategy.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 
+/** Resolves standard checks and records whether a failed push needs GM follow-up. */
 export class BasicRollStrategy extends BaseRollStrategy {
     async onRollApplied(participant, state) {
         if (participant?.isPushed && !participant.isSuccess) state.pushFailurePending = true;

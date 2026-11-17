@@ -24,10 +24,12 @@ const CHARACTERISTIC_ALIASES = Object.freeze({
     edu: "edu", education: "edu", bildung: "edu", bi: "edu", know: "edu", wissen: "edu"
 });
 
+/** Routes CoC7 sheet and enriched-text clicks into the shared roll-session workflow. */
 export class CoC7Interceptor {
     static register() {
         if (document.body.dataset.roeGlobalCapture) return;
         document.body.dataset.roeGlobalCapture = "true";
+        // Capture clicks before the system's handlers can start a competing roll.
         document.body.addEventListener("click", (event) => this.#handleDocumentClick(event), { capture: true });
     }
 
@@ -53,6 +55,7 @@ export class CoC7Interceptor {
         );
         if (!trigger) return;
 
+        // Shift-click lets a GM open the modifier-preparation phase from a sheet.
         const prepareModifiers = Boolean(game.user.isGM && event.shiftKey);
         const item = this.#resolveClickedItem(actor, trigger);
 
@@ -98,6 +101,7 @@ export class CoC7Interceptor {
         const parsed = this.#parseEnricherLink(link);
         const prepareModifiers = Boolean(game.user.isGM && event.shiftKey);
         const promptTitle = parsed.rawName || game.i18n.localize("ROE_COC7.RollSession.Types.basic");
+        // Prefer selected tokens; otherwise use the player's character or ask the GM.
         const actors = await this.#resolveTargetActors(promptTitle);
 
         for (const actor of actors) {

@@ -4,6 +4,7 @@ import { getPromptApp } from "../prompts/prompt-app-registry.mjs";
 import { SessionStore } from "../../core-bridge.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 
+/** Resolves melee exchanges, creates damage follow-ups, and applies combat consequences. */
 export class CombatRollStrategy extends BaseRollStrategy {
     /** @override */
     renderPrompt(options) {
@@ -23,6 +24,7 @@ export class CombatRollStrategy extends BaseRollStrategy {
             const finalDamage = Math.max(0, rawDamage - armor);
 
             const maxHp = Number(CoC7DataMapper.getResource(targetActor, "hp")?.max ?? 10);
+            // Major wounds are measured against maximum HP, after armor mitigation.
             const majorWoundTriggered = finalDamage > 0 && finalDamage >= Math.floor(maxHp / 2);
 
             state.rawDamage = rawDamage;
@@ -189,6 +191,7 @@ export class CombatRollStrategy extends BaseRollStrategy {
         const attPassed = attRank >= rank.regular;
         const defPassed = defRank >= rank.regular;
 
+        // A dodge avoids a hit on an equal success level; fighting back favors the attacker on ties.
         if (state.defenderReaction === "dodge") {
             if (!attPassed) return "";
             if (!defPassed) return "attacker";

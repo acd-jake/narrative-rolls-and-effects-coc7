@@ -7,6 +7,7 @@ import { createRangedPromptApp } from "./ranged-prompt-app.mjs";
 import { createSanityCheckPromptApp } from "./sanity-check-prompt-app.mjs";
 import { registerPromptApps } from "./prompt-app-registry.mjs";
 
+/** Creates each CoC7 prompt and registers the resulting classes for roll strategies. */
 export function initializePromptApps(core) {
     const basic = createBasicRollPromptApp(core);
     const opposed = createOpposedRollPromptApp(core);

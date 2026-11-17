@@ -4,6 +4,7 @@ import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 
 const OPPOSED_ROLL_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/opposed-roll-prompt.hbs";
 
+/** Creates the opposed-roll prompt, including per-contestant rolls and visibility rules. */
 export function createOpposedRollPromptApp(core) {
     const CorePromptApp = core.createPromptClass({ template: OPPOSED_ROLL_TEMPLATE });
     return class OpposedRollPromptApp extends CorePromptApp {

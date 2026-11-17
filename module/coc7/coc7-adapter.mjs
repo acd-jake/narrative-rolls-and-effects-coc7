@@ -25,9 +25,11 @@ const EFFECT_PRESETS = {
 const PREPARATION_DIFFICULTIES = ["regular", "hard", "extreme"];
 const DIFFICULTY_PREPARATION_ROLL_TYPES = new Set(["basic", "skill", "combined"]);
 
+/** Connects CoC7 roll creation, prompts, consequences, and Foundry sheet interactions to the core API. */
 export class CoC7Adapter {
     #strategies;
 
+    /** Creates the strategy instances used to resolve each supported roll type. */
     constructor() {
         this.#strategies = Object.freeze({
             basic: new BasicRollStrategy(),
@@ -41,16 +43,19 @@ export class CoC7Adapter {
         });
     }
 
+    /** Initializes prompts, effect presets, and sheet-click interception after core registration. */
     initialize() {
         initializePromptApps(getPromptFactory());
         this.#registerEffectPresets();
         CoC7Interceptor.register();
     }
 
+    /** Returns the strategy for a roll type, falling back to the standard check strategy. */
     getStrategy(rollType) {
         return this.#strategies[rollType] ?? this.#strategies.basic;
     }
 
+    /** Builds participant data for a new session and initializes post-roll decision fields. */
     buildSessionPayload(type, cfg) {
         const builders = {
             basic: () => CoC7SessionFactory.createBasicOrOther(cfg),
@@ -62,6 +67,7 @@ export class CoC7Adapter {
             ranged: () => CoC7SessionFactory.createRanged(cfg)
         };
         const session = builders[type]();
+        // Initialize post-roll state consistently for every participant type.
         session.participants = session.participants.map((participant) => ({
             ...participant,
             isPushed: false,
@@ -71,6 +77,7 @@ export class CoC7Adapter {
         return session;
     }
 
+    /** Supplies the default session state merged into sessions created from the given configuration. */
     getInitialSessionFields(cfg) {
         return {
             canPush: cfg.canPush ?? true,
@@ -104,22 +111,27 @@ export class CoC7Adapter {
         };
     }
 
+    /** Adds CoC7-specific result fields used by the chat-card and prompt templates. */
     enrichSessionForTemplate(session) {
         return CoC7SessionFactory.enrichForTemplate(session);
     }
 
+    /** Returns the actor's available checks for use in the roll-request composer. */
     collectActorChecks(actor, options = {}) {
         return CoC7SessionFactory.collectActorChecks(actor, options);
     }
 
+    /** Returns the localized label for a CoC7 roll type. */
     getRollTypeLabel(rollType) {
         return game.i18n.localize(`ROE_COC7.RollSession.Types.${rollType}`);
     }
 
+    /** Returns the Handlebars template used to render a CoC7 session chat card. */
     getChatCardTemplate() {
         return "modules/narrative-rolls-and-effects-coc7/templates/chat/coc7-session-card.hbs";
     }
 
+    /** Defines the roll-type tabs displayed by the request composer. */
     getRequestComposerTabs() {
         const tabDefinitions = [
             ["skill", "fa-dice-d20"],
@@ -131,10 +143,12 @@ export class CoC7Adapter {
         return tabDefinitions.map((definition) => this.#createRequestTab(...definition));
     }
 
+    /** Returns the Handlebars template used for CoC7 request fields. */
     getRequestComposerTemplate() {
         return "modules/narrative-rolls-and-effects-coc7/templates/dialogs/coc7-request-fields.hbs";
     }
 
+    /** Builds request-form context, including check choices for the supplied actors. */
     getRequestComposerContext(rollType, { actorA, actorB }) {
         return {
             rollType,
@@ -148,6 +162,7 @@ export class CoC7Adapter {
         };
     }
 
+    /** Reads the request form and starts the matching roll session; returns false if its primary actor is missing. */
     async dispatchRequestComposer(rollType, form, { prepareModifiers }) {
         const actorA = game.actors.get(form.querySelector("select[name='actorA']")?.value);
         if (!actorA) return false;
@@ -168,10 +183,12 @@ export class CoC7Adapter {
         return true;
     }
 
+    /** Verifies that a submitted roll uses the modifier dice allowed by its session state. */
     validateSubmittedRoll(session, participant, rollData) {
         if (session.rollType === "other" || participant.key === "damage") return true;
         if (participant.key === "defender" && (session.rollType === "ranged" || session.defenderReaction === "none")) return true;
 
+        // Recompute contextual dice modifiers so submitted results match the session flags.
         let expected = Number(participant.modifierDice ?? 0);
         if (session.rollType === "combat" && participant.key === "attacker") {
             const f = session.tacticalFlags ?? {};
@@ -184,6 +201,7 @@ export class CoC7Adapter {
         return Number(rollData.modifierDice ?? 0) === Math.clamp(expected, -2, 2);
     }
 
+    /** Rolls and packages a participant's pushed check for submission by the core orchestrator. */
     async executePushRoll(session, participantKey) {
         if (!CoC7CheckResolver.canPush(session, participantKey)) return null;
         const participant = session.participants.find((p) => p.key === participantKey);
@@ -198,9 +216,11 @@ export class CoC7Adapter {
         };
     }
 
+    /** Applies session patches and validates CoC7-specific resets and defender-reaction changes. */
     transformSessionPatch(session, patch) {
         if (patch.resetCombatPhase || patch.resetSanityPhase) {
             if (session.consequencesApplied) return session;
+            // Rewinds clear the roll result as well as post-roll choices tied to it.
             const clear = {
                 hasRolled: false, total: null, successLevel: "", isSuccess: false,
                 isPushed: false, luckDecided: false, luckSpent: 0, rollBreakdown: null
@@ -283,7 +303,8 @@ export class CoC7Adapter {
     }
 
     /**
-     * Verarbeitet Post-Roll-Aktionen (Glück ausgeben, Glück ablehnen, Probe forcieren, Forcieren-Folgen bestätigen).
+     * Handles a participant's post-roll choice and returns the updated session and finalization decision.
+     * Called by the core orchestrator with a supported action ID and its action payload.
      */
     async handlePostRollAction(session, participantKey, actionId, payload) {
         if (actionId === "spendLuck") {
@@ -326,6 +347,7 @@ export class CoC7Adapter {
         return null;
     }
 
+    /** Calculates which Luck and push actions the current user may take for a rolled participant. */
     evaluateParticipantOptions(participant, session, isDelegatedToPlayer) {
         if (!participant?.hasRolled || session.isResolved || session.rollType === "other") {
             return { canSpendLuck: false, luckCost: 0, luckTargetLevel: "", luckTargetLabel: "", canPush: false, hasPendingAction: false, isDelegatedToPlayer };
@@ -342,6 +364,7 @@ export class CoC7Adapter {
         let luckCost = 0;
         let luckTargetLevel = "";
 
+        // Luck can improve a failure to the required level or advance an allowed success by one level.
         if (!participant.luckDecided && !isPushed && level !== "fumble" && level !== "critical" && availableLuck > 0) {
             const allowImprove = this.#isLuckImprovementAllowed();
             let desiredLevel = "";
@@ -374,6 +397,7 @@ export class CoC7Adapter {
         };
     }
 
+    /** Returns the participants shown in the modifier-preparation phase, or an empty list otherwise. */
     buildPreparationParticipants(session) {
         if (!session?.isPreparingModifiers || session.rollType === "other") return [];
         let participants = session.participants ?? [];
@@ -386,6 +410,7 @@ export class CoC7Adapter {
         }));
     }
 
+    /** Returns the tactical modifier controls shown while preparing a combat roll. */
     buildPreparationTactics(session) {
         if (!session?.isPreparingModifiers || session.rollType !== "combat") return [];
         const labels = { outnumbered: "Outnumbered", surprised: "Surprised", proneTarget: "ProneTarget" };
@@ -396,6 +421,7 @@ export class CoC7Adapter {
         }));
     }
 
+    /** Formats a participant's resolved result for the session summary. */
     formatResolvedParticipant(participant, session) {
         if (session.rollType === "ranged" && participant.key === "defender") {
             return game.i18n.localize(participant.tookCover ? "ROE_COC7.Ranged.CoverTaken" : "ROE_COC7.Ranged.NoCover");
@@ -405,6 +431,7 @@ export class CoC7Adapter {
         return this.formatRollOutcome(participant);
     }
 
+    /** Builds a permission-aware result badge for a participant in a chat card. */
     formatParticipantBadge(participant, session, permissions) {
         if (!permissions.canViewRoll) {
             return { text: game.i18n.localize("ROE.RollSession.HiddenRoll"), className: "pending-badge" };
@@ -430,6 +457,7 @@ export class CoC7Adapter {
         };
     }
 
+    /** Adds push-failure warning and visibility fields to a prompt's prepared context. */
     preparePromptContext(prompt, session, context) {
         const pushedParticipants = (session?.participants ?? []).filter((participant) => participant.isPushed);
         return {
@@ -441,6 +469,7 @@ export class CoC7Adapter {
         };
     }
 
+    /** Returns the registered Handlebars partials to include during modifier preparation. */
     getModifierPreparationPartials(session) {
         if (!session?.isPreparingModifiers) return {};
         return {
@@ -449,6 +478,7 @@ export class CoC7Adapter {
         };
     }
 
+    /** Returns the difficulty choices allowed in the current modifier-preparation phase. */
     buildPreparationDifficulties(session) {
         if (
             !session?.isPreparingModifiers ||
@@ -463,12 +493,14 @@ export class CoC7Adapter {
         }));
     }
 
+    /** Identifies participants whose modifier dice change together for the selected roll type. */
     getModifierParticipantKeys(session, participantKey) {
         return session.rollType === "combined"
             ? session.participants.map((participant) => participant.key)
             : [participantKey];
     }
 
+    /** Routes a prompt action to the corresponding Luck, push, or preparation handler. */
     handlePromptAction(prompt, actionName, event, target) {
         const handlers = {
             spendLuck: () => this.#spendLuck(prompt, target),
@@ -482,20 +514,24 @@ export class CoC7Adapter {
         return undefined;
     }
 
+    /** Converts a base target to the CoC7 target number for regular, hard, or extreme difficulty. */
     getDifficultyThreshold(target, difficulty) {
         if (difficulty === "hard") return Math.floor(target / 2);
         if (difficulty === "extreme") return Math.floor(target / 5);
         return target;
     }
 
+    /** Delegates roll-outcome formatting so adapter consumers use the configured display style. */
     formatRollOutcome(params) {
         return CoC7ResultFormatter.formatRollOutcome(params);
     }
 
+    /** Returns the localized display text for a success level, or an empty string when absent. */
     formatSuccessLevel(level) {
         return level ? game.i18n.localize(`ROE_COC7.SuccessLevels.${level}`) : "";
     }
 
+    /** Renders regular, hard, and extreme target numbers for the roll-inspection view. */
     formatInspectionThresholds(breakdown) {
         if (breakdown.targetValue <= 0) return "";
         return `<div class="inspect-thresholds">
@@ -505,6 +541,7 @@ export class CoC7Adapter {
         </div>`;
     }
 
+    /** Converts dice-visualizer entries into a concise, localized formula label. */
     formatDiceFormulaLabel(diceArray) {
         const counts = { units: 0, tens: 0, bonus: 0, penalty: 0 };
         const otherDice = [];
@@ -517,6 +554,7 @@ export class CoC7Adapter {
         return parts.join(", ");
     }
 
+    /** Adds bonus- or penalty-die icons to the dice visuals for a percentile roll. */
     extendDiceVisuals(dice, session, modifierDice) {
         if (session?.rollType === "other") return dice;
         const modifier = Math.clamp(Number(modifierDice) || 0, -2, 2);
@@ -534,6 +572,7 @@ export class CoC7Adapter {
     }
 
     // Effects engine integration points
+    /** Maps an actor's Sanity value to an atmosphere state, or returns null when none applies. */
     evaluateAtmosphereState(actor) {
         const san = CoC7DataMapper.getResource(actor, "sanity");
         if (!san || typeof san.value !== "number") return null;
@@ -542,6 +581,7 @@ export class CoC7Adapter {
         return null;
     }
 
+    /** Selects the visual effect associated with a participant's roll result, if any. */
     getRollEffectType(participant) {
         if (participant.successLevel === "fumble") return "fumble";
         if (participant.successLevel === "critical") return "critical";
@@ -549,6 +589,7 @@ export class CoC7Adapter {
         return null;
     }
 
+    /** Reports whether an actor's updated Sanity should trigger the low-resource sound. */
     didTriggerLowResourceSound(actor, changed) {
         const newSanity = changed.system?.attribs?.san?.value;
         return typeof newSanity === "number" && newSanity <= 20;
@@ -642,6 +683,7 @@ export class CoC7Adapter {
     }
 
     #parseCheckOption(raw) {
+        // Request-composer values encode kind, item ID, label, and target separated by pipes.
         const [kind, itemId, label, value] = (raw ?? "char||Check|50").split("|");
         return { isLuck: kind === "luck", itemId: itemId || null, label: label || "Check", targetValue: Number(value) || 50 };
     }

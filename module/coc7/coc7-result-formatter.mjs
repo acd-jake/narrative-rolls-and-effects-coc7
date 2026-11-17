@@ -1,5 +1,6 @@
 import { COC7_MODULE_ID } from "./coc7-settings.mjs";
 
+/** Formats check levels and roll outcomes according to the world's display settings. */
 export class CoC7ResultFormatter {
     static SYMBOL_MAP = Object.freeze({
         critical: "***!",

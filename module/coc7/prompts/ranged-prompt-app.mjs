@@ -12,6 +12,7 @@ const COVER_PENALTY_DICE = -1;
  */
 const RANGED_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/ranged-prompt.hbs";
 
+/** Creates the ranged prompt and coordinates cover, attack, and damage actions. */
 export function createRangedPromptApp(core, BasicPromptApp) {
     const ParentPromptApp = core.extendPromptClass(BasicPromptApp, { template: RANGED_PROMPT_TEMPLATE });
     return class RangedPromptApp extends ParentPromptApp {
@@ -38,6 +39,7 @@ export function createRangedPromptApp(core, BasicPromptApp) {
         const tookCover = Boolean(target?.tookCover);
         const manualMod = Number(attacker?.modifierDice ?? 0);
         const coverPenalty = tookCover ? COVER_PENALTY_DICE : 0;
+        // Taking cover contributes a penalty die to the attacker's manual modifier.
         const effectiveMod = Math.clamp(manualMod + coverPenalty, -2, 2);
 
         const canViewAttackerRoll = attacker ? RollVisibilityPolicy.canViewParticipantRoll(attacker, sys) : false;

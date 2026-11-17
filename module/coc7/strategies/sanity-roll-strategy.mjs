@@ -5,6 +5,7 @@ import { getPromptApp } from "../prompts/prompt-app-registry.mjs";
 import { SessionStore } from "../../core-bridge.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 
+/** Resolves Sanity loss, threshold-based insanity, and any required Intelligence follow-up. */
 export class SanityRollStrategy extends BasicRollStrategy {
     /** @override */
     renderPrompt(options) {
@@ -66,6 +67,7 @@ export class SanityRollStrategy extends BasicRollStrategy {
         const currentSan = Number(sanResource.value ?? 0);
         const previousDailyLoss = Number(sanResource.dailyLoss ?? 0);
 
+        // Reconstruct the day's starting Sanity to test the cumulative one-fifth threshold.
         const dailyStartSan = currentSan + previousDailyLoss;
         const newSan = Math.max(0, currentSan - lost);
         const newDailyLoss = previousDailyLoss + lost;

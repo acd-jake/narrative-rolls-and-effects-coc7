@@ -6,6 +6,7 @@ import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 
 const COMBAT_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/combat-prompt.hbs";
 
+/** Creates the melee prompt for attacker, defender reaction, damage, and result phases. */
 export function createCombatPromptApp(core, OpposedPromptApp) {
     const ParentPromptApp = core.extendPromptClass(OpposedPromptApp, { template: COMBAT_PROMPT_TEMPLATE });
     return class CombatPromptApp extends ParentPromptApp {

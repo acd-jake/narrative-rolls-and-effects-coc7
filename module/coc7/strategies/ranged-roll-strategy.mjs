@@ -47,6 +47,7 @@ export class RangedRollStrategy extends CombatRollStrategy {
     async applyConsequences(state) {
         await super.applyConsequences(state);
 
+        // Cover is applied alongside damage consequences, so it remains pending if damage is deferred.
         if (!this.#targetTookCover(state)) return;
         const target = state.participants?.find((p) => p.key === "defender");
         const targetActor = SessionStore.resolveActor(target);

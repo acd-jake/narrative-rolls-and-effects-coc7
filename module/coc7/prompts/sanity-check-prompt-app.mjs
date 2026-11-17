@@ -5,6 +5,7 @@ import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 
 const SANITY_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/sanity-check-prompt.hbs";
 
+/** Creates the staged Sanity prompt, including its optional Intelligence follow-up. */
 export function createSanityCheckPromptApp(core, BasicPromptApp) {
     const ParentPromptApp = core.extendPromptClass(BasicPromptApp, { template: SANITY_PROMPT_TEMPLATE });
     return class SanityCheckPromptApp extends ParentPromptApp {
@@ -140,6 +141,7 @@ export function createSanityCheckPromptApp(core, BasicPromptApp) {
         const intRoll = sys?.participants?.find((p) => p.key === "insanityInt");
         if (!intRoll || intRoll.hasRolled || sys.isResolved) return;
 
+        // The follow-up check resolves temporary-insanity duration after a bout is triggered.
         const modifierDice = intRoll.modifierDice ?? 0;
         const formula = CoC7CheckResolver.buildRollFormula(modifierDice);
         const roll = await new Roll(formula).evaluate();

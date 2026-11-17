@@ -5,6 +5,7 @@ import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 
 const BASIC_ROLL_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/basic-roll-prompt.hbs";
 
+/** Creates the standard check prompt and its percentile-roll action. */
 export function createBasicRollPromptApp(core) {
     const CorePromptApp = core.createPromptClass({ template: BASIC_ROLL_TEMPLATE });
     return class BasicRollPromptApp extends CorePromptApp {
@@ -88,6 +89,7 @@ export function createBasicRollPromptApp(core) {
             return;
         }
 
+        // Resolve the roll once, then submit both its displayed breakdown and success state.
         const modifierDice = p.modifierDice ?? 0;
         const formula = CoC7CheckResolver.buildRollFormula(modifierDice);
         const roll = await new Roll(formula).evaluate();

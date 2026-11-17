@@ -2,12 +2,15 @@ import { CoC7Adapter } from "./coc7/coc7-adapter.mjs";
 import { setCoreApi } from "./core-bridge.mjs";
 import { COC7_MODULE_ID, CoC7Settings } from "./coc7/coc7-settings.mjs";
 
+// Register settings when Foundry starts.
 Hooks.once("init", () => CoC7Settings.register());
 
+// Set up the CoC7 integration when the core module registers its adapters.
 Hooks.once("nre.registerAdapters", async (core) => {
     setCoreApi(core);
     core.registerAdapter("CoC7", new CoC7Adapter());
 
+    // Load prompt partials used by the adapter for roll preparation and results.
     await foundry.applications.handlebars.loadTemplates({
         roePromptLayout: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/prompt-layout.hbs`,
         roeCocModifierPreparationHeader: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/modifier-preparation-header.hbs`,

@@ -1,3 +1,4 @@
+/** Adapts common actor, skill, resource, and condition data to the CoC7 system schema. */
 export class CoC7DataMapper {
     static getSkillValue(skillItem) {
         return Number(skillItem?.system?.value ?? skillItem?.system?.total ?? 0);
@@ -53,7 +54,7 @@ export class CoC7DataMapper {
 
     static async setCondition(actor, conditionKey, active) {
         if (!actor) return;
-        // Official CoC7 status mapping
+        // Translate adapter condition names to the system's status identifiers.
         const statusMap = {
             majorWound: "criticalWounds",
             temporaryInsanity: "tempoInsane",

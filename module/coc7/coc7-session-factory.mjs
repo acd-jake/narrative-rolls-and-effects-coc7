@@ -1,7 +1,9 @@
 import { SessionStore } from "../core-bridge.mjs";
 import { CoC7DataMapper } from "./coc7-data-mapper.mjs";
 
+/** Builds system-specific session data and derives the presentation fields used by templates. */
 export class CoC7SessionFactory {
+    /** Creates the standard percentile-roll session or a free-form dice-roll session. */
     static createBasicOrOther({ actor, label, targetValue = 0, difficulty = "regular", diceFormula = "1d100", isOther = false, prepareModifiers = false }) {
         return {
             rollType: isOther ? "other" : "basic",
@@ -13,6 +15,7 @@ export class CoC7SessionFactory {
         };
     }
 
+    /** Creates a skill or characteristic check with its push and difficulty options. */
     static createSkillCheck({ actor, item = null, label, targetValue, difficulty = "regular", canChangeDifficulty = true, canPush = item?.system?.properties?.push !== false, prepareModifiers = false }) {
         return {
             rollType: "skill",
@@ -25,6 +28,7 @@ export class CoC7SessionFactory {
         };
     }
 
+    /** Creates a Sanity session, using current Sanity as the check target. */
     static createSanityCheck({ actor, label, lossSuccess = "0", lossFailure = "1d6", prepareModifiers = false }) {
         const currentSan = Number(CoC7DataMapper.getResource(actor, "sanity")?.value ?? 0);
         const sanLabel = game.i18n.localize("ROE_COC7.Resources.Sanity");
@@ -40,6 +44,7 @@ export class CoC7SessionFactory {
         };
     }
 
+    /** Creates two participants that will be evaluated against the same percentile roll. */
     static createCombined({ actor, checks, combinedMode = "and", difficulty = "regular", prepareModifiers = false }) {
         return {
             rollType: "combined",
@@ -57,6 +62,7 @@ export class CoC7SessionFactory {
         };
     }
 
+    /** Creates independent contestants for an opposed check. */
     static createOpposed({ title, contestants, prepareModifiers = false }) {
         return {
             rollType: "opposed",
@@ -67,6 +73,7 @@ export class CoC7SessionFactory {
         };
     }
 
+    /** Creates a melee session with the defender's available dodge and fight-back targets. */
     static createCombat({ attacker, defender = null, weapon, attackSkillLabel, attackTargetValue, difficulty = "regular", prepareModifiers = false }) {
         const participants = [SessionStore.buildParticipant("attacker", attacker, attackSkillLabel, attackTargetValue, weapon?.id ?? "")];
         let dodgeVal = 0;
@@ -102,6 +109,7 @@ export class CoC7SessionFactory {
         };
     }
 
+    /** Creates a ranged session whose target chooses cover before the attack roll. */
     static createRanged({ attacker, target, weapon, attackSkillLabel, attackTargetValue, difficulty = "regular", prepareModifiers = false }) {
         const weaponLabel = weapon?.name || attackSkillLabel;
         return {
@@ -124,6 +132,7 @@ export class CoC7SessionFactory {
         };
     }
 
+    /** Returns localized check choices for the request composer. */
     static collectActorChecks(actor, { includeSpecial = true } = {}) {
         if (!actor?.system) return [];
         const list = [];
@@ -151,6 +160,7 @@ export class CoC7SessionFactory {
         return list;
     }
 
+    /** Adds result badges, phase summaries, and partial names needed by chat templates. */
     static enrichForTemplate(data) {
         const isSanity = data.rollType === "sanity";
         const isCombat = data.rollType === "combat" || data.rollType === "ranged";

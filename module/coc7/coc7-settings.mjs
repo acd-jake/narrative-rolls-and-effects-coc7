@@ -1,5 +1,6 @@
 export const COC7_MODULE_ID = "narrative-rolls-and-effects-coc7";
 
+/** Registers world-level preferences for displaying roll results. */
 export class CoC7Settings {
     static register() {
         game.settings.register(COC7_MODULE_ID, "resultDisplayMode", {

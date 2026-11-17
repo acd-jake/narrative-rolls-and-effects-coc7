@@ -1,3 +1,4 @@
+/** Implements percentile check resolution, roll construction, and pushed-roll validation. */
 export class CoC7CheckResolver {
     static LEVEL_RANK = Object.freeze({
         fumble: 0,
@@ -8,6 +9,7 @@ export class CoC7CheckResolver {
         critical: 5
     });
 
+    /** Returns the CoC 7e success level for a roll against a target value. */
     static evaluateResult(rollTotal, targetValue) {
         if (rollTotal === 1) return "critical";
         targetValue = Number(targetValue);
@@ -19,6 +21,10 @@ export class CoC7CheckResolver {
         return "failure";
     }
 
+    /**
+     * Builds a percentile formula; bonus or penalty dice add tens dice and keep the
+     * lowest or highest tens result respectively.
+     */
     static buildRollFormula(modifierDice = 0) {
         const extraTens = Math.abs(modifierDice);
         if (extraTens === 0) return "1d100";
@@ -49,6 +55,7 @@ export class CoC7CheckResolver {
         };
     }
 
+    /** Checks whether the session and selected participant are eligible for a push. */
     static canPush(state, participantKey) {
         if (!state || state.isResolved || state.isPreparingModifiers || state.canPush === false) return false;
         if (!["basic", "skill", "combined"].includes(state.rollType)) return false;
@@ -61,6 +68,7 @@ export class CoC7CheckResolver {
         return !passed;
     }
 
+    /** Applies a validated pushed result to the participant or combined-check participants. */
     static buildPushedParticipants(state, participantKey, rollData) {
         if (!this.canPush(state, participantKey)) return null;
         const total = Number(rollData.total);

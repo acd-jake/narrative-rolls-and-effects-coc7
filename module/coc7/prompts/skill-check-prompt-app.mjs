@@ -1,3 +1,4 @@
+/** Extends the standard prompt with the effective difficulty target for skill checks. */
 export function createSkillCheckPromptApp(core, BasicPromptApp) {
     const ParentPromptApp = core.extendPromptClass(BasicPromptApp, {
         template: "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/basic-roll-prompt.hbs"

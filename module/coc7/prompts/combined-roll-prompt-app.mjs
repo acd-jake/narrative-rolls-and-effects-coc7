@@ -3,6 +3,7 @@ import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 
 const COMBINED_ROLL_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/combined-roll-prompt.hbs";
 
+/** Creates a prompt that applies one percentile result to both checks in a combined roll. */
 export function createCombinedRollPromptApp(core) {
     const CorePromptApp = core.createPromptClass({ template: COMBINED_ROLL_TEMPLATE });
     return class CombinedRollPromptApp extends CorePromptApp {
@@ -26,6 +27,7 @@ export function createCombinedRollPromptApp(core) {
                 ? Boolean(first?.isSuccess || second?.isSuccess)
                 : Boolean(first?.isSuccess && second?.isSuccess);
 
+        // A combined roll is pushed as one result, so both checks must still be eligible.
         const canPushCombined = Boolean(
             first?.hasRolled &&
             !sys?.isResolved &&
@@ -65,6 +67,7 @@ export function createCombinedRollPromptApp(core) {
         const rank = CoC7CheckResolver.LEVEL_RANK;
         const reqRank = rank[sys.difficulty] ?? 2;
 
+        // Both participants share this die result but resolve it against their own target.
         for (const part of [first, second]) {
             const successLevel = CoC7CheckResolver.evaluateResult(total, part.targetValue);
             const isSuccess = (rank[successLevel] ?? 0) >= reqRank;

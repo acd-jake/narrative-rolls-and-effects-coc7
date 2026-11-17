@@ -1,6 +1,9 @@
 <div
     class="roe-overlay roe-chat-card combat-protocol-card {{#if isSanity}}sanity-protocol-card{{/if}} {{#if isResolved}}is-resolved{{/if}}"
     data-nre-system="CoC7">
+    {{#if isResolved}}
+    <span>{{localize "ROE.RollSession.LoadingResult"}}</span>
+    {{else}}
     <header class="combat-card-title">
         <span class="weapon-headline">
             {{#if isSanity}}<i class="fa-solid fa-eye sanity-emblem"></i> {{/if}}{{title}}
@@ -16,14 +19,7 @@
     </div>
     {{/if}}
 
-    {{#if isResolved}}
-    <button type="button" class="resolved-summary-toggle" data-action="toggleCardDetails" aria-expanded="false">
-        <span class="resolved-summary-text">{{outcomeHeadline}}</span>
-        <i class="fa-solid fa-chevron-down toggle-chevron"></i>
-    </button>
-    {{/if}}
-
-    <div class="card-details-drawer {{#unless isResolved}}is-expanded{{/unless}}">
+    <div class="card-details-drawer is-expanded">
         <div class="card-details-inner">
             {{#if isCombat}}
             {{!-- PHASE 1: ANGRIFF (INITIATOR) --}}
@@ -202,4 +198,5 @@
             {{/if}}
         </div>
     </div>
+    {{/if}}
 </div>

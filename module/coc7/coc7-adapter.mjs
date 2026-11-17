@@ -133,6 +133,7 @@ export class CoC7Adapter {
     /** Formats a participant's resolved result for the session summary. */ formatResolvedParticipant(participant, session) { return this.#dicePresenter.formatResolvedParticipant(participant, session); }
     /** Builds a permission-aware result badge for a participant in a chat card. */ formatParticipantBadge(participant, session, permissions) { return this.#dicePresenter.formatParticipantBadge(participant, session, permissions); }
     /** Adds visibility and resolved-result fields to a prompt context. */ preparePromptContext(prompt, session, context) { return this.#promptPresenter.preparePromptContext(prompt, session, context); }
+    /** Builds the resolved prompt context for a viewer's chat card. */ prepareResolvedChatContext(session) { return this.#promptPresenter.prepareResolvedChatContext(session); }
     /** Returns the partials included during modifier preparation. */ getModifierPreparationPartials(session) { return this.#promptPresenter.getModifierPreparationPartials(session); }
     /** Returns the partials included when displaying resolved checks. */ getResolvedResultPartials(session) { return this.#promptPresenter.getResolvedResultPartials(session); }
     /** Returns a phase-aware waiting hint while the Keeper resolves the check. */ getPlayerWaitingHint(session) { return this.#promptPresenter.getPlayerWaitingHint(session); }

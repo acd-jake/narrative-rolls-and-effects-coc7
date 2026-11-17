@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Configurable resolved combat prompt layout setting (`combatResolvedLayout`) supporting both narrative scene summaries and side-by-side duel comparisons with separated mechanical consequences.
 
 ### Changed
+- Resolved chat cards now show the same results as roll prompts.
 - Failed pushed checks are highlighted in prompts and chat cards to draw attention to their consequences.
 - Pushed checks are now identified in roll prompts and chat cards.
 - Declining Luck now finalizes the post-roll step so eligible sessions can resolve automatically.

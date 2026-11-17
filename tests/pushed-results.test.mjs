@@ -150,4 +150,22 @@ for (const [total, expectedFailure] of [[40, true], [5, false]]) {
     const changedOpponent = { ...next, participants: [participants[0], { ...opponent, successLevel: "fumble" }] };
     assert.equal(CoC7CheckResolver.didPushFail(changedOpponent, original.key), expectedFailure);
 }
+
+const resolvedTypes = ["basic", "skill", "other", "combined", "opposed", "sanity", "combat", "ranged"];
+for (const rollType of resolvedTypes) {
+    const participants = rollType === "combat" || rollType === "ranged"
+        ? [{ ...pushed, key: "attacker" }, { ...normal, key: "defender" }]
+        : [pushed, normal];
+    const session = {
+        rollType, title: "Test", outcomeHeadline: "Outcome", isResolved: true,
+        participants, combinedMode: "and", sanityLost: 2, finalDamage: 3
+    };
+    const expected = promptPresenter.preparePromptContext(null, session, {
+        resolvedTitle: "Test", resolvedHeadline: "Outcome"
+    });
+    assert.deepEqual(promptPresenter.prepareResolvedChatContext(session), expected, rollType);
+    const hiddenSession = { ...session, participants: [{ ...participants[0], visible: false }, participants[1]] };
+    const hiddenContext = promptPresenter.prepareResolvedChatContext(hiddenSession);
+    assert.equal(hiddenContext.resolvedHeadline, "", `${rollType} must hide the headline`);
+}
 console.log("Pushed result display checks passed.");

@@ -55,6 +55,17 @@ export class CoC7PromptPresenter {
         return base;
     }
 
+    /** Builds the same visibility-aware resolved context for a chat card as for a prompt. */
+    prepareResolvedChatContext(session) {
+        const allVisible = (session.participants ?? []).every((participant) =>
+            RollVisibilityPolicy.canViewParticipantRoll(participant, session)
+        );
+        return this.preparePromptContext(null, session, {
+            resolvedTitle: session.title ?? "",
+            resolvedHeadline: allVisible ? session.outcomeHeadline ?? "" : ""
+        });
+    }
+
     /** Returns the registered partials to include during modifier preparation. */
     getModifierPreparationPartials(session) {
         if (!session?.isPreparingModifiers) return {};

@@ -62,6 +62,11 @@
     cursor: grabbing;
 }
 
+.roe-overlay[data-nre-system="CoC7"].roe-chat-card .prompt-header,
+.roe-overlay[data-nre-system="CoC7"].roe-chat-card .prompt-header:active {
+    cursor: default;
+}
+
 .roe-overlay[data-nre-system="CoC7"] .combat-header-avatars {
     display: flex;
     align-items: center;

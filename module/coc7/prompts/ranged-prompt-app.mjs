@@ -73,6 +73,7 @@ export function createRangedPromptApp(core, BasicPromptApp) {
 
             manualModifierDice: manualMod,
             flagModifierDice: coverPenalty,
+            effectiveModifierDice: effectiveMod,
             effectiveModifierLabel: this._formatModifierLabel(effectiveMod),
             attackerDice,
             attackerDiceLabel: this._formatDiceFormulaLabel(attackerDice),

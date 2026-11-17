@@ -44,6 +44,7 @@
 
         {{#if canRoll}}
         <div class="prompt-player-controls {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
+            {{> roeModifierSummary modifierDice=modifierDice modifierDisplay=modifierDisplay}}
             {{> roeDiceDisplay dice=dice modifierTooltip=modifierDisplay}}
 
             <button type="button" class="prompt-action-btn roll-now compact" data-action="rollContestant" data-key="{{key}}">

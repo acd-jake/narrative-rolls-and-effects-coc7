@@ -54,6 +54,7 @@
 
 {{#if canRoll}}
 <footer class="prompt-footer pre-roll-controls {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
+    {{> roeModifierSummary modifierDice=modifierDice modifierDisplay=modifierDisplay}}
     {{> roeDiceDisplay dice=rollDice modifierTooltip=modifierDisplay}}
 
     <button type="button" class="prompt-action-btn roll-now" data-action="executeCombinedRoll">

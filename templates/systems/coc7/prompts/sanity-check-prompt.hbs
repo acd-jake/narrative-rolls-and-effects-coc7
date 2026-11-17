@@ -51,6 +51,7 @@
 
     {{#if canRoll}}
     <div class="prompt-player-controls {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
+        {{> roeModifierSummary modifierDice=manualModifierDice modifierDisplay=effectiveModifierLabel}}
         {{> roeDiceDisplay dice=rollDice modifierTooltip=effectiveModifierLabel}}
 
         <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">
@@ -90,6 +91,7 @@
 
     {{#if isPhaseInsight}}
     {{#if canRollIntCheck}}
+    {{> roeModifierSummary modifierDice=intModifierDice modifierDisplay=intModifierLabel}}
     {{> roeDiceDisplay dice=intDice modifierTooltip=intModifierLabel}}
     <button type="button" class="prompt-action-btn sanity-int-btn {{#if isIntDelegatedToPlayer}}gm-delegated{{/if}}"
         data-action="executeIntCheck">

@@ -106,6 +106,7 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
 
             tacticalOptions: this.#buildTacticalOptions(flags),
             attackerModifierDice: attackerModifier,
+            effectiveModifierDice: effectiveMod,
             defenderModifierDice: defenderModifier,
             defenderModifierLabel: this._formatModifierLabel(defenderModifier),
             flagModifierDice: flagBonus,

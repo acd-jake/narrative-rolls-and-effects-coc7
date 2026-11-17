@@ -38,6 +38,7 @@
 {{#if canRoll}}
 <div class="prompt-player-controls {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
     {{> roeSkillDifficultyControls}}
+    {{> roeModifierSummary modifierDice=modifierDice modifierDisplay=modifierDisplay}}
     {{> roeDiceDisplay dice=rollDice modifierTooltip=modifierDisplay}}
 
     <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">

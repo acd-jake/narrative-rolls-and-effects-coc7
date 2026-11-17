@@ -553,7 +553,7 @@ export class CoC7Adapter {
         for (let i = 0; i < Math.abs(modifier); i++) {
             const isBonus = modifier > 0;
             modifierVisuals.push({
-                src: `modules/narrative-rolls-and-effects/assets/dice/d10-${isBonus ? "bonus" : "penalty"}.svg`,
+                src: `modules/narrative-rolls-and-effects-coc7/assets/dice/d10-${isBonus ? "bonus" : "penalty"}.svg`,
                 label: isBonus ? "ROE.Roll.BonusDie" : "ROE.Roll.PenaltyDie",
                 count: 1,
                 multiple: false

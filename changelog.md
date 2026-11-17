@@ -17,3 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 - Dice-face images, formula visualization, and the shared dice display are provided by the core module; CoC7 prompts now use that shared implementation.
 - CoC7 dice tooltips now group percentile units, tens, and bonus/penalty dice into one formula.
+
+### Fixed
+- Kept modifier sliders in preparation and summarized active bonus or penalty dice in roll prompts.
+- Pointed bonus and penalty dice visuals to this module's assets and marked chat cards with the CoC7 system identifier.

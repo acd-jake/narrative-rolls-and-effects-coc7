@@ -80,6 +80,7 @@
         </div>
         {{/if}}
 
+        {{> roeModifierSummary modifierDice=effectiveModifierDice modifierDisplay=effectiveModifierLabel}}
         {{> roeDiceDisplay dice=attackerDice modifierTooltip=effectiveModifierLabel}}
 
         <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">

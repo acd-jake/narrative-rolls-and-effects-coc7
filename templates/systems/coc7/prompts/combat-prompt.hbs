@@ -59,6 +59,7 @@
         {{#each tacticalOptions}}{{#if active}}
         <div class="section-header">{{label}}</div>
         {{/if}}{{/each}}
+        {{> roeModifierSummary modifierDice=effectiveModifierDice modifierDisplay=effectiveModifierLabel}}
         {{> roeDiceDisplay dice=attackerDice modifierTooltip=effectiveModifierLabel}}
 
         <button type="button" class="prompt-action-btn roll-now" data-action="rollInitiatorAttack">
@@ -123,6 +124,7 @@
         {{/if}}
 
         {{#unless isNoneReaction}}
+        {{> roeModifierSummary modifierDice=defenderModifierDice modifierDisplay=defenderModifierLabel}}
         {{> roeDiceDisplay dice=defenderDice modifierTooltip=defenderModifierLabel}}
         {{/unless}}
 

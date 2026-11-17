@@ -29,5 +29,36 @@ export class CoC7Settings {
             },
             default: "text"
         });
+
+        game.settings.register(COC7_MODULE_ID, "sanityEvaluationHints", {
+            name: "ROE_COC7.Settings.SanityEvaluationHints.Name",
+            hint: "ROE_COC7.Settings.SanityEvaluationHints.Hint",
+            scope: "world",
+            config: true,
+            type: new foundry.data.fields.StringField({
+                required: false,
+                blank: true,
+                initial: ""
+            }),
+            default: "",
+            input: (field, config) => {
+                const value = config.value || game.i18n.localize("ROE_COC7.Settings.SanityEvaluationHints.Default");
+                return foundry.applications.fields.createTextareaInput({
+                    ...config,
+                    value,
+                    rows: 5
+                });
+            }
+        });
+
+        Hooks.once("i18nInit", () => {
+            const setting = game.settings.settings.get(`${COC7_MODULE_ID}.sanityEvaluationHints`);
+            if (setting) {
+                const defaultHints = game.i18n.localize("ROE_COC7.Settings.SanityEvaluationHints.Default");
+                setting.default = defaultHints;
+                if (setting.type) setting.type.initial = defaultHints;
+            }
+        });
+
     }
 }

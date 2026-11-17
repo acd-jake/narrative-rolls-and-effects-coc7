@@ -1,0 +1,27 @@
+<div class="resolved-single-result">
+    <div class="resolved-single-outcome {{resolvedSanityLevel}}" {{#if resolvedCanViewSanity}}data-inspect-key="p0"{{/if}}>
+        {{#if resolvedSanityNumberText}}
+        <span class="resolved-single-numbers">{{resolvedSanityNumberText}}</span>
+        {{/if}}
+        {{#if resolvedSanityLevelText}}
+        <span class="resolved-single-level">{{resolvedSanityLevelText}}</span>
+        {{/if}}
+    </div>
+
+    <div class="resolved-sanity-loss {{#if resolvedSanityLost}}is-severe{{else}}is-safe{{/if}}">
+        <i class="fa-solid fa-heart-crack"></i> {{localize "ROE_COC7.Sanity.CardLossSummary" lost=resolvedSanityLost}}
+    </div>
+
+    {{#if resolvedHasIntCheck}}
+    <div class="prompt-sub-box resolved-combined-list">
+        <div class="combined-check-row">
+            <span>{{resolvedIntLabel}}</span>
+            <strong class="resolved-level-text {{resolvedIntLevel}}" {{#if resolvedCanViewInt}}data-inspect-key="insanityInt"{{/if}}>{{resolvedIntRollText}}</strong>
+        </div>
+    </div>
+    {{/if}}
+
+    {{#if resolvedSanityStatusText}}
+    <div class="resolved-summary-line {{#if resolvedIsInsane}}is-insane{{/if}}">{{resolvedSanityStatusText}}</div>
+    {{/if}}
+</div>

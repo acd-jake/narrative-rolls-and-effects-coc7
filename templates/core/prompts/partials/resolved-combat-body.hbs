@@ -1,0 +1,32 @@
+<div class="resolved-single-result">
+    <div class="prompt-sub-box resolved-combined-list">
+        <div class="combined-check-row">
+            <span>{{resolvedAttackerName}} <small>({{resolvedAttackerLabel}})</small></span>
+            <strong class="resolved-level-text {{resolvedAttackerLevel}}" {{#if resolvedCanViewAttacker}}data-inspect-key="attacker"{{/if}}>{{resolvedAttackerResult}}</strong>
+        </div>
+        {{#if resolvedHasDefender}}
+        <div class="combined-check-row">
+            <span>{{resolvedDefenderName}} <small>({{resolvedDefenderLabel}})</small></span>
+            <strong class="resolved-level-text {{resolvedDefenderLevel}}" {{#if resolvedCanViewDefender}}data-inspect-key="defender"{{/if}}>{{resolvedDefenderResult}}</strong>
+        </div>
+        {{/if}}
+    </div>
+    {{#if resolvedHasDamage}}
+    <div class="resolved-combat-damage" {{#if resolvedCanViewDamage}}data-inspect-key="damage"{{/if}}>
+        <i class="fa-solid fa-burst"></i>
+        {{#if resolvedCanViewDamage}}
+        -{{resolvedFinalDamage}} {{localize "ROE_COC7.Resources.HPAbbr"}}
+        {{#if resolvedArmorApplied}}<small>({{resolvedArmorApplied}} {{localize "ROE_COC7.Combat.Armor"}})</small>{{/if}}
+        {{else}}
+        {{localize "ROE.RollSession.HiddenRoll"}}
+        {{/if}}
+    </div>
+    {{#if resolvedMajorWound}}
+    <div class="resolved-major-wound">
+        <i class="fa-solid fa-skull-crossbones"></i> {{localize "ROE_COC7.Conditions.MajorWound"}}
+    </div>
+    {{/if}}
+    {{else if resolvedHeadline}}
+    <div class="resolved-summary-line">{{resolvedHeadline}}</div>
+    {{/if}}
+</div>

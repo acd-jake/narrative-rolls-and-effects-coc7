@@ -13,6 +13,11 @@
         "Hint": "Displays success levels either as full text or compact symbols (* to *** / - to ---).",
         "Text": "Text (Regular, Hard, Extreme)",
         "Symbols": "Symbols (* to *** / - to ---)"
+      },
+      "SanityEvaluationHints": {
+        "Name": "Sanity Evaluation Hints",
+        "Hint": "Atmospheric lines (one per line) shown to players while the Keeper evaluates the consequences of a Sanity check.",
+        "Default": "Your mind struggles to comprehend what you have just witnessed...\nA cold chill runs down your spine as the implications sink in...\nThe images burn into your memory while the fog slowly clears...\nAn eerie silence settles over your thoughts as reality shifts...\nYour heart pounds—in a moment you will know if your sanity holds..."
       }
     },
     "Roll": {

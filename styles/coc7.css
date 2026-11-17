@@ -1000,3 +1000,54 @@
 .roe-overlay[data-nre-system="CoC7"] .resolved-level-text.fumble {
     color: #f29b9b;
 }
+
+/* Resolved Opposed, Sanity & Combat Results */
+.roe-overlay[data-nre-system="CoC7"] .combined-check-row.is-opposed-winner {
+    padding: 0.15rem 0.3rem;
+    background: rgba(197, 160, 89, 0.12);
+    border-left: 2px solid var(--roe-gold);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-winner-icon {
+    color: var(--roe-gold-bright);
+    font-size: 0.72rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-summary-line {
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-align: center;
+    color: var(--roe-text-main);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-summary-line.is-insane {
+    color: #e0aaff;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-sanity-loss {
+    font-family: var(--roe-font-display);
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-sanity-loss.is-safe {
+    color: #7ee2a8;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-sanity-loss.is-severe {
+    color: #c77dff;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-combat-damage {
+    font-family: var(--roe-font-display);
+    font-size: 1.02rem;
+    font-weight: bold;
+    color: #f29b9b;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-major-wound {
+    font-family: var(--roe-font-display);
+    font-size: 0.82rem;
+    font-weight: bold;
+    color: var(--roe-critical);
+}

@@ -14,11 +14,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - CoC7-owned header and details for the core-managed modifier-preparation prompt.
 - Difficulty selection during modifier preparation for eligible CoC7 checks.
 - Pushed-roll support for opposed checks alongside characteristic, skill, and combined checks according to Call of Cthulhu 7e rules.
+- Configurable atmospheric evaluation hints shown to players while the Keeper resolves Sanity check consequences.
 
 ### Changed
 - Dice-face images, formula visualization, and the shared dice display are provided by the core module; CoC7 prompts now use that shared implementation.
 - CoC7 dice tooltips now group percentile units, tens, and bonus/penalty dice into one formula.
-- Simplified resolved single-actor check prompts (skill, characteristic, custom, and combined checks) to show the actor name above the check title and display color-coded success levels without duplicate text.
+- Simplified resolved roll prompts across all CoC7 check types (skill, characteristic, custom, combined, opposed, sanity, and combat) to show context headers and color-coded outcomes without duplicate text.
 
 ### Fixed
 - Kept modifier sliders in preparation and summarized active bonus or penalty dice in roll prompts.

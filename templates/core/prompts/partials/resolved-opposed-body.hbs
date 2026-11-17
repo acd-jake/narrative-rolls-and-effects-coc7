@@ -1,0 +1,16 @@
+<div class="resolved-single-result">
+    <div class="prompt-sub-box resolved-combined-list">
+        {{#each resolvedOpposedContestants}}
+        <div class="combined-check-row {{#if isWinner}}is-opposed-winner{{/if}}">
+            <span>
+                {{#if isWinner}}<i class="fa-solid fa-trophy resolved-winner-icon"></i> {{/if}}
+                <strong>{{actorName}}</strong> <small>({{label}})</small>
+            </span>
+            <strong class="resolved-level-text {{successLevel}}" {{#if canView}}data-inspect-key="{{key}}"{{/if}}>{{result}}</strong>
+        </div>
+        {{/each}}
+    </div>
+    {{#if resolvedHeadline}}
+    <div class="resolved-summary-line">{{resolvedHeadline}}</div>
+    {{/if}}
+</div>

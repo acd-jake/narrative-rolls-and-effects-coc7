@@ -438,7 +438,8 @@ export class CoC7Adapter {
             })
         };
     }
-    /** Adds push-failure warning, visibility, and resolved single-actor fields to a prompt's prepared context. */
+
+        /** Adds push-failure warning, visibility, and resolved result fields to a prompt's prepared context. */
     preparePromptContext(prompt, session, context) {
         const pushedParticipants = (session?.participants ?? []).filter((participant) => participant.isPushed);
         const base = {
@@ -448,8 +449,16 @@ export class CoC7Adapter {
                 RollVisibilityPolicy.canViewParticipantRoll(participant, session)
             )
         };
-        if (!session?.isResolved || !SINGLE_ACTOR_RESOLVED_ROLL_TYPES.has(session.rollType)) return base;
-        return { ...base, ...this.#buildResolvedSingleActorContext(session) };
+        if (!session?.isResolved) return base;
+        if (SINGLE_ACTOR_RESOLVED_ROLL_TYPES.has(session.rollType)) {
+            return { ...base, ...this.#buildResolvedSingleActorContext(session) };
+        }
+        if (session.rollType === "opposed") return { ...base, ...this.#buildResolvedOpposedContext(session) };
+        if (session.rollType === "sanity") return { ...base, ...this.#buildResolvedSanityContext(session) };
+        if (session.rollType === "combat" || session.rollType === "ranged") {
+            return { ...base, ...this.#buildResolvedCombatContext(session) };
+        }
+        return base;
     }
 
     /** Returns the registered Handlebars partials to include during modifier preparation. */
@@ -461,13 +470,21 @@ export class CoC7Adapter {
         };
     }
 
-    /** Returns the registered Handlebars partials to include when displaying resolved single-actor checks. */
+    /** Returns the registered Handlebars partials to include when displaying resolved checks. */
     getResolvedResultPartials(session) {
-        if (!session?.isResolved || !SINGLE_ACTOR_RESOLVED_ROLL_TYPES.has(session.rollType)) return {};
-        return {
-            header: "roeCocResolvedSingleHeader",
-            body: "roeCocResolvedSingleBody"
+        if (!session?.isResolved) return {};
+        const bodyByType = {
+            basic: "roeCocResolvedSingleBody",
+            skill: "roeCocResolvedSingleBody",
+            other: "roeCocResolvedSingleBody",
+            combined: "roeCocResolvedSingleBody",
+            opposed: "roeCocResolvedOpposedBody",
+            sanity: "roeCocResolvedSanityBody",
+            combat: "roeCocResolvedCombatBody",
+            ranged: "roeCocResolvedCombatBody"
         };
+        const body = bodyByType[session.rollType];
+        return body ? { header: "roeCocResolvedSingleHeader", body } : {};
     }
 
     /** Returns the difficulty choices allowed in the current modifier-preparation phase. */
@@ -570,7 +587,7 @@ export class CoC7Adapter {
         return typeof newSanity === "number" && newSanity <= 20;
     }
 
-        #buildResolvedSingleActorContext(session) {
+    #buildResolvedSingleActorContext(session) {
         const participants = session.participants ?? [];
         const first = participants.at(0);
         const actorName = first?.actorName?.toUpperCase() ?? "";
@@ -640,6 +657,109 @@ export class CoC7Adapter {
             resolvedSuccessLevel: first.successLevel ?? "",
             resolvedNumberText: displayMode !== "level" ? numberPart : "",
             resolvedLevelText: displayMode !== "numbers" ? levelPart : ""
+        };
+    }
+
+        #buildResolvedOpposedContext(session) {
+        const contestants = (session.participants ?? []).map((p) => {
+            const canView = RollVisibilityPolicy.canViewParticipantRoll(p, session);
+            return {
+                key: p.key,
+                actorName: p.actorName,
+                label: p.label,
+                canView,
+                isWinner: canView && session.winnerKey === p.key,
+                successLevel: canView ? p.successLevel : "",
+                result: canView
+                    ? this.formatRollOutcome({ total: p.total, targetValue: p.targetValue, successLevel: p.successLevel })
+                    : game.i18n.localize("ROE.RollSession.HiddenRoll")
+            };
+        });
+        return {
+            resolvedActorName: game.i18n.localize("ROE_COC7.RollSession.Types.opposed").toUpperCase(),
+            resolvedOpposedContestants: contestants
+        };
+    }
+
+    #buildResolvedSanityContext(session) {
+        const sanRoll = session.participants?.find((p) => p.key === "p0") ?? session.participants?.at(0);
+        const intRoll = session.participants?.find((p) => p.key === "insanityInt") ?? null;
+        const canViewSan = Boolean(sanRoll && RollVisibilityPolicy.canViewParticipantRoll(sanRoll, session));
+        const canViewInt = Boolean(intRoll && RollVisibilityPolicy.canViewParticipantRoll(intRoll, session));
+        const enriched = CoC7SessionFactory.enrichForTemplate(session);
+        const statusText = enriched.sanityInsanityBadge || enriched.sanityRepressedBadge || "";
+
+        const displayMode = game.settings?.get("narrative-rolls-and-effects-coc7", "resultDisplayMode") || "both";
+        const numberPart = sanRoll?.targetValue ? `${sanRoll.total} vs. ${sanRoll.targetValue}` : `${sanRoll?.total ?? ""}`;
+        const levelPart = canViewSan ? CoC7ResultFormatter.formatSuccessLevel(sanRoll?.successLevel) : "";
+
+        return {
+            resolvedActorName: sanRoll?.actorName?.toUpperCase() ?? "",
+            resolvedTitle: game.i18n.localize("ROE_COC7.RollSession.Types.sanity"),
+            resolvedCanViewSanity: canViewSan,
+            resolvedSanityLevel: canViewSan ? (sanRoll?.successLevel ?? "") : "",
+            resolvedSanityNumberText: canViewSan && displayMode !== "level" ? numberPart : "",
+            resolvedSanityLevelText: canViewSan
+                ? (displayMode !== "numbers" ? levelPart : "")
+                : game.i18n.localize("ROE.RollSession.HiddenRoll"),
+            resolvedHasIntCheck: Boolean(intRoll),
+            resolvedIntLabel: intRoll?.label ?? "",
+            resolvedCanViewInt: canViewInt,
+            resolvedIntLevel: canViewInt ? intRoll.successLevel : "",
+            resolvedIntRollText: intRoll
+                ? canViewInt
+                    ? this.formatRollOutcome({ total: intRoll.total, targetValue: intRoll.targetValue, successLevel: intRoll.successLevel })
+                    : game.i18n.localize("ROE.RollSession.HiddenRoll")
+                : "",
+            resolvedSanityLost: canViewSan ? Number(session.sanityLost ?? 0) : "?",
+            resolvedSanityStatusText: canViewSan ? statusText : "",
+            resolvedIsInsane: Boolean(canViewSan && enriched.sanityInsanityBadge)
+        };
+    }
+
+    #buildResolvedCombatContext(session) {
+        const attacker = session.participants?.find((p) => p.key === "attacker");
+        const defender = session.participants?.find((p) => p.key === "defender") ?? null;
+        const damage = session.participants?.find((p) => p.key === "damage") ?? null;
+        const canViewAtt = Boolean(attacker && RollVisibilityPolicy.canViewParticipantRoll(attacker, session));
+        const canViewDef = Boolean(defender && RollVisibilityPolicy.canViewParticipantRoll(defender, session));
+        const canViewDmg = Boolean(damage && RollVisibilityPolicy.canViewParticipantRoll(damage, session));
+
+        const headerActors = defender
+            ? `${attacker?.actorName ?? ""} vs. ${defender.actorName ?? ""}`
+            : (attacker?.actorName ?? "");
+
+        const defenderResult = !defender
+            ? ""
+            : session.rollType === "ranged"
+                ? game.i18n.localize(defender.tookCover ? "ROE_COC7.Ranged.CoverTaken" : "ROE_COC7.Ranged.NoCover")
+                : defender.total === null
+                    ? game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none")
+                    : canViewDef
+                        ? this.formatRollOutcome({ total: defender.total, targetValue: defender.targetValue, successLevel: defender.successLevel })
+                        : game.i18n.localize("ROE.RollSession.HiddenRoll");
+
+        return {
+            resolvedActorName: headerActors.toUpperCase(),
+            resolvedTitle: session.weaponName || session.title,
+            resolvedAttackerName: attacker?.actorName ?? "",
+            resolvedAttackerLabel: attacker?.label ?? "",
+            resolvedCanViewAttacker: canViewAtt,
+            resolvedAttackerLevel: canViewAtt ? attacker.successLevel : "",
+            resolvedAttackerResult: canViewAtt
+                ? this.formatRollOutcome({ total: attacker.total, targetValue: attacker.targetValue, successLevel: attacker.successLevel })
+                : game.i18n.localize("ROE.RollSession.HiddenRoll"),
+            resolvedHasDefender: Boolean(defender),
+            resolvedDefenderName: defender?.actorName ?? "",
+            resolvedDefenderLabel: game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${session.defenderReaction || "dodge"}`),
+            resolvedCanViewDefender: Boolean(canViewDef && defender?.total !== null),
+            resolvedDefenderLevel: canViewDef && defender?.total !== null ? defender.successLevel : "",
+            resolvedDefenderResult: defenderResult,
+            resolvedHasDamage: Boolean(session.finalDamage !== null && session.finalDamage !== undefined),
+            resolvedCanViewDamage: canViewDmg,
+            resolvedFinalDamage: session.finalDamage ?? 0,
+            resolvedArmorApplied: Number(session.armorApplied ?? 0),
+            resolvedMajorWound: Boolean(canViewDmg && session.majorWoundTriggered)
         };
     }
 

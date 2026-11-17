@@ -13,6 +13,11 @@
         "Hint": "Zeigt Erfolgsgrade entweder als ausgeschriebenen Text oder als kompakte Symbole (* bis *** / - bis ---) an.",
         "Text": "Text (Regulär, Schwierig, Extrem)",
         "Symbols": "Symbole (* bis *** / - bis ---)"
+      },
+      "SanityEvaluationHints": {
+        "Name": "Hinweistexte bei Stabilitäts-Auswertung",
+        "Hint": "Atmosphärische Texte (ein Hinweis pro Zeile), die Spielern angezeigt werden, während die Spielleitung die Folgen einer Stabilitätsprobe auswertet.",
+        "Default": "Dein Verstand ringt noch damit, das Gesehene zu begreifen...\nEin kalter Schauer läuft dir über den Rücken – was bedeutet das für deinen Geist?\nDie Bilder brennen sich in dein Gedächtnis ein, während sich der Nebel lichtet...\nStille legt sich über deinen Geist, als die Erkenntnis langsam einsickert...\nDein Herz hämmert – gleich zeigt sich, ob dein Verstand dem Grauen standhält..."
       }
     },
     "Roll": {

@@ -115,6 +115,7 @@
 
 {{#*inline "promptResults"}}
 {{#if isPhaseResolution}}
+{{#if isGM}}
 <section class="combat-phase-section is-active">
     <header class="combat-phase-header">
         <span class="phase-title">
@@ -141,6 +142,13 @@
     </footer>
     {{/if}}
 </section>
+{{else}}
+<div class="sanity-immersion-panel">
+    <div class="sanity-flavor-line">
+        <i class="fa-solid fa-hourglass-half"></i> {{sanityEvaluationHint}}
+    </div>
+</div>
+{{/if}}
 {{/if}}
 {{/inline}}
 {{/roePromptLayout}}

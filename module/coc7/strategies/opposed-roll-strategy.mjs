@@ -41,4 +41,14 @@ export class OpposedRollStrategy extends BaseRollStrategy {
             })
         };
     }
+
+        /** @override */
+    async onRollApplied(participant, state) {
+        if (!participant?.isPushed) return;
+        const resolution = this.evaluateResolution(state);
+        if (resolution.winnerKey !== participant.key) {
+            state.pushFailurePending = true;
+        }
+    }
+
 }

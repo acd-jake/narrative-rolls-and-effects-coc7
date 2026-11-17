@@ -58,14 +58,31 @@ export class CoC7CheckResolver {
     /** Checks whether the session and selected participant are eligible for a push. */
     static canPush(state, participantKey) {
         if (!state || state.isResolved || state.isPreparingModifiers || state.canPush === false) return false;
-        if (!["basic", "skill", "combined"].includes(state.rollType)) return false;
+        if (!["basic", "skill", "combined", "opposed"].includes(state.rollType)) return false;
         const participants = state.participants ?? [];
         const participant = participants.find((e) => e.key === participantKey);
-        if (!participant?.hasRolled || participant.isPushed || participant.successLevel === "fumble") return false;
+        if (!participant?.hasRolled || participant.isPushed || participant.canPush === false || participant.successLevel === "fumble") return false;
+
+        if (state.rollType === "opposed") {
+            if (participants.length < 2 || participants.some((e) => !e.hasRolled)) return false;
+            return this.#determineOpposedWinnerKey(participants) !== participantKey;
+        }
+
         if (state.rollType !== "combined") return !participant.isSuccess;
-        if (participants.length < 2 || participants.some((e) => !e.hasRolled || e.isPushed || e.successLevel === "fumble")) return false;
+        if (participants.length < 2 || participants.some((e) => !e.hasRolled || e.isPushed || e.canPush === false || e.successLevel === "fumble")) return false;
         const passed = state.combinedMode === "or" ? participants.some((e) => e.isSuccess) : participants.every((e) => e.isSuccess);
         return !passed;
+    }
+
+    static #determineOpposedWinnerKey(participants) {
+        const successful = participants.filter((p) => (this.LEVEL_RANK[p.successLevel] ?? 0) >= this.LEVEL_RANK.regular);
+        if (successful.length === 0) return "";
+        successful.sort((a, b) => {
+            const rankDiff = (this.LEVEL_RANK[b.successLevel] ?? 0) - (this.LEVEL_RANK[a.successLevel] ?? 0);
+            if (rankDiff !== 0) return rankDiff;
+            return Number(b.targetValue ?? 0) - Number(a.targetValue ?? 0);
+        });
+        return successful[0].key;
     }
 
     /** Applies a validated pushed result to the participant or combined-check participants. */

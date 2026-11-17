@@ -4,13 +4,14 @@ import { CoC7DataMapper } from "./coc7-data-mapper.mjs";
 /** Builds system-specific session data and derives the presentation fields used by templates. */
 export class CoC7SessionFactory {
     /** Creates the standard percentile-roll session or a free-form dice-roll session. */
-    static createBasicOrOther({ actor, label, targetValue = 0, difficulty = "regular", diceFormula = "1d100", isOther = false, prepareModifiers = false }) {
+    static createBasicOrOther({ actor, label, targetValue = 0, difficulty = "regular", diceFormula = "1d100", isOther = false, canPush = true, prepareModifiers = false }) {
         return {
             rollType: isOther ? "other" : "basic",
             prepareModifiers,
             title: label,
             difficulty,
             diceFormula,
+            canPush: !isOther && canPush,
             participants: [SessionStore.buildParticipant("p0", actor, label, targetValue)]
         };
     }
@@ -46,30 +47,40 @@ export class CoC7SessionFactory {
 
     /** Creates two participants that will be evaluated against the same percentile roll. */
     static createCombined({ actor, checks, combinedMode = "and", difficulty = "regular", prepareModifiers = false }) {
+        const isCheckPushable = (check) => {
+            if (check.isLuck || check.canPush === false) return false;
+            if (!check.itemId) return true;
+            const skill = actor.items?.get?.(check.itemId);
+            return Boolean(skill && skill.system?.properties?.push !== false);
+        };
+
         return {
             rollType: "combined",
             prepareModifiers,
             title: checks.map((c) => c.label).join(" + "),
             difficulty,
             combinedMode,
-            canPush: checks.every((c) => {
-                if (c.isLuck || c.canPush === false) return false;
-                if (!c.itemId) return true;
-                const skill = actor.items?.get?.(c.itemId);
-                return Boolean(skill && skill.system?.properties?.push !== false);
-            }),
-            participants: checks.map((c, i) => SessionStore.buildParticipant(`c${i}`, actor, c.label, c.targetValue, c.itemId ?? ""))
+            canPush: checks.every(isCheckPushable),
+            participants: checks.map((c, i) => ({
+                ...SessionStore.buildParticipant(`c${i}`, actor, c.label, c.targetValue, c.itemId ?? ""),
+                canPush: isCheckPushable(c)
+            }))
         };
     }
 
     /** Creates independent contestants for an opposed check. */
     static createOpposed({ title, contestants, prepareModifiers = false }) {
+        const participants = contestants.map((c, i) => ({
+            ...SessionStore.buildParticipant(`op${i}`, c.actor, c.label, c.targetValue, c.itemId ?? ""),
+            canPush: c.canPush !== false
+        }));
         return {
             rollType: "opposed",
             prepareModifiers,
             title,
             difficulty: "regular",
-            participants: contestants.map((c, i) => SessionStore.buildParticipant(`op${i}`, c.actor, c.label, c.targetValue))
+            canPush: participants.some((p) => p.canPush),
+            participants
         };
     }
 
@@ -155,8 +166,10 @@ export class CoC7SessionFactory {
 
         for (const skill of skills) {
             const val = CoC7DataMapper.getSkillValue(skill);
-            list.push({ value: `skill|${skill.id}|${skill.name}|${val}`, display: `${skill.name} (${val}%)` });
+            const pushFlag = skill.system?.properties?.push !== false ? "1" : "0";
+            list.push({ value: `skill|${skill.id}|${skill.name}|${val}|${pushFlag}`, display: `${skill.name} (${val}%)` });
         }
+
         return list;
     }
 

@@ -1,6 +1,9 @@
 ﻿=== C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\.github ===
 
 
+=== C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\assets ===
+
+
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\lang ===
 
 
@@ -14,8 +17,10 @@
 
 
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\.gitignore ===
-.DS_Store
-Thumbs.db
+projekt-stand_*.txt
+projekt-stand_narrative-rolls-and-effects-coc7.txt
+projekt-stand_narrative-rolls-and-effects-coc7.txt
+projekt-stand_narrative-rolls-and-effects-coc7.txt
 
 
 
@@ -35,10 +40,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - CoC7 bonus and penalty dice as an extension to the core dice visuals.
 - CoC7-owned header and details for the core-managed modifier-preparation prompt.
 - Difficulty selection during modifier preparation for eligible CoC7 checks.
+- Pushed-roll support for opposed checks alongside characteristic, skill, and combined checks according to Call of Cthulhu 7e rules.
 
 ### Changed
 - Dice-face images, formula visualization, and the shared dice display are provided by the core module; CoC7 prompts now use that shared implementation.
 - CoC7 dice tooltips now group percentile units, tens, and bonus/penalty dice into one formula.
+
+### Fixed
+- Kept modifier sliders in preparation and summarized active bonus or penalty dice in roll prompts.
+- Pointed bonus and penalty dice visuals to this module's assets and marked chat cards with the CoC7 system identifier.
+- Showed failed forced-roll consequences in the normal resolution step instead of a separate phase.
+- Restored the expandable skill description in skill-check prompts.
 
 
 
@@ -331,6 +343,35 @@ jobs:
 
       - name: Run unit tests
         run: npm test
+
+
+=== C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\assets\dice ===
+
+
+=== C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\assets\dice\d10-bonus.svg ===
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <title>Bonus D10</title>
+  <path d="M48 7 78 27 86 58 48 89 10 58 18 27Z" fill="#174332" stroke="#c5a059" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M48 8 18 27 10 58 28 39Z" fill="#4b9068" stroke="#c5a059" stroke-width="1.5"/>
+  <path d="M10 58 28 39 48 81 48 89Z" fill="#286747" stroke="#a8894e" stroke-width="1.5"/>
+  <path d="M48 8 78 27 86 58 68 39Z" fill="#347953" stroke="#c5a059" stroke-width="1.5"/>
+  <path d="M86 58 68 39 48 81 48 89Z" fill="#1c513a" stroke="#a8894e" stroke-width="1.5"/>
+  <path d="M48 8 68 39 48 81 28 39Z" fill="#205b3e" stroke="#c5a059" stroke-width="1.5"/>
+  <text x="48" y="56" text-anchor="middle" fill="#f2d89a" font-family="Georgia,serif" font-weight="bold" font-size="22">10</text>
+</svg>
+
+
+=== C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\assets\dice\d10-penalty.svg ===
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <title>Penalty D10</title>
+  <path d="M48 7 78 27 86 58 48 89 10 58 18 27Z" fill="#532529" stroke="#c5a059" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M48 8 18 27 10 58 28 39Z" fill="#a84e4d" stroke="#c5a059" stroke-width="1.5"/>
+  <path d="M10 58 28 39 48 81 48 89Z" fill="#773036" stroke="#a8894e" stroke-width="1.5"/>
+  <path d="M48 8 78 27 86 58 68 39Z" fill="#923c40" stroke="#c5a059" stroke-width="1.5"/>
+  <path d="M86 58 68 39 48 81 48 89Z" fill="#61282e" stroke="#a8894e" stroke-width="1.5"/>
+  <path d="M48 8 68 39 48 81 28 39Z" fill="#792e35" stroke="#c5a059" stroke-width="1.5"/>
+  <text x="48" y="56" text-anchor="middle" fill="#f2d89a" font-family="Georgia,serif" font-weight="bold" font-size="22">10</text>
+</svg>
 
 
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\lang\de.json ===
@@ -1039,6 +1080,7 @@ let coreApi;
 
 export const MODULE_ID = "narrative-rolls-and-effects";
 
+/** Stores the core API provided during adapter registration for later service access. */
 export function setCoreApi(api) {
     coreApi = api;
 }
@@ -1050,6 +1092,7 @@ function getCoreService(serviceName) {
 }
 
 function createServiceFacade(serviceName) {
+    // Resolve services lazily so facades can be imported before the core API is available.
     return new Proxy({}, {
         get(_target, property) {
             const service = getCoreService(serviceName);
@@ -1069,14 +1112,17 @@ export const EffectsEngine = createServiceFacade("effects");
 export const ActorTargetSelectorApp = createServiceFacade("actorSelector");
 export const DiceVisualizer = createServiceFacade("diceVisualizer");
 
+/** Creates a system prompt class through the registered core service. */
 export function createPromptClass(definition) {
     return getCoreService("createPromptClass")(definition);
 }
 
+/** Extends a core prompt class while keeping prompt construction owned by the core module. */
 export function extendPromptClass(baseClass, definition) {
     return getCoreService("extendPromptClass")(baseClass, definition);
 }
 
+/** Exposes the core prompt factories in the shape expected by the CoC7 adapter. */
 export function getPromptFactory() {
     return {
         createPromptClass: (definition) => createPromptClass(definition),
@@ -1091,12 +1137,15 @@ import { CoC7Adapter } from "./coc7/coc7-adapter.mjs";
 import { setCoreApi } from "./core-bridge.mjs";
 import { COC7_MODULE_ID, CoC7Settings } from "./coc7/coc7-settings.mjs";
 
+// Register settings when Foundry starts.
 Hooks.once("init", () => CoC7Settings.register());
 
+// Set up the CoC7 integration when the core module registers its adapters.
 Hooks.once("nre.registerAdapters", async (core) => {
     setCoreApi(core);
     core.registerAdapter("CoC7", new CoC7Adapter());
 
+    // Load prompt partials used by the adapter for roll preparation and results.
     await foundry.applications.handlebars.loadTemplates({
         roePromptLayout: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/prompt-layout.hbs`,
         roeCocModifierPreparationHeader: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/modifier-preparation-header.hbs`,
@@ -1145,9 +1194,11 @@ const EFFECT_PRESETS = {
 const PREPARATION_DIFFICULTIES = ["regular", "hard", "extreme"];
 const DIFFICULTY_PREPARATION_ROLL_TYPES = new Set(["basic", "skill", "combined"]);
 
+/** Connects CoC7 roll creation, prompts, consequences, and Foundry sheet interactions to the core API. */
 export class CoC7Adapter {
     #strategies;
 
+    /** Creates the strategy instances used to resolve each supported roll type. */
     constructor() {
         this.#strategies = Object.freeze({
             basic: new BasicRollStrategy(),
@@ -1161,16 +1212,19 @@ export class CoC7Adapter {
         });
     }
 
+    /** Initializes prompts, effect presets, and sheet-click interception after core registration. */
     initialize() {
         initializePromptApps(getPromptFactory());
         this.#registerEffectPresets();
         CoC7Interceptor.register();
     }
 
+    /** Returns the strategy for a roll type, falling back to the standard check strategy. */
     getStrategy(rollType) {
         return this.#strategies[rollType] ?? this.#strategies.basic;
     }
 
+    /** Builds participant data for a new session and initializes post-roll decision fields. */
     buildSessionPayload(type, cfg) {
         const builders = {
             basic: () => CoC7SessionFactory.createBasicOrOther(cfg),
@@ -1182,8 +1236,10 @@ export class CoC7Adapter {
             ranged: () => CoC7SessionFactory.createRanged(cfg)
         };
         const session = builders[type]();
+        // Initialize post-roll state consistently for every participant type.
         session.participants = session.participants.map((participant) => ({
             ...participant,
+            canPush: participant.canPush ?? true,
             isPushed: false,
             luckDecided: false,
             luckSpent: 0
@@ -1191,6 +1247,7 @@ export class CoC7Adapter {
         return session;
     }
 
+    /** Supplies the default session state merged into sessions created from the given configuration. */
     getInitialSessionFields(cfg) {
         return {
             canPush: cfg.canPush ?? true,
@@ -1224,22 +1281,27 @@ export class CoC7Adapter {
         };
     }
 
+    /** Adds CoC7-specific result fields used by the chat-card and prompt templates. */
     enrichSessionForTemplate(session) {
         return CoC7SessionFactory.enrichForTemplate(session);
     }
 
+    /** Returns the actor's available checks for use in the roll-request composer. */
     collectActorChecks(actor, options = {}) {
         return CoC7SessionFactory.collectActorChecks(actor, options);
     }
 
+    /** Returns the localized label for a CoC7 roll type. */
     getRollTypeLabel(rollType) {
         return game.i18n.localize(`ROE_COC7.RollSession.Types.${rollType}`);
     }
 
+    /** Returns the Handlebars template used to render a CoC7 session chat card. */
     getChatCardTemplate() {
         return "modules/narrative-rolls-and-effects-coc7/templates/chat/coc7-session-card.hbs";
     }
 
+    /** Defines the roll-type tabs displayed by the request composer. */
     getRequestComposerTabs() {
         const tabDefinitions = [
             ["skill", "fa-dice-d20"],
@@ -1251,10 +1313,12 @@ export class CoC7Adapter {
         return tabDefinitions.map((definition) => this.#createRequestTab(...definition));
     }
 
+    /** Returns the Handlebars template used for CoC7 request fields. */
     getRequestComposerTemplate() {
         return "modules/narrative-rolls-and-effects-coc7/templates/dialogs/coc7-request-fields.hbs";
     }
 
+    /** Builds request-form context, including check choices for the supplied actors. */
     getRequestComposerContext(rollType, { actorA, actorB }) {
         return {
             rollType,
@@ -1268,6 +1332,7 @@ export class CoC7Adapter {
         };
     }
 
+    /** Reads the request form and starts the matching roll session; returns false if its primary actor is missing. */
     async dispatchRequestComposer(rollType, form, { prepareModifiers }) {
         const actorA = game.actors.get(form.querySelector("select[name='actorA']")?.value);
         if (!actorA) return false;
@@ -1288,10 +1353,12 @@ export class CoC7Adapter {
         return true;
     }
 
+    /** Verifies that a submitted roll uses the modifier dice allowed by its session state. */
     validateSubmittedRoll(session, participant, rollData) {
         if (session.rollType === "other" || participant.key === "damage") return true;
         if (participant.key === "defender" && (session.rollType === "ranged" || session.defenderReaction === "none")) return true;
 
+        // Recompute contextual dice modifiers so submitted results match the session flags.
         let expected = Number(participant.modifierDice ?? 0);
         if (session.rollType === "combat" && participant.key === "attacker") {
             const f = session.tacticalFlags ?? {};
@@ -1304,6 +1371,7 @@ export class CoC7Adapter {
         return Number(rollData.modifierDice ?? 0) === Math.clamp(expected, -2, 2);
     }
 
+    /** Rolls and packages a participant's pushed check for submission by the core orchestrator. */
     async executePushRoll(session, participantKey) {
         if (!CoC7CheckResolver.canPush(session, participantKey)) return null;
         const participant = session.participants.find((p) => p.key === participantKey);
@@ -1317,10 +1385,11 @@ export class CoC7Adapter {
             rollBreakdown: CoC7CheckResolver.buildBreakdown(roll, 0, "", { modifierDice })
         };
     }
-
+    /** Applies session patches and validates CoC7-specific resets and defender-reaction changes. */
     transformSessionPatch(session, patch) {
         if (patch.resetCombatPhase || patch.resetSanityPhase) {
             if (session.consequencesApplied) return session;
+            // Rewinds clear the roll result as well as post-roll choices tied to it.
             const clear = {
                 hasRolled: false, total: null, successLevel: "", isSuccess: false,
                 isPushed: false, luckDecided: false, luckSpent: 0, rollBreakdown: null
@@ -1353,7 +1422,6 @@ export class CoC7Adapter {
             }
             return session;
         }
-
         if (session.rollType === "combat" && ("defenderReaction" in patch || "reactionDetail" in patch)) {
             const defender = session.participants.find((p) => p.key === "defender");
             if (!defender || defender.hasRolled) return session;
@@ -1401,27 +1469,23 @@ export class CoC7Adapter {
         }
         return { ...session, ...patch };
     }
-
     /**
-     * Verarbeitet Post-Roll-Aktionen (Glück ausgeben, Glück ablehnen, Probe forcieren, Forcieren-Folgen bestätigen).
-     */
+    * Handles a participant's post-roll choice and returns the updated session and finalization decision.
+    * Called by the core orchestrator with a supported action ID and its action payload.
+    */
     async handlePostRollAction(session, participantKey, actionId, payload) {
         if (actionId === "spendLuck") {
             const target = session.participants.find((p) => p.key === participantKey);
             if (!target || target.isPushed) return null;
-
             const actor = SessionStore.resolveActor(target);
             const currentLuck = CoC7DataMapper.getResource(actor, "luck")?.value ?? 0;
             const cost = Number(payload.cost);
             if (!actor || currentLuck < cost) return null;
-
             const remainingLuck = currentLuck - cost;
             await actor.update({ "system.attribs.lck.value": remainingLuck });
-
             const rank = CoC7CheckResolver.LEVEL_RANK;
             const isSuccess = (rank[payload.newLevel] ?? 0) >= (rank[session.difficulty] ?? 2);
             const canUpgradeMore = this.#canUpgradeFurther(target.total, target.targetValue, payload.newLevel, remainingLuck);
-
             const participants = session.participants.map((p) =>
                 p.key === participantKey
                     ? { ...p, successLevel: payload.newLevel, isSuccess, luckSpent: (p.luckSpent ?? 0) + cost, luckDecided: !canUpgradeMore }
@@ -1429,46 +1493,34 @@ export class CoC7Adapter {
             );
             return { session: { ...session, participants }, finalize: true };
         }
-
         if (actionId === "declineLuck") {
             const participants = session.participants.map((p) =>
                 p.key === participantKey ? { ...p, luckDecided: true } : p
             );
             return { session: { ...session, participants }, finalize: false };
         }
-
         if (actionId === "pushRoll") {
             const participants = CoC7CheckResolver.buildPushedParticipants(session, participantKey, payload.rollData);
             if (!participants) return null;
             return { session: { ...session, participants }, finalize: true };
         }
-
-        if (actionId === "acknowledgePushFailure" && game.user.isGM) {
-            return {
-                session: { ...session, pushFailurePending: false, phase: "awaitingResolution" },
-                finalize: false
-            };
-        }
-
         return null;
     }
-
+    /** Calculates which Luck and push actions the current user may take for a rolled participant. */
     evaluateParticipantOptions(participant, session, isDelegatedToPlayer) {
         if (!participant?.hasRolled || session.isResolved || session.rollType === "other") {
             return { canSpendLuck: false, luckCost: 0, luckTargetLevel: "", luckTargetLabel: "", canPush: false, hasPendingAction: false, isDelegatedToPlayer };
         }
-
         const actor = SessionStore.resolveActor(participant);
         if (!actor || (!game.user.isGM && !actor.isOwner)) {
             return { canSpendLuck: false, luckCost: 0, luckTargetLevel: "", luckTargetLabel: "", canPush: false, hasPendingAction: false, isDelegatedToPlayer };
         }
-
         const level = participant.successLevel;
         const isPushed = Boolean(participant.isPushed);
         const availableLuck = CoC7DataMapper.getResource(actor, "luck")?.value ?? 0;
         let luckCost = 0;
         let luckTargetLevel = "";
-
+        // Luck can improve a failure to the required level or advance an allowed success by one level.
         if (!participant.luckDecided && !isPushed && level !== "fumble" && level !== "critical" && availableLuck > 0) {
             const allowImprove = this.#isLuckImprovementAllowed();
             let desiredLevel = "";
@@ -1477,7 +1529,6 @@ export class CoC7Adapter {
                 if (level === "regular") desiredLevel = "hard";
                 else if (level === "hard") desiredLevel = "extreme";
             }
-
             if (desiredLevel) {
                 const threshold = this.getDifficultyThreshold(participant.targetValue, desiredLevel);
                 const needed = participant.total - threshold;
@@ -1487,7 +1538,6 @@ export class CoC7Adapter {
                 }
             }
         }
-
         const canPush = CoC7CheckResolver.canPush(session, participant.key);
         const canSpendLuck = luckCost > 0;
         return {
@@ -1500,7 +1550,7 @@ export class CoC7Adapter {
             isDelegatedToPlayer
         };
     }
-
+    /** Returns the participants shown in the modifier-preparation phase, or an empty list otherwise. */
     buildPreparationParticipants(session) {
         if (!session?.isPreparingModifiers || session.rollType === "other") return [];
         let participants = session.participants ?? [];
@@ -1512,7 +1562,7 @@ export class CoC7Adapter {
             modifierDisplay: this.#formatModifierLabel(participant.modifierDice ?? 0)
         }));
     }
-
+    /** Returns the tactical modifier controls shown while preparing a combat roll. */
     buildPreparationTactics(session) {
         if (!session?.isPreparingModifiers || session.rollType !== "combat") return [];
         const labels = { outnumbered: "Outnumbered", surprised: "Surprised", proneTarget: "ProneTarget" };
@@ -1522,7 +1572,7 @@ export class CoC7Adapter {
             active: Boolean(session.tacticalFlags?.[key])
         }));
     }
-
+    /** Formats a participant's resolved result for the session summary. */
     formatResolvedParticipant(participant, session) {
         if (session.rollType === "ranged" && participant.key === "defender") {
             return game.i18n.localize(participant.tookCover ? "ROE_COC7.Ranged.CoverTaken" : "ROE_COC7.Ranged.NoCover");
@@ -1531,7 +1581,7 @@ export class CoC7Adapter {
         if (session.rollType === "other" || participant.key === "damage") return String(participant.total ?? "");
         return this.formatRollOutcome(participant);
     }
-
+    /** Builds a permission-aware result badge for a participant in a chat card. */
     formatParticipantBadge(participant, session, permissions) {
         if (!permissions.canViewRoll) {
             return { text: game.i18n.localize("ROE.RollSession.HiddenRoll"), className: "pending-badge" };
@@ -1556,39 +1606,18 @@ export class CoC7Adapter {
             })
         };
     }
-
-    getPhases(session) {
-        if (!session?.pushFailurePending || !["basic", "skill", "combined"].includes(session.rollType)) return null;
-        return [
-            { id: "roll", isActive: false, isCompleted: true },
-            { id: "pushConsequences", isActive: true, isCompleted: false }
-        ];
-    }
-
-    buildPhaseSummary(session) {
-        if (!session?.pushFailurePending) return "";
-        return game.i18n.localize("ROE_COC7.Roll.PushFailureDescription");
-    }
-
+    /** Adds push-failure warning and visibility fields to a prompt's prepared context. */
     preparePromptContext(prompt, session, context) {
         const pushedParticipants = (session?.participants ?? []).filter((participant) => participant.isPushed);
         return {
             ...context,
-            showPushFailurePhase: Boolean(game.user.isGM && session?.pushFailurePending),
+            showPushFailureWarning: Boolean(game.user.isGM && session?.pushFailurePending),
             canViewPushFailure: pushedParticipants.length > 0 && pushedParticipants.every((participant) =>
                 RollVisibilityPolicy.canViewParticipantRoll(participant, session)
             )
         };
     }
-
-    canResolveSession(session) {
-        return !session?.pushFailurePending;
-    }
-
-    getSessionPhase(session, allRolled) {
-        return session.pushFailurePending ? "pushConsequences" : allRolled ? "awaitingResolution" : "rolling";
-    }
-
+    /** Returns the registered Handlebars partials to include during modifier preparation. */
     getModifierPreparationPartials(session) {
         if (!session?.isPreparingModifiers) return {};
         return {
@@ -1596,33 +1625,31 @@ export class CoC7Adapter {
             details: "roeCocModifierPreparationDetails"
         };
     }
-
+    /** Returns the difficulty choices allowed in the current modifier-preparation phase. */
     buildPreparationDifficulties(session) {
         if (
             !session?.isPreparingModifiers ||
             session.canChangeDifficulty === false ||
             !DIFFICULTY_PREPARATION_ROLL_TYPES.has(session.rollType)
         ) return [];
-
         return PREPARATION_DIFFICULTIES.map((difficulty) => ({
             value: difficulty,
             label: game.i18n.localize(`ROE_COC7.Difficulty.${difficulty.capitalize()}`),
             selected: session.difficulty === difficulty
         }));
     }
-
+    /** Identifies participants whose modifier dice change together for the selected roll type. */
     getModifierParticipantKeys(session, participantKey) {
         return session.rollType === "combined"
             ? session.participants.map((participant) => participant.key)
             : [participantKey];
     }
-
+    /** Routes a prompt action to the corresponding Luck, push, or preparation handler. */
     handlePromptAction(prompt, actionName, event, target) {
         const handlers = {
             spendLuck: () => this.#spendLuck(prompt, target),
             declineLuck: () => this.#declineLuck(prompt, target),
             pushRoll: () => this.#pushRoll(prompt, target),
-            acknowledgePushFailure: () => this.#acknowledgePushFailure(prompt),
             togglePreparedTactical: () => this.#togglePreparedTactical(prompt, target),
             setPreparedDifficulty: () => this.#setPreparedDifficulty(prompt, target)
         };
@@ -1630,42 +1657,37 @@ export class CoC7Adapter {
         if (handler) return handler();
         return undefined;
     }
-
+    /** Converts a base target to the CoC7 target number for regular, hard, or extreme difficulty. */
     getDifficultyThreshold(target, difficulty) {
         if (difficulty === "hard") return Math.floor(target / 2);
         if (difficulty === "extreme") return Math.floor(target / 5);
         return target;
     }
-
+    /** Delegates roll-outcome formatting so adapter consumers use the configured display style. */
     formatRollOutcome(params) {
         return CoC7ResultFormatter.formatRollOutcome(params);
     }
-
+    /** Returns the localized display text for a success level, or an empty string when absent. */
     formatSuccessLevel(level) {
         return level ? game.i18n.localize(`ROE_COC7.SuccessLevels.${level}`) : "";
     }
-
+    /** Renders regular, hard, and extreme target numbers for the roll-inspection view. */
     formatInspectionThresholds(breakdown) {
         if (breakdown.targetValue <= 0) return "";
-        return `<div class="inspect-thresholds">
-            <span>${game.i18n.localize("ROE_COC7.Difficulty.Regular")}: <strong>${breakdown.targetValue}</strong></span>
-            <span>${game.i18n.localize("ROE_COC7.Difficulty.Hard")}: <strong>${breakdown.hardThreshold}</strong></span>
-            <span>${game.i18n.localize("ROE_COC7.Difficulty.Extreme")}: <strong>${breakdown.extremeThreshold}</strong></span>
-        </div>`;
+        return `<div class="inspect-thresholds"> <span>${game.i18n.localize("ROE_COC7.Difficulty.Regular")}: <strong>${breakdown.targetValue}</strong></span> <span>${game.i18n.localize("ROE_COC7.Difficulty.Hard")}: <strong>${breakdown.hardThreshold}</strong></span> <span>${game.i18n.localize("ROE_COC7.Difficulty.Extreme")}: <strong>${breakdown.extremeThreshold}</strong></span> </div>`;
     }
-
+    /** Converts dice-visualizer entries into a concise, localized formula label. */
     formatDiceFormulaLabel(diceArray) {
         const counts = { units: 0, tens: 0, bonus: 0, penalty: 0 };
         const otherDice = [];
         for (const die of diceArray) this.#accumulateDiceLabel(die, counts, otherDice);
-
         const parts = [];
         if (counts.units) parts.push(`${counts.units}D10`);
         this.#appendTensLabel(parts, counts);
         for (const die of otherDice) parts.push(`${die.count}d${this.#extractDiceSides(die.label)}`);
         return parts.join(", ");
     }
-
+    /** Adds bonus- or penalty-die icons to the dice visuals for a percentile roll. */
     extendDiceVisuals(dice, session, modifierDice) {
         if (session?.rollType === "other") return dice;
         const modifier = Math.clamp(Number(modifierDice) || 0, -2, 2);
@@ -1674,15 +1696,15 @@ export class CoC7Adapter {
             const isBonus = modifier > 0;
             modifierVisuals.push({
                 src: `modules/narrative-rolls-and-effects-coc7/assets/dice/d10-${isBonus ? "bonus" : "penalty"}.svg`,
-                label: isBonus ? "ROE.Roll.BonusDie" : "ROE.Roll.PenaltyDie",
+                label: isBonus ? `ROE.Roll.BonusDie` : `ROE.Roll.PenaltyDie`,
                 count: 1,
                 multiple: false
             });
         }
         return [...dice, ...modifierVisuals];
     }
-
     // Effects engine integration points
+    /** Maps an actor's Sanity value to an atmosphere state, or returns null when none applies. */
     evaluateAtmosphereState(actor) {
         const san = CoC7DataMapper.getResource(actor, "sanity");
         if (!san || typeof san.value !== "number") return null;
@@ -1690,19 +1712,18 @@ export class CoC7Adapter {
         if (san.value <= 45) return "unease";
         return null;
     }
-
+    /** Selects the visual effect associated with a participant's roll result, if any. */
     getRollEffectType(participant) {
         if (participant.successLevel === "fumble") return "fumble";
         if (participant.successLevel === "critical") return "critical";
         if (participant.isPushed && !participant.isSuccess) return "fumble";
         return null;
     }
-
+    /** Reports whether an actor's updated Sanity should trigger the low-resource sound. */
     didTriggerLowResourceSound(actor, changed) {
         const newSanity = changed.system?.attribs?.san?.value;
         return typeof newSanity === "number" && newSanity <= 20;
     }
-
     #isLuckImprovementAllowed() {
         for (const key of ["spendLuck", "luckImprovement", "allowLuckImprovement"]) {
             if (game.settings?.settings.has(`CoC7.${key}`)) {
@@ -1711,7 +1732,6 @@ export class CoC7Adapter {
         }
         return false;
     }
-
     #canUpgradeFurther(total, targetValue, currentLevel, remainingLuck) {
         if (remainingLuck <= 0 || !this.#isLuckImprovementAllowed()) return false;
         const nextThreshold = currentLevel === "regular"
@@ -1723,7 +1743,6 @@ export class CoC7Adapter {
         const needed = total - nextThreshold;
         return needed > 0 && needed <= remainingLuck;
     }
-
     async #dispatchSkillRequest(actor, form, prepareModifiers) {
         const parsed = this.#parseCheckOption(form.querySelector("select[name='skillCheck']")?.value);
         const difficulty = form.querySelector("select[name='difficulty']")?.value || "regular";
@@ -1739,7 +1758,6 @@ export class CoC7Adapter {
             prepareModifiers
         });
     }
-
     async #dispatchSanityRequest(actor, form, prepareModifiers) {
         const label = form.querySelector("input[name='sanityLabel']")?.value.trim()
             || game.i18n.localize("ROE_COC7.Resources.Sanity");
@@ -1749,7 +1767,6 @@ export class CoC7Adapter {
             actor, label, lossSuccess, lossFailure, prepareModifiers
         });
     }
-
     async #dispatchCombinedRequest(actor, form, prepareModifiers) {
         const firstCheck = this.#parseCheckOption(form.querySelector("select[name='combinedCheck1']")?.value);
         const secondCheck = this.#parseCheckOption(form.querySelector("select[name='combinedCheck2']")?.value);
@@ -1763,7 +1780,6 @@ export class CoC7Adapter {
             prepareModifiers
         });
     }
-
     async #dispatchOpposedRequest(actorA, form, prepareModifiers) {
         const actorB = this.#findAvailableActor(form.querySelector("select[name='actorB']")?.value);
         if (!actorB) return;
@@ -1775,12 +1791,11 @@ export class CoC7Adapter {
             title,
             prepareModifiers,
             contestants: [
-                { actor: actorA, label: checkA.label, targetValue: checkA.targetValue },
-                { actor: actorB, label: checkB.label, targetValue: checkB.targetValue }
+                { actor: actorA, itemId: checkA.itemId, label: checkA.label, targetValue: checkA.targetValue, canPush: checkA.canPush },
+                { actor: actorB, itemId: checkB.itemId, label: checkB.label, targetValue: checkB.targetValue, canPush: checkB.canPush }
             ]
         });
     }
-
     async #dispatchOtherRequest(actor, form, prepareModifiers) {
         const label = form.querySelector("input[name='otherLabel']")?.value.trim()
             || game.i18n.localize("ROE_COC7.RollSession.Types.other");
@@ -1789,20 +1804,25 @@ export class CoC7Adapter {
             actor, label, diceFormula, isOther: true, prepareModifiers
         });
     }
-
     #parseCheckOption(raw) {
-        const [kind, itemId, label, value] = (raw ?? "char||Check|50").split("|");
-        return { isLuck: kind === "luck", itemId: itemId || null, label: label || "Check", targetValue: Number(value) || 50 };
+        // Request-composer values encode kind, item ID, label, target, and push eligibility separated by pipes.
+        const [kind, itemId, label, value, pushFlag] = (raw ?? "char||Check|50|1").split("|");
+        const isLuck = kind === "luck";
+        return {
+            isLuck,
+            itemId: itemId || null,
+            label: label || "Check",
+            targetValue: Number(value) || 50,
+            canPush: !isLuck && pushFlag !== "0"
+        };
     }
-
     #findAvailableActor(actorId) {
         const tokenActor = canvas?.tokens?.placeables?.find((token) => token.actor?.id === actorId)?.actor;
         return tokenActor ?? game.actors.get(actorId) ?? null;
     }
-
     #formatModifierLabel(modifier) {
         if (modifier > 0) {
-            const label = game.i18n.localize(modifier === 1 ? "ROE.Roll.BonusDie" : "ROE.Roll.BonusDice");
+            const label = game.i18n.localize(modifier === 1 ? `ROE.Roll.BonusDie` : `ROE.Roll.BonusDice`);
             return `${modifier} ${label}`;
         }
         if (modifier < 0) {
@@ -1812,11 +1832,9 @@ export class CoC7Adapter {
         }
         return game.i18n.localize("ROE.Roll.BonusPenaltyLabel");
     }
-
     #createRequestTab(id, icon) {
         return { id, icon, label: game.i18n.localize(`ROE_COC7.RollSession.Types.${id}`) };
     }
-
     #accumulateDiceLabel(die, counts, otherDice) {
         const count = die.count || 1;
         const labels = {
@@ -1831,7 +1849,6 @@ export class CoC7Adapter {
         if (countKey) counts[countKey] += count;
         else otherDice.push({ count, label: die.label });
     }
-
     #appendTensLabel(parts, counts) {
         const total = counts.tens + counts.bonus + counts.penalty;
         if (!total) return;
@@ -1842,12 +1859,10 @@ export class CoC7Adapter {
         if (modifiers.length) label += ` (${modifiers.join(", ")})`;
         parts.push(label);
     }
-
     #extractDiceSides(label) {
         const matches = label.match(/D(\d+)/i);
         return matches?.[1] ?? "?";
     }
-
     async #spendLuck(prompt, target) {
         const key = target.dataset.key || prompt.session?.participants?.[0]?.key;
         const cost = Number(target.dataset.cost);
@@ -1855,12 +1870,10 @@ export class CoC7Adapter {
         if (!key || !cost || !newLevel) return;
         await UniversalRollOrchestrator.executePostRollAction(prompt._messageId, key, "spendLuck", { cost, newLevel });
     }
-
     async #declineLuck(prompt, target) {
         const key = target.dataset.key || prompt.session?.participants?.[0]?.key;
         if (key) await UniversalRollOrchestrator.executePostRollAction(prompt._messageId, key, "declineLuck");
     }
-
     async #pushRoll(prompt, target) {
         const session = prompt.session;
         const key = target.dataset.key || session?.participants?.[0]?.key;
@@ -1879,13 +1892,6 @@ export class CoC7Adapter {
             await UniversalRollOrchestrator.executePostRollAction(prompt._messageId, key, "pushRoll", { rollData });
         }
     }
-
-    async #acknowledgePushFailure(prompt) {
-        if (game.user.isGM) {
-            await UniversalRollOrchestrator.executePostRollAction(prompt._messageId, "p0", "acknowledgePushFailure");
-        }
-    }
-
     async #togglePreparedTactical(prompt, target) {
         const session = prompt.session;
         const key = target.dataset.flag;
@@ -1893,7 +1899,6 @@ export class CoC7Adapter {
         const tacticalFlags = { ...session.tacticalFlags, [key]: !session.tacticalFlags?.[key] };
         await UniversalRollOrchestrator.updateSessionPatch(prompt._messageId, { tacticalFlags });
     }
-
     async #setPreparedDifficulty(prompt, target) {
         const session = prompt.session;
         const difficulty = target.dataset.difficulty;
@@ -1907,7 +1912,6 @@ export class CoC7Adapter {
         ) return;
         await UniversalRollOrchestrator.updateSessionPatch(prompt._messageId, { difficulty });
     }
-
     #registerEffectPresets() {
         for (const [key, preset] of Object.entries(EFFECT_PRESETS)) {
             EffectsEngine.registerPreset(key, preset);
@@ -1917,6 +1921,7 @@ export class CoC7Adapter {
 
 
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\module\coc7\coc7-check-resolver.mjs ===
+/** Implements percentile check resolution, roll construction, and pushed-roll validation. */
 export class CoC7CheckResolver {
     static LEVEL_RANK = Object.freeze({
         fumble: 0,
@@ -1927,6 +1932,7 @@ export class CoC7CheckResolver {
         critical: 5
     });
 
+    /** Returns the CoC 7e success level for a roll against a target value. */
     static evaluateResult(rollTotal, targetValue) {
         if (rollTotal === 1) return "critical";
         targetValue = Number(targetValue);
@@ -1938,6 +1944,10 @@ export class CoC7CheckResolver {
         return "failure";
     }
 
+    /**
+     * Builds a percentile formula; bonus or penalty dice add tens dice and keep the
+     * lowest or highest tens result respectively.
+     */
     static buildRollFormula(modifierDice = 0) {
         const extraTens = Math.abs(modifierDice);
         if (extraTens === 0) return "1d100";
@@ -1968,18 +1978,37 @@ export class CoC7CheckResolver {
         };
     }
 
+    /** Checks whether the session and selected participant are eligible for a push. */
     static canPush(state, participantKey) {
         if (!state || state.isResolved || state.isPreparingModifiers || state.canPush === false) return false;
-        if (!["basic", "skill", "combined"].includes(state.rollType)) return false;
+        if (!["basic", "skill", "combined", "opposed"].includes(state.rollType)) return false;
         const participants = state.participants ?? [];
         const participant = participants.find((e) => e.key === participantKey);
-        if (!participant?.hasRolled || participant.isPushed || participant.successLevel === "fumble") return false;
+        if (!participant?.hasRolled || participant.isPushed || participant.canPush === false || participant.successLevel === "fumble") return false;
+
+        if (state.rollType === "opposed") {
+            if (participants.length < 2 || participants.some((e) => !e.hasRolled)) return false;
+            return this.#determineOpposedWinnerKey(participants) !== participantKey;
+        }
+
         if (state.rollType !== "combined") return !participant.isSuccess;
-        if (participants.length < 2 || participants.some((e) => !e.hasRolled || e.isPushed || e.successLevel === "fumble")) return false;
+        if (participants.length < 2 || participants.some((e) => !e.hasRolled || e.isPushed || e.canPush === false || e.successLevel === "fumble")) return false;
         const passed = state.combinedMode === "or" ? participants.some((e) => e.isSuccess) : participants.every((e) => e.isSuccess);
         return !passed;
     }
 
+    static #determineOpposedWinnerKey(participants) {
+        const successful = participants.filter((p) => (this.LEVEL_RANK[p.successLevel] ?? 0) >= this.LEVEL_RANK.regular);
+        if (successful.length === 0) return "";
+        successful.sort((a, b) => {
+            const rankDiff = (this.LEVEL_RANK[b.successLevel] ?? 0) - (this.LEVEL_RANK[a.successLevel] ?? 0);
+            if (rankDiff !== 0) return rankDiff;
+            return Number(b.targetValue ?? 0) - Number(a.targetValue ?? 0);
+        });
+        return successful[0].key;
+    }
+
+    /** Applies a validated pushed result to the participant or combined-check participants. */
     static buildPushedParticipants(state, participantKey, rollData) {
         if (!this.canPush(state, participantKey)) return null;
         const total = Number(rollData.total);
@@ -2014,6 +2043,7 @@ export class CoC7CheckResolver {
 
 
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\module\coc7\coc7-data-mapper.mjs ===
+/** Adapts common actor, skill, resource, and condition data to the CoC7 system schema. */
 export class CoC7DataMapper {
     static getSkillValue(skillItem) {
         return Number(skillItem?.system?.value ?? skillItem?.system?.total ?? 0);
@@ -2069,7 +2099,7 @@ export class CoC7DataMapper {
 
     static async setCondition(actor, conditionKey, active) {
         if (!actor) return;
-        // Official CoC7 status mapping
+        // Translate adapter condition names to the system's status identifiers.
         const statusMap = {
             majorWound: "criticalWounds",
             temporaryInsanity: "tempoInsane",
@@ -2121,10 +2151,12 @@ const CHARACTERISTIC_ALIASES = Object.freeze({
     edu: "edu", education: "edu", bildung: "edu", bi: "edu", know: "edu", wissen: "edu"
 });
 
+/** Routes CoC7 sheet and enriched-text clicks into the shared roll-session workflow. */
 export class CoC7Interceptor {
     static register() {
         if (document.body.dataset.roeGlobalCapture) return;
         document.body.dataset.roeGlobalCapture = "true";
+        // Capture clicks before the system's handlers can start a competing roll.
         document.body.addEventListener("click", (event) => this.#handleDocumentClick(event), { capture: true });
     }
 
@@ -2150,6 +2182,7 @@ export class CoC7Interceptor {
         );
         if (!trigger) return;
 
+        // Shift-click lets a GM open the modifier-preparation phase from a sheet.
         const prepareModifiers = Boolean(game.user.isGM && event.shiftKey);
         const item = this.#resolveClickedItem(actor, trigger);
 
@@ -2195,6 +2228,7 @@ export class CoC7Interceptor {
         const parsed = this.#parseEnricherLink(link);
         const prepareModifiers = Boolean(game.user.isGM && event.shiftKey);
         const promptTitle = parsed.rawName || game.i18n.localize("ROE_COC7.RollSession.Types.basic");
+        // Prefer selected tokens; otherwise use the player's character or ask the GM.
         const actors = await this.#resolveTargetActors(promptTitle);
 
         for (const actor of actors) {
@@ -2392,6 +2426,7 @@ export class CoC7Interceptor {
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\module\coc7\coc7-result-formatter.mjs ===
 import { COC7_MODULE_ID } from "./coc7-settings.mjs";
 
+/** Formats check levels and roll outcomes according to the world's display settings. */
 export class CoC7ResultFormatter {
     static SYMBOL_MAP = Object.freeze({
         critical: "***!",
@@ -2425,18 +2460,22 @@ export class CoC7ResultFormatter {
 import { SessionStore } from "../core-bridge.mjs";
 import { CoC7DataMapper } from "./coc7-data-mapper.mjs";
 
+/** Builds system-specific session data and derives the presentation fields used by templates. */
 export class CoC7SessionFactory {
-    static createBasicOrOther({ actor, label, targetValue = 0, difficulty = "regular", diceFormula = "1d100", isOther = false, prepareModifiers = false }) {
+    /** Creates the standard percentile-roll session or a free-form dice-roll session. */
+    static createBasicOrOther({ actor, label, targetValue = 0, difficulty = "regular", diceFormula = "1d100", isOther = false, canPush = true, prepareModifiers = false }) {
         return {
             rollType: isOther ? "other" : "basic",
             prepareModifiers,
             title: label,
             difficulty,
             diceFormula,
+            canPush: !isOther && canPush,
             participants: [SessionStore.buildParticipant("p0", actor, label, targetValue)]
         };
     }
 
+    /** Creates a skill or characteristic check with its push and difficulty options. */
     static createSkillCheck({ actor, item = null, label, targetValue, difficulty = "regular", canChangeDifficulty = true, canPush = item?.system?.properties?.push !== false, prepareModifiers = false }) {
         return {
             rollType: "skill",
@@ -2449,6 +2488,7 @@ export class CoC7SessionFactory {
         };
     }
 
+    /** Creates a Sanity session, using current Sanity as the check target. */
     static createSanityCheck({ actor, label, lossSuccess = "0", lossFailure = "1d6", prepareModifiers = false }) {
         const currentSan = Number(CoC7DataMapper.getResource(actor, "sanity")?.value ?? 0);
         const sanLabel = game.i18n.localize("ROE_COC7.Resources.Sanity");
@@ -2464,33 +2504,46 @@ export class CoC7SessionFactory {
         };
     }
 
+    /** Creates two participants that will be evaluated against the same percentile roll. */
     static createCombined({ actor, checks, combinedMode = "and", difficulty = "regular", prepareModifiers = false }) {
+        const isCheckPushable = (check) => {
+            if (check.isLuck || check.canPush === false) return false;
+            if (!check.itemId) return true;
+            const skill = actor.items?.get?.(check.itemId);
+            return Boolean(skill && skill.system?.properties?.push !== false);
+        };
+
         return {
             rollType: "combined",
             prepareModifiers,
             title: checks.map((c) => c.label).join(" + "),
             difficulty,
             combinedMode,
-            canPush: checks.every((c) => {
-                if (c.isLuck || c.canPush === false) return false;
-                if (!c.itemId) return true;
-                const skill = actor.items?.get?.(c.itemId);
-                return Boolean(skill && skill.system?.properties?.push !== false);
-            }),
-            participants: checks.map((c, i) => SessionStore.buildParticipant(`c${i}`, actor, c.label, c.targetValue, c.itemId ?? ""))
+            canPush: checks.every(isCheckPushable),
+            participants: checks.map((c, i) => ({
+                ...SessionStore.buildParticipant(`c${i}`, actor, c.label, c.targetValue, c.itemId ?? ""),
+                canPush: isCheckPushable(c)
+            }))
         };
     }
 
+    /** Creates independent contestants for an opposed check. */
     static createOpposed({ title, contestants, prepareModifiers = false }) {
+        const participants = contestants.map((c, i) => ({
+            ...SessionStore.buildParticipant(`op${i}`, c.actor, c.label, c.targetValue, c.itemId ?? ""),
+            canPush: c.canPush !== false
+        }));
         return {
             rollType: "opposed",
             prepareModifiers,
             title,
             difficulty: "regular",
-            participants: contestants.map((c, i) => SessionStore.buildParticipant(`op${i}`, c.actor, c.label, c.targetValue))
+            canPush: participants.some((p) => p.canPush),
+            participants
         };
     }
 
+    /** Creates a melee session with the defender's available dodge and fight-back targets. */
     static createCombat({ attacker, defender = null, weapon, attackSkillLabel, attackTargetValue, difficulty = "regular", prepareModifiers = false }) {
         const participants = [SessionStore.buildParticipant("attacker", attacker, attackSkillLabel, attackTargetValue, weapon?.id ?? "")];
         let dodgeVal = 0;
@@ -2526,6 +2579,7 @@ export class CoC7SessionFactory {
         };
     }
 
+    /** Creates a ranged session whose target chooses cover before the attack roll. */
     static createRanged({ attacker, target, weapon, attackSkillLabel, attackTargetValue, difficulty = "regular", prepareModifiers = false }) {
         const weaponLabel = weapon?.name || attackSkillLabel;
         return {
@@ -2548,6 +2602,7 @@ export class CoC7SessionFactory {
         };
     }
 
+    /** Returns localized check choices for the request composer. */
     static collectActorChecks(actor, { includeSpecial = true } = {}) {
         if (!actor?.system) return [];
         const list = [];
@@ -2570,11 +2625,14 @@ export class CoC7SessionFactory {
 
         for (const skill of skills) {
             const val = CoC7DataMapper.getSkillValue(skill);
-            list.push({ value: `skill|${skill.id}|${skill.name}|${val}`, display: `${skill.name} (${val}%)` });
+            const pushFlag = skill.system?.properties?.push !== false ? "1" : "0";
+            list.push({ value: `skill|${skill.id}|${skill.name}|${val}|${pushFlag}`, display: `${skill.name} (${val}%)` });
         }
+
         return list;
     }
 
+    /** Adds result badges, phase summaries, and partial names needed by chat templates. */
     static enrichForTemplate(data) {
         const isSanity = data.rollType === "sanity";
         const isCombat = data.rollType === "combat" || data.rollType === "ranged";
@@ -2668,6 +2726,7 @@ export class CoC7SessionFactory {
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\module\coc7\coc7-settings.mjs ===
 export const COC7_MODULE_ID = "narrative-rolls-and-effects-coc7";
 
+/** Registers world-level preferences for displaying roll results. */
 export class CoC7Settings {
     static register() {
         game.settings.register(COC7_MODULE_ID, "resultDisplayMode", {
@@ -2709,6 +2768,7 @@ import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 
 const BASIC_ROLL_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/basic-roll-prompt.hbs";
 
+/** Creates the standard check prompt and its percentile-roll action. */
 export function createBasicRollPromptApp(core) {
     const CorePromptApp = core.createPromptClass({ template: BASIC_ROLL_TEMPLATE });
     return class BasicRollPromptApp extends CorePromptApp {
@@ -2731,6 +2791,8 @@ export function createBasicRollPromptApp(core) {
         const formattedLevel = p?.successLevel ? CoC7ResultFormatter.formatSuccessLevel(p.successLevel) : "";
         const modDice = p?.modifierDice ?? 0;
         const rollDiceArray = context.rollDice ?? [];
+        const skillDescription = await this.#getSkillDescription(p, sys?.rollType);
+        const promptDescriptions = skillDescription ? [{ html: skillDescription }] : [];
 
         return {
             ...context,
@@ -2754,8 +2816,18 @@ export function createBasicRollPromptApp(core) {
             canChangeDifficulty: false,
             modifierDisplay: this._formatModifierLabel(modDice),
             rollDiceLabel: this._formatDiceFormulaLabel(rollDiceArray),
+            hasPromptDescription: promptDescriptions.length > 0,
+            promptDescriptions,
             ...opts
         };
+    }
+
+    async #getSkillDescription(participant, rollType) {
+        if (rollType !== "skill" || !participant?.itemId) return "";
+        const actor = SessionStore.resolveActor(participant);
+        const description = actor?.items?.get(participant.itemId)?.system?.description?.value;
+        if (typeof description !== "string" || !description.trim()) return "";
+        return foundry.applications.ux.TextEditor.implementation.enrichHTML(description);
     }
 
     static async #onExecuteRoll() {
@@ -2780,6 +2852,7 @@ export function createBasicRollPromptApp(core) {
             return;
         }
 
+        // Resolve the roll once, then submit both its displayed breakdown and success state.
         const modifierDice = p.modifierDice ?? 0;
         const formula = CoC7CheckResolver.buildRollFormula(modifierDice);
         const roll = await new Roll(formula).evaluate();
@@ -2813,6 +2886,7 @@ import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 
 const COMBAT_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/combat-prompt.hbs";
 
+/** Creates the melee prompt for attacker, defender reaction, damage, and result phases. */
 export function createCombatPromptApp(core, OpposedPromptApp) {
     const ParentPromptApp = core.extendPromptClass(OpposedPromptApp, { template: COMBAT_PROMPT_TEMPLATE });
     return class CombatPromptApp extends ParentPromptApp {
@@ -2913,6 +2987,7 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
 
             tacticalOptions: this.#buildTacticalOptions(flags),
             attackerModifierDice: attackerModifier,
+            effectiveModifierDice: effectiveMod,
             defenderModifierDice: defenderModifier,
             defenderModifierLabel: this._formatModifierLabel(defenderModifier),
             flagModifierDice: flagBonus,
@@ -3191,6 +3266,7 @@ import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 
 const COMBINED_ROLL_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/combined-roll-prompt.hbs";
 
+/** Creates a prompt that applies one percentile result to both checks in a combined roll. */
 export function createCombinedRollPromptApp(core) {
     const CorePromptApp = core.createPromptClass({ template: COMBINED_ROLL_TEMPLATE });
     return class CombinedRollPromptApp extends CorePromptApp {
@@ -3214,6 +3290,7 @@ export function createCombinedRollPromptApp(core) {
                 ? Boolean(first?.isSuccess || second?.isSuccess)
                 : Boolean(first?.isSuccess && second?.isSuccess);
 
+        // A combined roll is pushed as one result, so both checks must still be eligible.
         const canPushCombined = Boolean(
             first?.hasRolled &&
             !sys?.isResolved &&
@@ -3253,6 +3330,7 @@ export function createCombinedRollPromptApp(core) {
         const rank = CoC7CheckResolver.LEVEL_RANK;
         const reqRank = rank[sys.difficulty] ?? 2;
 
+        // Both participants share this die result but resolve it against their own target.
         for (const part of [first, second]) {
             const successLevel = CoC7CheckResolver.evaluateResult(total, part.targetValue);
             const isSuccess = (rank[successLevel] ?? 0) >= reqRank;
@@ -3322,6 +3400,7 @@ import { createRangedPromptApp } from "./ranged-prompt-app.mjs";
 import { createSanityCheckPromptApp } from "./sanity-check-prompt-app.mjs";
 import { registerPromptApps } from "./prompt-app-registry.mjs";
 
+/** Creates each CoC7 prompt and registers the resulting classes for roll strategies. */
 export function initializePromptApps(core) {
     const basic = createBasicRollPromptApp(core);
     const opposed = createOpposedRollPromptApp(core);
@@ -3345,6 +3424,7 @@ import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 
 const OPPOSED_ROLL_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/opposed-roll-prompt.hbs";
 
+/** Creates the opposed-roll prompt, including per-contestant rolls and visibility rules. */
 export function createOpposedRollPromptApp(core) {
     const CorePromptApp = core.createPromptClass({ template: OPPOSED_ROLL_TEMPLATE });
     return class OpposedRollPromptApp extends CorePromptApp {
@@ -3393,11 +3473,11 @@ export function createOpposedRollPromptApp(core) {
             };
         });
 
-        const hasPendingOwnLuckDecision =
-            !game.user.isGM && enriched.some((p) => p.isOwner && p.hasRolled && p.canSpendLuck);
+        const hasPendingOwnAction =
+            !game.user.isGM && enriched.some((p) => p.isOwner && p.hasRolled && (p.canSpendLuck || p.canPush));
 
         const canRevealOpposedResults =
-            game.user.isGM || (context.allRolled && !hasPendingOwnLuckDecision) || Boolean(sys?.isResolved);
+            game.user.isGM || (context.allRolled && !hasPendingOwnAction) || Boolean(sys?.isResolved);
 
         const participants = enriched.map((p, index) => {
             const showDetails = game.user.isGM || p.isOwner || canRevealOpposedResults;
@@ -3406,7 +3486,7 @@ export function createOpposedRollPromptApp(core) {
                 ...p,
                 phaseNumber: index + 1,
                 isPhaseActive: !p.hasRolled,
-                hiddenInCompact: p.hasRolled ? !p.canSpendLuck : !canRoll,
+                hiddenInCompact: p.hasRolled ? (!p.canSpendLuck && !p.canPush) : !canRoll,
                 canRoll,
                 statusText: p.hasRolled
                     ? showDetails
@@ -3477,10 +3557,12 @@ export function createOpposedRollPromptApp(core) {
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\module\coc7\prompts\prompt-app-registry.mjs ===
 let promptApps;
 
+/** Stores prompt classes after adapter initialization. */
 export function registerPromptApps(apps) {
     promptApps = apps;
 }
 
+/** Returns an initialized prompt class or reports an invalid initialization order. */
 export function getPromptApp(name) {
     const PromptApp = promptApps?.[name];
     if (!PromptApp) throw new Error(`Call of Cthulhu prompt "${name}" has not been initialized.`);
@@ -3504,6 +3586,7 @@ const COVER_PENALTY_DICE = -1;
  */
 const RANGED_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/ranged-prompt.hbs";
 
+/** Creates the ranged prompt and coordinates cover, attack, and damage actions. */
 export function createRangedPromptApp(core, BasicPromptApp) {
     const ParentPromptApp = core.extendPromptClass(BasicPromptApp, { template: RANGED_PROMPT_TEMPLATE });
     return class RangedPromptApp extends ParentPromptApp {
@@ -3530,6 +3613,7 @@ export function createRangedPromptApp(core, BasicPromptApp) {
         const tookCover = Boolean(target?.tookCover);
         const manualMod = Number(attacker?.modifierDice ?? 0);
         const coverPenalty = tookCover ? COVER_PENALTY_DICE : 0;
+        // Taking cover contributes a penalty die to the attacker's manual modifier.
         const effectiveMod = Math.clamp(manualMod + coverPenalty, -2, 2);
 
         const canViewAttackerRoll = attacker ? RollVisibilityPolicy.canViewParticipantRoll(attacker, sys) : false;
@@ -3565,6 +3649,7 @@ export function createRangedPromptApp(core, BasicPromptApp) {
 
             manualModifierDice: manualMod,
             flagModifierDice: coverPenalty,
+            effectiveModifierDice: effectiveMod,
             effectiveModifierLabel: this._formatModifierLabel(effectiveMod),
             attackerDice,
             attackerDiceLabel: this._formatDiceFormulaLabel(attackerDice),
@@ -3704,6 +3789,7 @@ import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 
 const SANITY_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/sanity-check-prompt.hbs";
 
+/** Creates the staged Sanity prompt, including its optional Intelligence follow-up. */
 export function createSanityCheckPromptApp(core, BasicPromptApp) {
     const ParentPromptApp = core.extendPromptClass(BasicPromptApp, { template: SANITY_PROMPT_TEMPLATE });
     return class SanityCheckPromptApp extends ParentPromptApp {
@@ -3839,6 +3925,7 @@ export function createSanityCheckPromptApp(core, BasicPromptApp) {
         const intRoll = sys?.participants?.find((p) => p.key === "insanityInt");
         if (!intRoll || intRoll.hasRolled || sys.isResolved) return;
 
+        // The follow-up check resolves temporary-insanity duration after a bout is triggered.
         const modifierDice = intRoll.modifierDice ?? 0;
         const formula = CoC7CheckResolver.buildRollFormula(modifierDice);
         const roll = await new Roll(formula).evaluate();
@@ -3864,6 +3951,7 @@ export function createSanityCheckPromptApp(core, BasicPromptApp) {
 
 
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\module\coc7\prompts\skill-check-prompt-app.mjs ===
+/** Extends the standard prompt with the effective difficulty target for skill checks. */
 export function createSkillCheckPromptApp(core, BasicPromptApp) {
     const ParentPromptApp = core.extendPromptClass(BasicPromptApp, {
         template: "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/basic-roll-prompt.hbs"
@@ -3955,6 +4043,7 @@ export class BaseRollStrategy {
 import { BaseRollStrategy } from "./base-roll-strategy.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 
+/** Resolves standard checks and records whether a failed push needs GM follow-up. */
 export class BasicRollStrategy extends BaseRollStrategy {
     async onRollApplied(participant, state) {
         if (participant?.isPushed && !participant.isSuccess) state.pushFailurePending = true;
@@ -3989,6 +4078,7 @@ import { getPromptApp } from "../prompts/prompt-app-registry.mjs";
 import { SessionStore } from "../../core-bridge.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 
+/** Resolves melee exchanges, creates damage follow-ups, and applies combat consequences. */
 export class CombatRollStrategy extends BaseRollStrategy {
     /** @override */
     renderPrompt(options) {
@@ -4008,7 +4098,8 @@ export class CombatRollStrategy extends BaseRollStrategy {
             const finalDamage = Math.max(0, rawDamage - armor);
 
             const maxHp = Number(CoC7DataMapper.getResource(targetActor, "hp")?.max ?? 10);
-            const majorWoundTriggered = finalDamage > 0 && finalDamage >= Math.floor(maxHp / 2);
+            // Major wounds are measured against maximum HP, after armor mitigation.
+            const majorWoundTriggered = finalDamage > 0 && finalDamage >= Math.ceil(maxHp / 2);
 
             state.rawDamage = rawDamage;
             state.armorApplied = armor;
@@ -4082,8 +4173,12 @@ export class CombatRollStrategy extends BaseRollStrategy {
         if (!targetActor) return;
 
         if (state.hitWinnerKey === "defender" && state.defenderReaction === "maneuver") {
-            const conditionKey = state.maneuverType === "knockdown" ? "prone" : "restrained";
-            await CoC7DataMapper.setCondition(targetActor, conditionKey, true);
+            const conditionByManeuver = {
+                grapple: "restrained",
+                knockdown: "prone"
+            };
+            const conditionKey = conditionByManeuver[state.maneuverType];
+            if (conditionKey) await CoC7DataMapper.setCondition(targetActor, conditionKey, true);
             return;
         }
 
@@ -4171,9 +4266,10 @@ export class CombatRollStrategy extends BaseRollStrategy {
         }
 
         const defRank = rank[defender.successLevel] ?? 0;
-        const attPassed = attRank >= rank.regular;
+        const attPassed = attRank >= reqRank;
         const defPassed = defRank >= rank.regular;
 
+        // A dodge avoids a hit on an equal success level; fighting back favors the attacker on ties.
         if (state.defenderReaction === "dodge") {
             if (!attPassed) return "";
             if (!defPassed) return "attacker";
@@ -4297,6 +4393,16 @@ export class OpposedRollStrategy extends BaseRollStrategy {
             })
         };
     }
+
+        /** @override */
+    async onRollApplied(participant, state) {
+        if (!participant?.isPushed) return;
+        const resolution = this.evaluateResolution(state);
+        if (resolution.winnerKey !== participant.key) {
+            state.pushFailurePending = true;
+        }
+    }
+
 }
 
 
@@ -4351,6 +4457,7 @@ export class RangedRollStrategy extends CombatRollStrategy {
     async applyConsequences(state) {
         await super.applyConsequences(state);
 
+        // Cover is applied alongside damage consequences, so it remains pending if damage is deferred.
         if (!this.#targetTookCover(state)) return;
         const target = state.participants?.find((p) => p.key === "defender");
         const targetActor = SessionStore.resolveActor(target);
@@ -4378,6 +4485,7 @@ import { getPromptApp } from "../prompts/prompt-app-registry.mjs";
 import { SessionStore } from "../../core-bridge.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 
+/** Resolves Sanity loss, threshold-based insanity, and any required Intelligence follow-up. */
 export class SanityRollStrategy extends BasicRollStrategy {
     /** @override */
     renderPrompt(options) {
@@ -4439,6 +4547,7 @@ export class SanityRollStrategy extends BasicRollStrategy {
         const currentSan = Number(sanResource.value ?? 0);
         const previousDailyLoss = Number(sanResource.dailyLoss ?? 0);
 
+        // Reconstruct the day's starting Sanity to test the cumulative one-fifth threshold.
         const dailyStartSan = currentSan + previousDailyLoss;
         const newSan = Math.max(0, currentSan - lost);
         const newDailyLoss = previousDailyLoss + lost;
@@ -5526,7 +5635,8 @@ export class SkillRollStrategy extends BasicRollStrategy {
 
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\templates\chat\coc7-session-card.hbs ===
 <div
-    class="roe-overlay roe-chat-card combat-protocol-card {{#if isSanity}}sanity-protocol-card{{/if}} {{#if isResolved}}is-resolved{{/if}}">
+    class="roe-overlay roe-chat-card combat-protocol-card {{#if isSanity}}sanity-protocol-card{{/if}} {{#if isResolved}}is-resolved{{/if}}"
+    data-nre-system="CoC7">
     <header class="combat-card-title">
         <span class="weapon-headline">
             {{#if isSanity}}<i class="fa-solid fa-eye sanity-emblem"></i> {{/if}}{{title}}
@@ -5799,16 +5909,11 @@ export class SkillRollStrategy extends BasicRollStrategy {
 
 
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\templates\core\prompts\partials\push-failure-phase.hbs ===
-{{#if showPushFailurePhase}}
-<section class="combat-phase-section is-active">
-    <header class="combat-phase-header">
-        <span class="phase-title"><i class="fa-solid fa-triangle-exclamation"></i> {{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureTitle"}}{{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}</span>
-    </header>
+{{#if showPushFailureWarning}}
+<div class="prompt-outcome-banner push-failure-warning" role="status">
+    <strong>{{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureTitle"}}{{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}</strong>
     <div>{{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureDescription"}}{{else}}{{localize "ROE_COC7.Roll.PushFailureHidden"}}{{/if}}</div>
-    <button type="button" class="prompt-action-btn primary" data-action="acknowledgePushFailure">
-        <i class="fa-solid fa-check"></i> {{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureAcknowledge"}}{{else}}{{localize "ROE_COC7.Roll.PushFailureContinue"}}{{/if}}
-    </button>
-</section>
+</div>
 {{/if}}
 
 
@@ -6135,6 +6240,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
 {{#if canRoll}}
 <div class="prompt-player-controls {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
     {{> roeSkillDifficultyControls}}
+    {{> roeModifierSummary modifierDice=modifierDice modifierDisplay=modifierDisplay}}
     {{> roeDiceDisplay dice=rollDice modifierTooltip=modifierDisplay}}
 
     <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">
@@ -6182,7 +6288,12 @@ export class SkillRollStrategy extends BasicRollStrategy {
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">
     <button type="button" class="prompt-action-btn primary" data-action="resolveSession">
-        <i class="fa-solid fa-gavel"></i> {{localize "ROE.RollSession.ResolveBtn"}}
+        <i class="fa-solid fa-gavel"></i>
+        {{#if showPushFailureWarning}}
+        {{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureAcknowledge"}}{{else}}{{localize "ROE_COC7.Roll.PushFailureContinue"}}{{/if}}
+        {{else}}
+        {{localize "ROE.RollSession.ResolveBtn"}}
+        {{/if}}
     </button>
 </footer>
 {{/if}}
@@ -6253,6 +6364,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
         {{#each tacticalOptions}}{{#if active}}
         <div class="section-header">{{label}}</div>
         {{/if}}{{/each}}
+        {{> roeModifierSummary modifierDice=effectiveModifierDice modifierDisplay=effectiveModifierLabel}}
         {{> roeDiceDisplay dice=attackerDice modifierTooltip=effectiveModifierLabel}}
 
         <button type="button" class="prompt-action-btn roll-now" data-action="rollInitiatorAttack">
@@ -6317,6 +6429,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
         {{/if}}
 
         {{#unless isNoneReaction}}
+        {{> roeModifierSummary modifierDice=defenderModifierDice modifierDisplay=defenderModifierLabel}}
         {{> roeDiceDisplay dice=defenderDice modifierTooltip=defenderModifierLabel}}
         {{/unless}}
 
@@ -6454,6 +6567,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
 
 {{#if canRoll}}
 <footer class="prompt-footer pre-roll-controls {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
+    {{> roeModifierSummary modifierDice=modifierDice modifierDisplay=modifierDisplay}}
     {{> roeDiceDisplay dice=rollDice modifierTooltip=modifierDisplay}}
 
     <button type="button" class="prompt-action-btn roll-now" data-action="executeCombinedRoll">
@@ -6488,7 +6602,12 @@ export class SkillRollStrategy extends BasicRollStrategy {
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">
     <button type="button" class="prompt-action-btn primary" data-action="resolveSession">
-        <i class="fa-solid fa-gavel"></i> {{localize "ROE.RollSession.ResolveBtn"}}
+        <i class="fa-solid fa-gavel"></i>
+        {{#if showPushFailureWarning}}
+        {{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureAcknowledge"}}{{else}}{{localize "ROE_COC7.Roll.PushFailureContinue"}}{{/if}}
+        {{else}}
+        {{localize "ROE.RollSession.ResolveBtn"}}
+        {{/if}}
     </button>
 </footer>
 {{/if}}
@@ -6544,6 +6663,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
 
         {{#if canRoll}}
         <div class="prompt-player-controls {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
+            {{> roeModifierSummary modifierDice=modifierDice modifierDisplay=modifierDisplay}}
             {{> roeDiceDisplay dice=dice modifierTooltip=modifierDisplay}}
 
             <button type="button" class="prompt-action-btn roll-now compact" data-action="rollContestant" data-key="{{key}}">
@@ -6552,15 +6672,12 @@ export class SkillRollStrategy extends BasicRollStrategy {
         </div>
         {{/if}}
 
-        {{#if canSpendLuck}}
+        {{#if canPush}}
         <div class="luck-decision-row {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
-            <button type="button" class="prompt-action-btn luck compact" data-action="spendLuck" data-key="{{key}}"
-                data-cost="{{luckCost}}" data-level="{{luckTargetLevel}}">
-                <i class="fa-solid fa-clover"></i> {{localize "ROE_COC7.Chat.SpendLuckImprove" level=luckTargetLabel
-                cost=luckCost}}
-            </button>
-            <button type="button" class="prompt-action-btn secondary compact" data-action="declineLuck" data-key="{{key}}">
-                {{localize "ROE_COC7.RollSession.DeclineLuckBtn"}}
+            {{> roeDiceDisplay dice=dice modifierTooltip=modifierDisplay}}
+            <button type="button" class="prompt-action-btn push compact {{#if isDelegatedToPlayer}}gm-delegated{{/if}}"
+                data-action="pushRoll" data-key="{{key}}">
+                <i class="fa-solid fa-rotate-right"></i> {{localize "ROE_COC7.Chat.PushRoll"}}
             </button>
         </div>
         {{/if}}
@@ -6571,11 +6688,17 @@ export class SkillRollStrategy extends BasicRollStrategy {
 
 {{#*inline "promptResults"}}
 {{> (lookup . "resultPartial")}}
+{{> roePushFailurePhase}}
 
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">
     <button type="button" class="prompt-action-btn primary" data-action="resolveSession">
-        <i class="fa-solid fa-gavel"></i> {{localize "ROE.RollSession.ResolveBtn"}}
+        <i class="fa-solid fa-gavel"></i>
+        {{#if showPushFailureWarning}}
+        {{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureAcknowledge"}}{{else}}{{localize "ROE_COC7.Roll.PushFailureContinue"}}{{/if}}
+        {{else}}
+        {{localize "ROE.RollSession.ResolveBtn"}}
+        {{/if}}
     </button>
 </footer>
 {{/if}}
@@ -6667,6 +6790,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
         </div>
         {{/if}}
 
+        {{> roeModifierSummary modifierDice=effectiveModifierDice modifierDisplay=effectiveModifierLabel}}
         {{> roeDiceDisplay dice=attackerDice modifierTooltip=effectiveModifierLabel}}
 
         <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">
@@ -6804,6 +6928,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
 
     {{#if canRoll}}
     <div class="prompt-player-controls {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
+        {{> roeModifierSummary modifierDice=manualModifierDice modifierDisplay=effectiveModifierLabel}}
         {{> roeDiceDisplay dice=rollDice modifierTooltip=effectiveModifierLabel}}
 
         <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">
@@ -6843,6 +6968,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
 
     {{#if isPhaseInsight}}
     {{#if canRollIntCheck}}
+    {{> roeModifierSummary modifierDice=intModifierDice modifierDisplay=intModifierLabel}}
     {{> roeDiceDisplay dice=intDice modifierTooltip=intModifierLabel}}
     <button type="button" class="prompt-action-btn sanity-int-btn {{#if isIntDelegatedToPlayer}}gm-delegated{{/if}}"
         data-action="executeIntCheck">

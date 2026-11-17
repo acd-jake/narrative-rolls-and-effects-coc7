@@ -53,11 +53,11 @@ export function createOpposedRollPromptApp(core) {
             };
         });
 
-        const hasPendingOwnLuckDecision =
-            !game.user.isGM && enriched.some((p) => p.isOwner && p.hasRolled && p.canSpendLuck);
+        const hasPendingOwnAction =
+            !game.user.isGM && enriched.some((p) => p.isOwner && p.hasRolled && (p.canSpendLuck || p.canPush));
 
         const canRevealOpposedResults =
-            game.user.isGM || (context.allRolled && !hasPendingOwnLuckDecision) || Boolean(sys?.isResolved);
+            game.user.isGM || (context.allRolled && !hasPendingOwnAction) || Boolean(sys?.isResolved);
 
         const participants = enriched.map((p, index) => {
             const showDetails = game.user.isGM || p.isOwner || canRevealOpposedResults;
@@ -66,7 +66,7 @@ export function createOpposedRollPromptApp(core) {
                 ...p,
                 phaseNumber: index + 1,
                 isPhaseActive: !p.hasRolled,
-                hiddenInCompact: p.hasRolled ? !p.canSpendLuck : !canRoll,
+                hiddenInCompact: p.hasRolled ? (!p.canSpendLuck && !p.canPush) : !canRoll,
                 canRoll,
                 statusText: p.hasRolled
                     ? showDetails

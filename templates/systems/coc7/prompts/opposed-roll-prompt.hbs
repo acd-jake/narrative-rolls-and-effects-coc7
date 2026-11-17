@@ -53,15 +53,12 @@
         </div>
         {{/if}}
 
-        {{#if canSpendLuck}}
+        {{#if canPush}}
         <div class="luck-decision-row {{#if isDelegatedToPlayer}}gm-delegated-region{{/if}}">
-            <button type="button" class="prompt-action-btn luck compact" data-action="spendLuck" data-key="{{key}}"
-                data-cost="{{luckCost}}" data-level="{{luckTargetLevel}}">
-                <i class="fa-solid fa-clover"></i> {{localize "ROE_COC7.Chat.SpendLuckImprove" level=luckTargetLabel
-                cost=luckCost}}
-            </button>
-            <button type="button" class="prompt-action-btn secondary compact" data-action="declineLuck" data-key="{{key}}">
-                {{localize "ROE_COC7.RollSession.DeclineLuckBtn"}}
+            {{> roeDiceDisplay dice=dice modifierTooltip=modifierDisplay}}
+            <button type="button" class="prompt-action-btn push compact {{#if isDelegatedToPlayer}}gm-delegated{{/if}}"
+                data-action="pushRoll" data-key="{{key}}">
+                <i class="fa-solid fa-rotate-right"></i> {{localize "ROE_COC7.Chat.PushRoll"}}
             </button>
         </div>
         {{/if}}
@@ -72,11 +69,17 @@
 
 {{#*inline "promptResults"}}
 {{> (lookup . "resultPartial")}}
+{{> roePushFailurePhase}}
 
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">
     <button type="button" class="prompt-action-btn primary" data-action="resolveSession">
-        <i class="fa-solid fa-gavel"></i> {{localize "ROE.RollSession.ResolveBtn"}}
+        <i class="fa-solid fa-gavel"></i>
+        {{#if showPushFailureWarning}}
+        {{#if canViewPushFailure}}{{localize "ROE_COC7.Roll.PushFailureAcknowledge"}}{{else}}{{localize "ROE_COC7.Roll.PushFailureContinue"}}{{/if}}
+        {{else}}
+        {{localize "ROE.RollSession.ResolveBtn"}}
+        {{/if}}
     </button>
 </footer>
 {{/if}}

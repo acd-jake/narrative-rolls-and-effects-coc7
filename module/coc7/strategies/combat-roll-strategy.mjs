@@ -25,7 +25,7 @@ export class CombatRollStrategy extends BaseRollStrategy {
 
             const maxHp = Number(CoC7DataMapper.getResource(targetActor, "hp")?.max ?? 10);
             // Major wounds are measured against maximum HP, after armor mitigation.
-            const majorWoundTriggered = finalDamage > 0 && finalDamage >= Math.floor(maxHp / 2);
+            const majorWoundTriggered = finalDamage > 0 && finalDamage >= Math.ceil(maxHp / 2);
 
             state.rawDamage = rawDamage;
             state.armorApplied = armor;
@@ -99,8 +99,12 @@ export class CombatRollStrategy extends BaseRollStrategy {
         if (!targetActor) return;
 
         if (state.hitWinnerKey === "defender" && state.defenderReaction === "maneuver") {
-            const conditionKey = state.maneuverType === "knockdown" ? "prone" : "restrained";
-            await CoC7DataMapper.setCondition(targetActor, conditionKey, true);
+            const conditionByManeuver = {
+                grapple: "restrained",
+                knockdown: "prone"
+            };
+            const conditionKey = conditionByManeuver[state.maneuverType];
+            if (conditionKey) await CoC7DataMapper.setCondition(targetActor, conditionKey, true);
             return;
         }
 
@@ -188,7 +192,7 @@ export class CombatRollStrategy extends BaseRollStrategy {
         }
 
         const defRank = rank[defender.successLevel] ?? 0;
-        const attPassed = attRank >= rank.regular;
+        const attPassed = attRank >= reqRank;
         const defPassed = defRank >= rank.regular;
 
         // A dodge avoids a hit on an equal success level; fighting back favors the attacker on ties.

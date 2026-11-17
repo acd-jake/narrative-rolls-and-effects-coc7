@@ -41,7 +41,9 @@ export class CoC7PostRollHandler {
         }
         if (actionId === "declineLuck") {
             const participants = session.participants.map((p) =>
-                p.key === participantKey ? { ...p, luckDecided: true } : p
+                p.key === participantKey || session.rollType === "combined"
+                    ? { ...p, luckDecided: true, pushDecided: true }
+                    : p
             );
             return { session: { ...session, participants }, finalize: true };
         }
@@ -87,6 +89,14 @@ export class CoC7PostRollHandler {
         }
         const canPush = CoC7CheckResolver.canPush(session, participant.key);
         const canSpendLuck = luckCost > 0;
+        const declinePostRollLabel = canSpendLuck && canPush
+            ? game.i18n.localize("ROE_COC7.RollSession.DeclineLuckAndPushBtn")
+            : canSpendLuck
+                ? game.i18n.localize("ROE_COC7.RollSession.DeclineLuckBtn")
+                : canPush
+                    ? game.i18n.localize("ROE_COC7.RollSession.DeclinePushBtn")
+                    : "";
+
         return {
             canSpendLuck,
             luckCost,
@@ -94,6 +104,7 @@ export class CoC7PostRollHandler {
             luckTargetLabel: luckTargetLevel ? game.i18n.localize(`ROE_COC7.SuccessLevels.${luckTargetLevel}`) : "",
             canPush,
             hasPendingAction: canSpendLuck || canPush,
+            declinePostRollLabel,
             isDelegatedToPlayer
         };
     }

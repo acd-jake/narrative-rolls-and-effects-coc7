@@ -30,8 +30,6 @@
         <i class="fa-solid fa-clover"></i> {{first.label}}: {{localize "ROE_COC7.Chat.SpendLuckImprove"
         level=first.luckTargetLabel cost=first.luckCost}}
     </button>
-    <button type="button" class="prompt-action-btn secondary compact {{#if first.isDelegatedToPlayer}}gm-delegated{{/if}}"
-        data-action="declineLuck" data-key="{{first.key}}">{{localize "ROE_COC7.RollSession.DeclineLuckBtn"}}</button>
     {{/if}}
 
     <div class="combined-check-row">
@@ -47,8 +45,6 @@
         <i class="fa-solid fa-clover"></i> {{second.label}}: {{localize "ROE_COC7.Chat.SpendLuckImprove"
         level=second.luckTargetLabel cost=second.luckCost}}
     </button>
-    <button type="button" class="prompt-action-btn secondary compact {{#if second.isDelegatedToPlayer}}gm-delegated{{/if}}"
-        data-action="declineLuck" data-key="{{second.key}}">{{localize "ROE_COC7.RollSession.DeclineLuckBtn"}}</button>
     {{/if}}
 </div>
 
@@ -78,6 +74,16 @@
     </button>
 </div>
 {{/if}}
+
+{{#if hasPendingCombinedAction}}
+<div class="prompt-footer">
+    <button type="button" class="prompt-action-btn secondary {{#if isDelegatedToPlayer}}gm-delegated{{/if}}"
+        data-action="declineLuck" data-key="{{first.key}}">
+        {{declineCombinedLabel}}
+    </button>
+</div>
+{{/if}}
+
 {{/inline}}
 
 {{#*inline "promptResults"}}

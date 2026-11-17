@@ -67,6 +67,8 @@
         "Opposed": "Vergleichende Probe {title}: {names}"
       },
       "DeclineLuckBtn": "Kein Glück einsetzen",
+      "DeclinePushBtn": "Nicht forcieren",
+      "DeclineLuckAndPushBtn": "Kein Glück einsetzen & nicht forcieren",
       "Types": {
         "basic": "Probe",
         "other": "Wurf",

@@ -62,6 +62,13 @@
             </button>
         </div>
         {{/if}}
+
+        {{#if hasPendingAction}}
+        <button type="button" class="prompt-action-btn secondary compact {{#if isDelegatedToPlayer}}gm-delegated{{/if}}"
+            data-action="declineLuck" data-key="{{key}}">
+            {{declinePostRollLabel}}
+        </button>
+        {{/if}}
     </div>
     {{/each}}
 </div>

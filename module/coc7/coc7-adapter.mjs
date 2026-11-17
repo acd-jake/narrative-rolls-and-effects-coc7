@@ -75,6 +75,7 @@ export class CoC7Adapter {
             ...participant,
             canPush: participant.canPush ?? true,
             isPushed: false,
+            pushDecided: false,
             luckDecided: false,
             luckSpent: 0
         };

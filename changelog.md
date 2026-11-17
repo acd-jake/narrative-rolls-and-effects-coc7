@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Allowed players to inspect roll details by clicking their visible success-level outcome during the waiting phase.
 - Displayed the opponent's success level in prompts and chat cards regardless of roll visibility mode, while keeping rolled numbers and dice-breakdown inspection restricted.
 - Allowed players to view and inspect their own roll outcome and details immediately while waiting for opponents or Keeper resolution.
+- Placed a unified post-roll decline button below Luck and Push options with dynamic labels based on available choices.
 
 ### Fixed
 - Kept modifier sliders in preparation and summarized active bonus or penalty dice in roll prompts.

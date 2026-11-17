@@ -25,7 +25,7 @@ export class CoC7SessionPatcher {
             if (session.consequencesApplied) return session;
             const clearResult = {
                 hasRolled: false, total: null, successLevel: "", isSuccess: false,
-                isPushed: false, luckDecided: false, luckSpent: 0, rollBreakdown: null
+                isPushed: false, luckDecided: false, pushDecided: false, luckSpent: 0, rollBreakdown: null
             };
             if (patch.resetCombatPhase && session.rollType === "combat") {
                 return this.#rewindCombatPhase(session, patch.resetCombatPhase, clearResult);

@@ -21,6 +21,17 @@ export function createCombinedRollPromptApp(core) {
         const firstOpts = this._evaluateParticipantOptions(first, sys);
         const secondOpts = this._evaluateParticipantOptions(second, sys);
 
+              const canSpendAnyLuck = Boolean(firstOpts.canSpendLuck || secondOpts.canSpendLuck);
+      const hasPendingCombinedAction = Boolean(canSpendAnyLuck || canPushCombined);
+      const declineCombinedLabel = canSpendAnyLuck && canPushCombined
+          ? game.i18n.localize("ROE_COC7.RollSession.DeclineLuckAndPushBtn")
+          : canSpendAnyLuck
+              ? game.i18n.localize("ROE_COC7.RollSession.DeclineLuckBtn")
+              : canPushCombined
+                  ? game.i18n.localize("ROE_COC7.RollSession.DeclinePushBtn")
+                  : "";
+
+
         // Push is available if the combined check failed overall and neither part was pushed yet
         const overallPassed =
             sys?.combinedMode === "or"
@@ -51,7 +62,9 @@ export function createCombinedRollPromptApp(core) {
             modifierDisplay: this._formatModifierLabel(modDice),
             rollDiceLabel: this._formatDiceFormulaLabel(rollDiceArray),
             canRoll: Boolean(first && !first.hasRolled && (game.user.isGM || SessionStore.resolveActor(first)?.isOwner)),
-            isDelegatedToPlayer: this._isDelegatedToActivePlayer(first)
+            isDelegatedToPlayer: this._isDelegatedToActivePlayer(first),
+            hasPendingCombinedAction,
+            declineCombinedLabel
         };
     }
 

@@ -61,7 +61,7 @@ export class CoC7CheckResolver {
         if (!["basic", "skill", "combined", "opposed"].includes(state.rollType)) return false;
         const participants = state.participants ?? [];
         const participant = participants.find((e) => e.key === participantKey);
-        if (!participant?.hasRolled || participant.isPushed || participant.canPush === false || participant.successLevel === "fumble") return false;
+        if (!participant?.hasRolled || participant.isPushed || participant.pushDecided || participant.canPush === false || participant.successLevel === "fumble") return false;
 
         if (state.rollType === "opposed") {
             if (participants.length < 2 || participants.some((e) => !e.hasRolled)) return false;
@@ -69,7 +69,7 @@ export class CoC7CheckResolver {
         }
 
         if (state.rollType !== "combined") return !participant.isSuccess;
-        if (participants.length < 2 || participants.some((e) => !e.hasRolled || e.isPushed || e.canPush === false || e.successLevel === "fumble")) return false;
+        if (participants.length < 2 || participants.some((e) => !e.hasRolled || e.isPushed || e.pushDecided || e.canPush === false || e.successLevel === "fumble")) return false;
         const passed = state.combinedMode === "or" ? participants.some((e) => e.isSuccess) : participants.every((e) => e.isSuccess);
         return !passed;
     }

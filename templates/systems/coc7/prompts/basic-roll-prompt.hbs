@@ -63,10 +63,6 @@
         <i class="fa-solid fa-clover"></i> {{localize "ROE_COC7.Chat.SpendLuckImprove" level=luckTargetLabel
         cost=luckCost}}
     </button>
-    <button type="button" class="prompt-action-btn secondary"
-        data-action="declineLuck" data-key="{{participantKey}}">
-        {{localize "ROE_COC7.RollSession.DeclineLuckBtn"}}
-    </button>
 </div>
 {{/if}}
 
@@ -75,6 +71,13 @@
 <button type="button" class="prompt-action-btn push {{#if isDelegatedToPlayer}}gm-delegated{{/if}}"
     data-action="pushRoll" data-key="{{participantKey}}">
     <i class="fa-solid fa-rotate-right"></i> {{localize "ROE_COC7.Chat.PushRoll"}}
+</button>
+{{/if}}
+
+{{#if hasPendingAction}}
+<button type="button" class="prompt-action-btn secondary {{#if isDelegatedToPlayer}}gm-delegated{{/if}}"
+    data-action="declineLuck" data-key="{{participantKey}}">
+    {{declinePostRollLabel}}
 </button>
 {{/if}}
 {{/inline}}

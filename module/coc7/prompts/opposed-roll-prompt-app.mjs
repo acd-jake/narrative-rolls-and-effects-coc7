@@ -61,22 +61,23 @@ export function createOpposedRollPromptApp(core) {
 
             const participants = enriched.map((p, index) => {
                 const canView = RollVisibilityPolicy.canViewParticipantRoll(p, sys);
-                const showDetails = game.user.isGM || p.isOwner || canRevealOpposedResults;
-                const canRoll = !p.hasRolled && (game.user.isGM || p.isOwner);
+                const isOwnParticipant = Boolean(p.isOwner);
+                const showDetails = isOwnParticipant || canRevealOpposedResults;
+                const canRoll = !p.hasRolled && (game.user.isGM || isOwnParticipant);
                 return {
                     ...p,
                     phaseNumber: index + 1,
                     isPhaseActive: !p.hasRolled,
-                    hiddenInCompact: p.hasRolled ? (!p.canSpendLuck && !p.canPush && !p.isOwner) : !canRoll,
+                    hiddenInCompact: p.hasRolled ? (!p.canSpendLuck && !p.canPush && !isOwnParticipant) : !canRoll,
                     canRoll,
-                    canInspect: p.hasRolled && canView,
+                    canInspect: p.hasRolled && (canView || isOwnParticipant),
                     statusText: p.hasRolled
                         ? showDetails
                             ? CoC7ResultFormatter.formatRollOutcome({
                                 total: p.total,
                                 targetValue: p.targetValue,
                                 successLevel: p.successLevel,
-                                allowNumbers: canView
+                                allowNumbers: canView || isOwnParticipant
                             })
                             : game.i18n.localize("ROE_COC7.Combat.Card.HiddenUntilOwnRoll")
                         : game.i18n.localize("ROE_COC7.Combat.Card.PendingRoll")

@@ -42,12 +42,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Difficulty selection during modifier preparation for eligible CoC7 checks.
 - Pushed-roll support for opposed checks alongside characteristic, skill, and combined checks according to Call of Cthulhu 7e rules.
 - Added atmospheric waiting hints per CoC7 check type while the Keeper resolves the roll session.
+- Configurable resolved combat prompt layout setting (`combatResolvedLayout`) supporting both narrative scene summaries and side-by-side duel comparisons with separated mechanical consequences.
 
 ### Changed
 - Dice-face images, formula visualization, and the shared dice display are provided by the core module; CoC7 prompts now use that shared implementation.
 - CoC7 dice tooltips now group percentile units, tens, and bonus/penalty dice into one formula.
 - Simplified resolved roll prompts across all CoC7 check types (skill, characteristic, custom, combined, opposed, sanity, and combat) to show context headers and color-coded outcomes without duplicate text.
 - Allowed players to inspect roll details by clicking their visible success-level outcome during the waiting phase.
+- Displayed the opponent's success level in prompts and chat cards regardless of roll visibility mode, while keeping rolled numbers and dice-breakdown inspection restricted.
+- Allowed players to view and inspect their own roll outcome and details immediately while waiting for opponents or Keeper resolution.
 
 ### Fixed
 - Kept modifier sliders in preparation and summarized active bonus or penalty dice in roll prompts.
@@ -398,6 +401,12 @@ jobs:
         "Name": "Hinweistexte bei Stabilitäts-Auswertung",
         "Hint": "Atmosphärische Texte (ein Hinweis pro Zeile), die Spielern angezeigt werden, während die Spielleitung die Folgen einer Stabilitätsprobe auswertet.",
         "Default": "Dein Verstand ringt noch damit, das Gesehene zu begreifen...\nEin kalter Schauer läuft dir über den Rücken – was bedeutet das für deinen Geist?\nDie Bilder brennen sich in dein Gedächtnis ein, während sich der Nebel lichtet...\nStille legt sich über deinen Geist, als die Erkenntnis langsam einsickert...\nDein Herz hämmert – gleich zeigt sich, ob dein Verstand dem Grauen standhält..."
+      },
+      "CombatResolvedLayout": {
+        "Name": "Darstellung aufgelöster Kampfproben",
+        "Hint": "Wählt, ob das Ergebnis einer Kampfprobe als atmosphärischer Szenentext oder als direkte Gegenüberstellung beider Kontrahenten angezeigt wird.",
+        "Narrative": "Szenischer Ausgang & Regel-Chips",
+        "Duel": "Duell-Gegenüberstellung mit Sieger-Siegel"
       }
     },
     "Roll": {
@@ -457,7 +466,11 @@ jobs:
         "other": "Der Wurf ist abgelegt – die Spielleitung wertet das Ergebnis aus...",
         "combined": "Beide Teilproben stehen auf dem Prüfstand – gleich entscheidet sich, ob dein Vorhaben gelingt...",
         "opposed": "Beide Seiten haben ihre Kräfte gemessen – gleich steht fest, wer die Oberhand behält...",
+        "combatInitiator": "Dein Gegner holt zum Schlag aus – mache dich bereit zu reagieren...",
+        "combatOpponent": "Dein Angriff ist geführt – gleich zeigt sich, wie dein Gegner reagiert...",
         "combat": "Stahl und Reflexe prallen aufeinander – der Ausgang des Schlagabtauschs wird ausgewertet...",
+        "rangedReaction": "Du legst an – gleich zeigt sich, ob dein Ziel noch rechtzeitig reagiert...",
+        "rangedAttack": "Du hast deine Entscheidung getroffen – der Schuss steht unmittelbar bevor...",
         "ranged": "Der Schuss hallt nach – gleich zeigt sich, ob er sein Ziel gefunden hat..."
       }
     },
@@ -611,6 +624,16 @@ jobs:
         "HiddenUntilOwnRoll": "Wurf abgelegt (sichtbar nach eigener Reaktion)",
         "DamageAppliedSecret": "Schaden auf {target} angewendet",
         "HiddenResult": "Verdecktes Kampfresultat"
+      },
+      "ResolvedNarrative": {
+        "Hit": "{attacker} durchbricht die Deckung von {defender} und landet einen Treffer.",
+        "HitUnopposed": "{attacker} führt einen gezielten Schlag mit {weapon} aus.",
+        "RangedHit": "{attacker} trifft {defender} mit {weapon}.",
+        "RangedMiss": "Der Schuss von {attacker} verfehlt {defender}.",
+        "Dodged": "{defender} weicht dem Angriff von {attacker} geschickt aus.",
+        "Missed": "{attacker} schlägt ins Leere.",
+        "Counter": "{defender} pariert den Vorstoß und kontert {attacker} blitzschnell.",
+        "Maneuver": "{defender} nutzt die Lücke und überwältigt {attacker} mit einem Manöver ({maneuver})."
       }
     },
     "Warnings": {
@@ -760,6 +783,12 @@ jobs:
         "Name": "Sanity Evaluation Hints",
         "Hint": "Atmospheric lines (one per line) shown to players while the Keeper evaluates the consequences of a Sanity check.",
         "Default": "Your mind struggles to comprehend what you have just witnessed...\nA cold chill runs down your spine as the implications sink in...\nThe images burn into your memory while the fog slowly clears...\nAn eerie silence settles over your thoughts as reality shifts...\nYour heart pounds—in a moment you will know if your sanity holds..."
+      },
+      "CombatResolvedLayout": {
+        "Name": "Resolved Combat Prompt Layout",
+        "Hint": "Chooses whether resolved combat prompts display an atmospheric scene summary or a side-by-side duel comparison.",
+        "Narrative": "Narrative Scene & Rule Chips",
+        "Duel": "Side-by-Side Duel Comparison"
       }
     },
     "Roll": {
@@ -819,7 +848,11 @@ jobs:
         "other": "The roll is submitted—the Keeper is evaluating the result...",
         "combined": "Both checks hang in the balance—in a moment you will know if your effort succeeds...",
         "opposed": "Both sides have tested their mettle—in a moment the victor will be clear...",
+        "combatInitiator": "Your opponent winds up to strike—prepare to react...",
+        "combatOpponent": "Your attack is launched—in a moment you will see how your opponent reacts...",
         "combat": "Steel and reflexes clash—the outcome of the exchange is being resolved...",
+        "rangedReaction": "You take aim—in a moment you will see if your target reacts in time...",
+        "rangedAttack": "You have made your choice—the shot is imminent...",
         "ranged": "The shot echoes out—in a moment you will see if it found its mark..."
       }
     },
@@ -973,6 +1006,16 @@ jobs:
         "HiddenUntilOwnRoll": "Roll submitted (visible after own reaction)",
         "DamageAppliedSecret": "Damage applied to {target}",
         "HiddenResult": "Hidden Combat Result"
+      },
+      "ResolvedNarrative": {
+        "Hit": "{attacker} breaks through {defender}'s guard and lands a blow.",
+        "HitUnopposed": "{attacker} strikes cleanly with {weapon}.",
+        "RangedHit": "{attacker} strikes {defender} with {weapon}.",
+        "RangedMiss": "{attacker}'s shot misses {defender}.",
+        "Dodged": "{defender} deftly dodges {attacker}'s attack.",
+        "Missed": "{attacker}'s strike misses its mark.",
+        "Counter": "{defender} turns the assault aside and counters {attacker}.",
+        "Maneuver": "{defender} seizes the opening and overwhelms {attacker} with a maneuver ({maneuver})."
       }
     },
     "Warnings": {
@@ -1183,6 +1226,9 @@ Hooks.once("nre.registerAdapters", async (core) => {
         roeCocResolvedSingleBody: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/resolved-single-body.hbs`,
         roeCocResolvedOpposedBody: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/resolved-opposed-body.hbs`,
         roeCocResolvedSanityBody: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/resolved-sanity-body.hbs`,
+        roeCocResolvedCombatNarrative: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/resolved-combat-narrative.hbs`,
+        roeCocResolvedCombatDuel: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/resolved-combat-duel.hbs`,
+        roeCocResolvedCombatConsequences: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/resolved-combat-consequences.hbs`,
         roeCocResolvedCombatBody: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/resolved-combat-body.hbs`,
         roePushFailurePhase: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/push-failure-phase.hbs`,
         roeSkillDifficultyControls: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/skill-difficulty-controls.hbs`,
@@ -1621,9 +1667,6 @@ export class CoC7Adapter {
     }
     /** Builds a permission-aware result badge for a participant in a chat card. */
     formatParticipantBadge(participant, session, permissions) {
-        if (!permissions.canViewRoll) {
-            return { text: game.i18n.localize("ROE.RollSession.HiddenRoll"), className: "pending-badge" };
-        }
         if (!permissions.showDetails) {
             return { text: game.i18n.localize("ROE_COC7.Combat.Card.HiddenUntilOwnRoll"), className: "pending-badge" };
         }
@@ -1631,10 +1674,16 @@ export class CoC7Adapter {
             return { text: game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none"), className: "pending-badge" };
         }
         if (participant.key === "damage") {
-            return { text: `${participant.total} (${participant.diceFormula})` };
+            return permissions.canViewRoll
+                ? { text: `${participant.total} (${participant.diceFormula})` }
+                : { text: game.i18n.localize("ROE.RollSession.HiddenRoll"), className: "pending-badge" };
         }
-        if (session.rollType === "other") return { text: String(participant.total) };
-        const allowNumbers = permissions.isGM || Boolean(permissions.actor?.testUserPermission(game.user, "OBSERVER"));
+        if (session.rollType === "other") {
+            return permissions.canViewRoll
+                ? { text: String(participant.total) }
+                : { text: game.i18n.localize("ROE.RollSession.HiddenRoll"), className: "pending-badge" };
+        }
+        const allowNumbers = permissions.canViewRoll && (permissions.isGM || Boolean(permissions.actor?.testUserPermission(game.user, "OBSERVER")));
         return {
             text: this.formatRollOutcome({
                 total: participant.total,
@@ -1679,6 +1728,8 @@ export class CoC7Adapter {
     /** Returns the registered Handlebars partials to include when displaying resolved checks. */
     getResolvedResultPartials(session) {
         if (!session?.isResolved) return {};
+        const combatLayout = game.settings?.get(COC7_MODULE_ID, "combatResolvedLayout") || "narrative";
+        const combatBody = combatLayout === "duel" ? "roeCocResolvedCombatDuel" : "roeCocResolvedCombatNarrative";
         const bodyByType = {
             basic: "roeCocResolvedSingleBody",
             skill: "roeCocResolvedSingleBody",
@@ -1686,8 +1737,8 @@ export class CoC7Adapter {
             combined: "roeCocResolvedSingleBody",
             opposed: "roeCocResolvedOpposedBody",
             sanity: "roeCocResolvedSanityBody",
-            combat: "roeCocResolvedCombatBody",
-            ranged: "roeCocResolvedCombatBody"
+            combat: combatBody,
+            ranged: combatBody
         };
         const body = bodyByType[session.rollType];
         return body ? { header: "roeCocResolvedSingleHeader", body } : {};
@@ -1707,6 +1758,24 @@ export class CoC7Adapter {
                 : game.i18n.localize("ROE.RollSession.AwaitingResolution");
             this.#waitingHintsBySession.set(cacheKey, chosen);
             return chosen;
+        }
+        if (session.rollType === "combat") {
+            const attacker = session.participants?.find((p) => p.key === "attacker");
+            const combatKey = session.combatPhase === "resolution"
+                ? "ROE_COC7.RollSession.WaitingHints.combat"
+                : !attacker?.hasRolled
+                    ? "ROE_COC7.RollSession.WaitingHints.combatInitiator"
+                    : "ROE_COC7.RollSession.WaitingHints.combatOpponent";
+            return game.i18n.localize(combatKey);
+        }
+        if (session.rollType === "ranged") {
+            const phase = session.combatPhase || "reaction";
+            const rangedKey = phase === "reaction"
+                ? "ROE_COC7.RollSession.WaitingHints.rangedReaction"
+                : phase === "attack"
+                    ? "ROE_COC7.RollSession.WaitingHints.rangedAttack"
+                    : "ROE_COC7.RollSession.WaitingHints.ranged";
+            return game.i18n.localize(rangedKey);
         }
         const key = `ROE_COC7.RollSession.WaitingHints.${session.rollType}`;
         return game.i18n.has(key) ? game.i18n.localize(key) : "";
@@ -1893,11 +1962,14 @@ export class CoC7Adapter {
                 actorName: p.actorName,
                 label: p.label,
                 canView,
-                isWinner: canView && session.winnerKey === p.key,
-                successLevel: canView ? p.successLevel : "",
-                result: canView
-                    ? this.formatRollOutcome({ total: p.total, targetValue: p.targetValue, successLevel: p.successLevel })
-                    : game.i18n.localize("ROE.RollSession.HiddenRoll")
+                isWinner: session.winnerKey === p.key,
+                successLevel: p.successLevel ?? "",
+                result: this.formatRollOutcome({
+                    total: p.total,
+                    targetValue: p.targetValue,
+                    successLevel: p.successLevel,
+                    allowNumbers: canView
+                })
             };
         });
         return {
@@ -1950,42 +2022,104 @@ export class CoC7Adapter {
         const canViewDef = Boolean(defender && RollVisibilityPolicy.canViewParticipantRoll(defender, session));
         const canViewDmg = Boolean(damage && RollVisibilityPolicy.canViewParticipantRoll(damage, session));
 
-        const headerActors = defender
-            ? `${attacker?.actorName ?? ""} vs. ${defender.actorName ?? ""}`
-            : (attacker?.actorName ?? "");
+        const combatLayout = game.settings?.get(COC7_MODULE_ID, "combatResolvedLayout") || "narrative";
+        const headerActors = combatLayout === "duel"
+            ? game.i18n.localize(`ROE_COC7.RollSession.Types.${session.rollType}`)
+            : defender
+                ? `${attacker?.actorName ?? ""} vs. ${defender.actorName ?? ""}`
+                : (attacker?.actorName ?? "");
 
-        const defenderResult = !defender
-            ? ""
-            : session.rollType === "ranged"
-                ? game.i18n.localize(defender.tookCover ? "ROE_COC7.Ranged.CoverTaken" : "ROE_COC7.Ranged.NoCover")
-                : defender.total === null
-                    ? game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none")
-                    : canViewDef
-                        ? this.formatRollOutcome({ total: defender.total, targetValue: defender.targetValue, successLevel: defender.successLevel })
-                        : game.i18n.localize("ROE.RollSession.HiddenRoll");
+        const formatCombatantOutcome = (participant, canView) => {
+            if (!participant) return "";
+            if (participant.key === "defender" && session.rollType === "ranged") {
+                return game.i18n.localize(participant.tookCover ? "ROE_COC7.Ranged.CoverTaken" : "ROE_COC7.Ranged.NoCover");
+            }
+            if (participant.total === null) return game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none");
+            return this.formatRollOutcome({
+                total: participant.total,
+                targetValue: participant.targetValue,
+                successLevel: participant.successLevel,
+                allowNumbers: canView
+            });
+        };
+
+        const chipClass = (level) => {
+            if (!level || level === "none") return "";
+            return ["regular", "hard", "extreme", "critical"].includes(level) ? "outcome is-success" : "outcome is-failure";
+        };
+
+        const hasDamage = Boolean(session.finalDamage !== null && session.finalDamage !== undefined);
+        const isManeuverWin = session.hitWinnerKey === "defender" && session.defenderReaction === "maneuver";
+        const targetTookCover = Boolean(session.rollType === "ranged" && defender?.tookCover);
 
         return {
             resolvedActorName: headerActors.toUpperCase(),
             resolvedTitle: session.weaponName || session.title,
+            resolvedCombatNarrative: this.#buildCombatNarrative(session, attacker, defender),
             resolvedAttackerName: attacker?.actorName ?? "",
+            resolvedAttackerImg: attacker?.actorImg ?? "",
             resolvedAttackerLabel: attacker?.label ?? "",
             resolvedCanViewAttacker: canViewAtt,
-            resolvedAttackerLevel: canViewAtt ? attacker.successLevel : "",
-            resolvedAttackerResult: canViewAtt
-                ? this.formatRollOutcome({ total: attacker.total, targetValue: attacker.targetValue, successLevel: attacker.successLevel })
-                : game.i18n.localize("ROE.RollSession.HiddenRoll"),
+            resolvedAttackerWon: session.hitWinnerKey === "attacker",
+            resolvedAttackerLevel: attacker?.successLevel ?? "",
+            resolvedAttackerOutcome: formatCombatantOutcome(attacker, canViewAtt),
+            resolvedAttackerChipClass: chipClass(attacker?.successLevel),
             resolvedHasDefender: Boolean(defender),
             resolvedDefenderName: defender?.actorName ?? "",
-            resolvedDefenderLabel: game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${session.defenderReaction || "dodge"}`),
+            resolvedDefenderImg: defender?.actorImg ?? "",
+            resolvedDefenderLabel: session.rollType === "ranged"
+                ? game.i18n.localize("ROE_COC7.Combat.TargetLabel")
+                : game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${session.defenderReaction || "dodge"}`),
             resolvedCanViewDefender: Boolean(canViewDef && defender?.total !== null),
-            resolvedDefenderLevel: canViewDef && defender?.total !== null ? defender.successLevel : "",
-            resolvedDefenderResult: defenderResult,
-            resolvedHasDamage: Boolean(session.finalDamage !== null && session.finalDamage !== undefined),
+            resolvedDefenderWon: session.hitWinnerKey === "defender",
+            resolvedDefenderLevel:  defender?.total !== null ? (defender?.successLevel ?? "") : "",
+            resolvedDefenderOutcome: formatCombatantOutcome(defender, canViewDef),
+            resolvedDefenderChipClass: chipClass(defender?.successLevel),
+            resolvedHasConsequences: hasDamage || isManeuverWin || targetTookCover,
+            resolvedHasDamage: hasDamage,
             resolvedCanViewDamage: canViewDmg,
             resolvedFinalDamage: session.finalDamage ?? 0,
             resolvedArmorApplied: Number(session.armorApplied ?? 0),
-            resolvedMajorWound: Boolean(canViewDmg && session.majorWoundTriggered)
+            resolvedMajorWound: Boolean(canViewDmg && session.majorWoundTriggered),
+            resolvedManeuverLabel: isManeuverWin
+                ? game.i18n.format("ROE_COC7.Combat.Badges.Maneuver", {
+                    maneuver: game.i18n.localize(`ROE_COC7.Combat.Maneuvers.${session.maneuverType || "disarm"}`)
+                })
+                : "",
+            resolvedTargetTookCover: targetTookCover
         };
+    }
+
+    #buildCombatNarrative(session, attacker, defender) {
+        const names = {
+            attacker: attacker?.actorName ?? "",
+            defender: defender?.actorName ?? game.i18n.localize("ROE_COC7.Combat.UnknownTarget"),
+            weapon: session.weaponName || session.title,
+            maneuver: game.i18n.localize(`ROE_COC7.Combat.Maneuvers.${session.maneuverType || "disarm"}`)
+        };
+        if (session.rollType === "ranged") {
+            return game.i18n.format(
+                session.hitWinnerKey === "attacker" ? "ROE_COC7.Combat.ResolvedNarrative.RangedHit" : "ROE_COC7.Combat.ResolvedNarrative.RangedMiss",
+                names
+            );
+        }
+        if (session.hitWinnerKey === "attacker") {
+            return game.i18n.format(
+                defender ? "ROE_COC7.Combat.ResolvedNarrative.Hit" : "ROE_COC7.Combat.ResolvedNarrative.HitUnopposed",
+                names
+            );
+        }
+        if (session.hitWinnerKey === "defender") {
+            return game.i18n.format(
+                session.defenderReaction === "maneuver" ? "ROE_COC7.Combat.ResolvedNarrative.Maneuver" : "ROE_COC7.Combat.ResolvedNarrative.Counter",
+                names
+            );
+        }
+        const wasDodged = defender && session.defenderReaction === "dodge" && defender.isSuccess;
+        return game.i18n.format(
+            wasDodged ? "ROE_COC7.Combat.ResolvedNarrative.Dodged" : "ROE_COC7.Combat.ResolvedNarrative.Missed",
+            names
+        );
     }
 
     #isLuckImprovementAllowed() {
@@ -2711,7 +2845,11 @@ export class CoC7ResultFormatter {
     static formatRollOutcome({ total, targetValue, successLevel, allowNumbers = true }) {
         const mode = game.settings?.get(COC7_MODULE_ID, "resultDisplayMode") || "both";
         const levelText = this.formatSuccessLevel(successLevel);
-        if (!allowNumbers || mode === "level") return levelText || String(total ?? "");
+        if (!allowNumbers) {
+            if (mode === "numbers" || !levelText) return game.i18n.localize("ROE.RollSession.HiddenRoll");
+            return levelText;
+        }
+        if (mode === "level") return levelText || String(total ?? "");
         const numberPart = targetValue ? `${total} vs. ${targetValue}` : `${total}`;
         if (mode === "numbers" || !levelText) return numberPart;
         return `${numberPart} • ${levelText}`;
@@ -3050,6 +3188,19 @@ export class CoC7Settings {
             }
         });
 
+        game.settings.register(COC7_MODULE_ID, "combatResolvedLayout", {
+            name: "ROE_COC7.Settings.CombatResolvedLayout.Name",
+            hint: "ROE_COC7.Settings.CombatResolvedLayout.Hint",
+            scope: "world",
+            config: true,
+            type: String,
+            choices: {
+                narrative: "ROE_COC7.Settings.CombatResolvedLayout.Narrative",
+                duel: "ROE_COC7.Settings.CombatResolvedLayout.Duel"
+            },
+            default: "narrative"
+        });
+
     }
 }
 
@@ -3080,7 +3231,8 @@ export function createBasicRollPromptApp(core) {
         const isOther = sys?.rollType === "other";
         const opts = this._evaluateParticipantOptions(p, sys);
 
-        const canViewRoll = Boolean(p?.hasRolled && RollVisibilityPolicy.canViewParticipantRoll(p, sys));
+        const isOwner = Boolean(SessionStore.resolveActor(p)?.isOwner);
+        const canViewRoll = Boolean(p?.hasRolled && (RollVisibilityPolicy.canViewParticipantRoll(p, sys) || (isOwner && p.rollMode !== "blindroll")));
         const displayMode = game.settings?.get(COC7_MODULE_ID, "resultDisplayMode") || "both";
         const showNumbers = isOther || !p?.hasRolled || displayMode !== "level";
         const showLevel = canViewRoll && !isOther && displayMode !== "numbers";
@@ -3187,371 +3339,370 @@ const COMBAT_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templat
 export function createCombatPromptApp(core, OpposedPromptApp) {
     const ParentPromptApp = core.extendPromptClass(OpposedPromptApp, { template: COMBAT_PROMPT_TEMPLATE });
     return class CombatPromptApp extends ParentPromptApp {
-    static DEFAULT_OPTIONS = {
-        actions: {
-            toggleTacticalFlag: CombatPromptApp.#onToggleTacticalFlag,
-            rollInitiatorAttack: CombatPromptApp.#onRollInitiatorAttack,
-            gmForceAutoSuccess: CombatPromptApp.#onGmForceAutoSuccess,
-            setDefenderReaction: CombatPromptApp.#onSetDefenderReaction,
-            rollOpponentReaction: CombatPromptApp.#onRollOpponentReaction,
-            executeDamageRoll: CombatPromptApp.#onExecuteDamageRoll,
-            resetCombatPhase: CombatPromptApp.#onResetCombatPhase
+        static DEFAULT_OPTIONS = {
+            actions: {
+                toggleTacticalFlag: CombatPromptApp.#onToggleTacticalFlag,
+                rollInitiatorAttack: CombatPromptApp.#onRollInitiatorAttack,
+                gmForceAutoSuccess: CombatPromptApp.#onGmForceAutoSuccess,
+                setDefenderReaction: CombatPromptApp.#onSetDefenderReaction,
+                rollOpponentReaction: CombatPromptApp.#onRollOpponentReaction,
+                executeDamageRoll: CombatPromptApp.#onExecuteDamageRoll,
+                resetCombatPhase: CombatPromptApp.#onResetCombatPhase
+            }
+        };
+
+        /** @override */
+        _onRender(context, options) {
+            super._onRender(context, options);
+
+            this.element.querySelector("select[name='defenderDetailSelect']")?.addEventListener("change", async (ev) => {
+                await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { reactionDetail: ev.target.value });
+            });
         }
-    };
 
-    /** @override */
-    _onRender(context, options) {
-        super._onRender(context, options);
+        /** @override */
+        async _onModifierSliderChange(val, participantKey) {
+            if (participantKey) await UniversalRollOrchestrator.setParticipantModifier(this._messageId, participantKey, val);
+        }
 
-        this.element.querySelector("select[name='defenderDetailSelect']")?.addEventListener("change", async (ev) => {
-            await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { reactionDetail: ev.target.value });
-        });
-    }
+        /** @override */
+        async _prepareContext(options) {
+            const context = await super._prepareContext(options);
+            const sys = this.session;
+            if (!sys) return context;
 
-    /** @override */
-    async _onModifierSliderChange(val, participantKey) {
-        if (participantKey) await UniversalRollOrchestrator.setParticipantModifier(this._messageId, participantKey, val);
-    }
+            const isGM = Boolean(game.user?.isGM);
+            const phase = sys.combatPhase || "initiator";
+            const attacker = sys.participants?.find((p) => p.key === "attacker");
+            const defender = sys.participants?.find((p) => p.key === "defender") ?? null;
+            const damageEntry = sys.participants?.find((p) => p.key === "damage") ?? null;
 
-    /** @override */
-    async _prepareContext(options) {
-        const context = await super._prepareContext(options);
-        const sys = this.session;
-        if (!sys) return context;
+            const attActor = this.#resolveActor(attacker);
+            const defActor = this.#resolveActor(defender);
+            const isAttackerOwner = Boolean(attActor?.isOwner);
+            const isDefenderOwner = Boolean(defActor?.isOwner);
 
-        const isGM = Boolean(game.user?.isGM);
-        const phase = sys.combatPhase || "initiator";
-        const attacker = sys.participants?.find((p) => p.key === "attacker");
-        const defender = sys.participants?.find((p) => p.key === "defender") ?? null;
-        const damageEntry = sys.participants?.find((p) => p.key === "damage") ?? null;
+            const flags = sys.tacticalFlags ?? {};
+            const flagBonus =
+                (flags.outnumbered ? 1 : 0) +
+                (flags.surprised ? 1 : 0) +
+                (flags.pointBlank ? 1 : 0) +
+                (flags.proneTarget ? 1 : 0) -
+                (flags.cover ? 1 : 0);
+            const attackerModifier = Number(attacker?.modifierDice ?? 0);
+            const defenderModifier = Number(defender?.modifierDice ?? 0);
+            const effectiveMod = Math.clamp(flagBonus + attackerModifier, -2, 2);
 
-        const attActor = this.#resolveActor(attacker);
-        const defActor = this.#resolveActor(defender);
-        const isAttackerOwner = Boolean(attActor?.isOwner);
-        const isDefenderOwner = Boolean(defActor?.isOwner);
+            const reaction = sys.defenderReaction || "dodge";
+            const defenderDetailOptions = defActor ? this.#buildDefenderDetailOptions(defActor, reaction, sys) : [];
 
-        const flags = sys.tacticalFlags ?? {};
-        const flagBonus =
-            (flags.outnumbered ? 1 : 0) +
-            (flags.surprised ? 1 : 0) +
-            (flags.pointBlank ? 1 : 0) +
-            (flags.proneTarget ? 1 : 0) -
-            (flags.cover ? 1 : 0);
-        const attackerModifier = Number(attacker?.modifierDice ?? 0);
-        const defenderModifier = Number(defender?.modifierDice ?? 0);
-        const effectiveMod = Math.clamp(flagBonus + attackerModifier, -2, 2);
+            const canViewAttackerRoll = attacker ? (isAttackerOwner || RollVisibilityPolicy.canViewParticipantRoll(attacker, sys)) : false;
+            const canViewDefenderRoll = defender ? (isDefenderOwner || RollVisibilityPolicy.canViewParticipantRoll(defender, sys)) : false;
+            const canViewDamage = damageEntry ? RollVisibilityPolicy.canViewParticipantRoll(damageEntry, sys) : false;
 
-        const reaction = sys.defenderReaction || "dodge";
-        const defenderDetailOptions = defActor ? this.#buildDefenderDetailOptions(defActor, reaction, sys) : [];
+            const damageActor = this.#resolveActor(damageEntry);
+            const attackerDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, effectiveMod);
+            const defenderDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, defenderModifier);
+            const damageDice = canViewDamage
+                ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageEntry?.diceFormula ?? sys.damageFormula })
+                : [];
 
-        const canViewAttackerRoll = attacker ? RollVisibilityPolicy.canViewParticipantRoll(attacker, sys) : false;
-        const canViewDefenderRoll = defender ? RollVisibilityPolicy.canViewParticipantRoll(defender, sys) : false;
-        const canViewDamage = damageEntry ? RollVisibilityPolicy.canViewParticipantRoll(damageEntry, sys) : false;
+            return {
+                ...context,
+                isGM,
+                isPhaseInitiator: !attacker?.hasRolled,
+                isPhaseOpponent: Boolean(defender && !defender.hasRolled),
+                isPhaseResolution: phase === "resolution",
 
-        const damageActor = this.#resolveActor(damageEntry);
-        const attackerDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, effectiveMod);
-        const defenderDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, defenderModifier);
-        const damageDice = canViewDamage
-            ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageEntry?.diceFormula ?? sys.damageFormula })
-            : [];
+                weaponName: sys.weaponName || sys.title,
+                attackerName: attacker?.actorName ?? "",
+                attackerImg: attacker?.actorImg ?? "",
+                defenderName: defender?.actorName ?? "",
+                defenderImg: defender?.actorImg ?? "",
+                hasDefender: Boolean(defender),
 
-        return {
-            ...context,
-            isGM,
-            isPhaseInitiator: !attacker?.hasRolled,
-            isPhaseOpponent: Boolean(defender && !defender.hasRolled),
-            isPhaseResolution: phase === "resolution",
+                canActAsInitiator: isGM || isAttackerOwner,
+                canActAsOpponent: isGM || isDefenderOwner,
+                isAttackerDelegated: this._isDelegatedToActivePlayer(attacker),
+                isDefenderDelegated: this._isDelegatedToActivePlayer(defender),
+                isDamageDelegated: this._isDelegatedToActivePlayer(damageEntry),
+                canSeeAttackerInPhase2: isGM || isAttackerOwner,
 
-            weaponName: sys.weaponName || sys.title,
-            attackerName: attacker?.actorName ?? "",
-            attackerImg: attacker?.actorImg ?? "",
-            defenderName: defender?.actorName ?? "",
-            defenderImg: defender?.actorImg ?? "",
-            hasDefender: Boolean(defender),
+                showPhaseOpponent: Boolean(defender),
+                hideInitiatorInCompact: !isAttackerOwner,
+                hideOpponentInCompact: !isDefenderOwner,
+                canSeeAttackerResult: phase === "resolution" ? canViewAttackerRoll : (isGM || isAttackerOwner),
+                defenderReactionLabel: game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${reaction}`),
 
-            canActAsInitiator: isGM || isAttackerOwner,
-            canActAsOpponent: isGM || isDefenderOwner,
-            isAttackerDelegated: this._isDelegatedToActivePlayer(attacker),
-            isDefenderDelegated: this._isDelegatedToActivePlayer(defender),
-            isDamageDelegated: this._isDelegatedToActivePlayer(damageEntry),
-            canSeeAttackerInPhase2: isGM || isAttackerOwner,
+                tacticalOptions: this.#buildTacticalOptions(flags),
+                attackerModifierDice: attackerModifier,
+                effectiveModifierDice: effectiveMod,
+                defenderModifierDice: defenderModifier,
+                defenderModifierLabel: this._formatModifierLabel(defenderModifier),
+                flagModifierDice: flagBonus,
+                effectiveModifierLabel: this._formatModifierLabel(effectiveMod),
+                attackerDice,
+                attackerDiceLabel: this._formatDiceFormulaLabel(attackerDice),
+                defenderDice,
+                defenderDiceLabel: this._formatDiceFormulaLabel(defenderDice),
+                damageDice,
+                damageDiceLabel: canViewDamage ? this._formatDiceFormulaLabel(damageDice) : "",
+                attackerRollBtnLabel: `${attacker?.label ?? ""} (${attacker?.targetValue ?? 0}%)`,
 
-            showPhaseOpponent: Boolean(defender),
-            hideInitiatorInCompact: !isAttackerOwner,
-            hideOpponentInCompact: !isDefenderOwner,
-            canSeeAttackerResult: phase === "resolution" ? canViewAttackerRoll : (isGM || isAttackerOwner),
-            defenderReactionLabel: game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${reaction}`),
-
-            tacticalOptions: this.#buildTacticalOptions(flags),
-            attackerModifierDice: attackerModifier,
-            effectiveModifierDice: effectiveMod,
-            defenderModifierDice: defenderModifier,
-            defenderModifierLabel: this._formatModifierLabel(defenderModifier),
-            flagModifierDice: flagBonus,
-            effectiveModifierLabel: this._formatModifierLabel(effectiveMod),
-            attackerDice,
-            attackerDiceLabel: this._formatDiceFormulaLabel(attackerDice),
-            defenderDice,
-            defenderDiceLabel: this._formatDiceFormulaLabel(defenderDice),
-            damageDice,
-            damageDiceLabel: canViewDamage ? this._formatDiceFormulaLabel(damageDice) : "",
-            attackerRollBtnLabel: `${attacker?.label ?? ""} (${attacker?.targetValue ?? 0}%)`,
-
-            attackerResultText: attacker?.hasRolled
-                ? canViewAttackerRoll
+                attackerResultText: attacker?.hasRolled
                     ? CoC7ResultFormatter.formatRollOutcome({
                         total: attacker.total,
                         targetValue: attacker.targetValue,
-                        successLevel: attacker.successLevel
+                        successLevel: attacker.successLevel,
+                        allowNumbers: canViewAttackerRoll
                     })
-                    : game.i18n.localize("ROE.RollSession.HiddenRoll")
-                : "",
+                    : "",
 
-            reactionTabs: [
-                { id: "dodge", label: game.i18n.localize("ROE_COC7.Combat.DefenseTabs.dodge"), active: reaction === "dodge" },
-                { id: "fightBack", label: game.i18n.localize("ROE_COC7.Combat.DefenseTabs.fightBack"), active: reaction === "fightBack" },
-                { id: "maneuver", label: game.i18n.localize("ROE_COC7.Combat.DefenseTabs.maneuver"), active: reaction === "maneuver" },
-                { id: "none", label: game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none"), active: reaction === "none" }
-            ],
-            isNoneReaction: reaction === "none",
-            hasDefenderDetails: defenderDetailOptions.length > 0,
-            defenderDetailOptions,
-            defenderRollBtnLabel:
-                reaction === "none"
-                    ? game.i18n.localize("ROE_COC7.Combat.ConfirmNoReaction")
-                    : `${defender?.label ?? ""} (${defender?.targetValue ?? 0}%)`,
+                reactionTabs: [
+                    { id: "dodge", label: game.i18n.localize("ROE_COC7.Combat.DefenseTabs.dodge"), active: reaction === "dodge" },
+                    { id: "fightBack", label: game.i18n.localize("ROE_COC7.Combat.DefenseTabs.fightBack"), active: reaction === "fightBack" },
+                    { id: "maneuver", label: game.i18n.localize("ROE_COC7.Combat.DefenseTabs.maneuver"), active: reaction === "maneuver" },
+                    { id: "none", label: game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none"), active: reaction === "none" }
+                ],
+                isNoneReaction: reaction === "none",
+                hasDefenderDetails: defenderDetailOptions.length > 0,
+                defenderDetailOptions,
+                defenderRollBtnLabel:
+                    reaction === "none"
+                        ? game.i18n.localize("ROE_COC7.Combat.ConfirmNoReaction")
+                        : `${defender?.label ?? ""} (${defender?.targetValue ?? 0}%)`,
 
-            defenderResultText: defender?.hasRolled
-                ? defender.total === null
-                    ? game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none")
-                    : canViewDefenderRoll
-                        ? CoC7ResultFormatter.formatRollOutcome({
+                defenderResultText: defender?.hasRolled
+                    ? defender.total === null
+                        ? game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none")
+                        : CoC7ResultFormatter.formatRollOutcome({
                             total: defender.total,
                             targetValue: defender.targetValue,
-                            successLevel: defender.successLevel
+                            successLevel: defender.successLevel,
+                            allowNumbers: canViewDefenderRoll
                         })
-                        : game.i18n.localize("ROE.RollSession.HiddenRoll")
-                : "",
-            hasDamageStep: Boolean(damageEntry),
-            damageLabel: damageEntry?.label ?? "",
-            damageFormula: canViewDamage ? (damageEntry?.diceFormula ?? sys.damageFormula) : "???",
-            damageRolled: Boolean(damageEntry?.hasRolled),
-            damageTotal: canViewDamage ? (damageEntry?.total ?? 0) : "?",
-            canViewDamage,
-            canRollDamage: Boolean(
-                phase === "resolution" &&
-                damageEntry &&
-                !damageEntry.hasRolled &&
-                (isGM || damageActor?.isOwner) &&
-                !sys.isResolved
-            ),
-            hasCombatDamage: Boolean(canViewDamage && sys.finalDamage !== null && sys.finalDamage !== undefined),
-            finalDamage: sys.finalDamage ?? 0,
-            armorApplied: sys.armorApplied ?? 0,
-            majorWoundTriggered: Boolean(sys.majorWoundTriggered),
-            gmApplyDamageLabel: game.i18n.format("ROE_COC7.Combat.GmApplyDamageBtn", {
-                damage: sys.finalDamage ?? 0
-            })
-        };
-    }
+                    : "",
 
-    /** @override */
-    _hasPendingPlayerAction() {
-        const sys = this.session;
-        if (!sys || sys.isResolved) return false;
+                hasDamageStep: Boolean(damageEntry),
+                damageLabel: damageEntry?.label ?? "",
+                damageFormula: canViewDamage ? (damageEntry?.diceFormula ?? sys.damageFormula) : "???",
+                damageRolled: Boolean(damageEntry?.hasRolled),
+                damageTotal: canViewDamage ? (damageEntry?.total ?? 0) : "?",
+                canViewDamage,
+                canRollDamage: Boolean(
+                    phase === "resolution" &&
+                    damageEntry &&
+                    !damageEntry.hasRolled &&
+                    (isGM || damageActor?.isOwner) &&
+                    !sys.isResolved
+                ),
+                hasCombatDamage: Boolean(canViewDamage && sys.finalDamage !== null && sys.finalDamage !== undefined),
+                finalDamage: sys.finalDamage ?? 0,
+                armorApplied: sys.armorApplied ?? 0,
+                majorWoundTriggered: Boolean(sys.majorWoundTriggered),
+                gmApplyDamageLabel: game.i18n.format("ROE_COC7.Combat.GmApplyDamageBtn", {
+                    damage: sys.finalDamage ?? 0
+                })
+            };
+        }
 
-        return (sys.participants ?? []).some((participant) =>
-            !participant.hasRolled && this.#resolveActor(participant)?.isOwner
-        );
-    }
+        /** @override */
+        _hasPendingPlayerAction() {
+            const sys = this.session;
+            if (!sys || sys.isResolved) return false;
 
-    /** @override */
-    _getPhases(sys) {
-        const isResolution = sys?.combatPhase === "resolution";
-        return [
-            { id: "combat", isActive: !isResolution, isCompleted: isResolution },
-            { id: "resolution", isActive: isResolution, isCompleted: false }
-        ];
-    }
+            return (sys.participants ?? []).some((participant) =>
+                !participant.hasRolled && this.#resolveActor(participant)?.isOwner
+            );
+        }
 
-    /** @override */
-    _buildPhaseSummary(sys) {
-        const attacker = sys.participants?.find((p) => p.key === "attacker");
-        const defender = sys.participants?.find((p) => p.key === "defender");
+        /** @override */
+        _getPhases(sys) {
+            const isResolution = sys?.combatPhase === "resolution";
+            return [
+                { id: "combat", isActive: !isResolution, isCompleted: isResolution },
+                { id: "resolution", isActive: isResolution, isCompleted: false }
+            ];
+        }
 
-        if (sys.combatPhase === "opponent" && defender) {
-            return game.i18n.format("ROE_COC7.Combat.Summary.Attack", {
-                attacker: attacker?.actorName ?? "",
-                defender: defender.actorName ?? "",
-                weapon: sys.weaponName || sys.title
+        /** @override */
+        _buildPhaseSummary(sys) {
+            const attacker = sys.participants?.find((p) => p.key === "attacker");
+            const defender = sys.participants?.find((p) => p.key === "defender");
+
+            if (sys.combatPhase === "opponent" && defender) {
+                return game.i18n.format("ROE_COC7.Combat.Summary.Attack", {
+                    attacker: attacker?.actorName ?? "",
+                    defender: defender.actorName ?? "",
+                    weapon: sys.weaponName || sys.title
+                });
+            }
+            if (sys.combatPhase === "resolution") {
+                const winner = sys.participants?.find((p) => p.key === sys.hitWinnerKey);
+                const target = winner?.key === "defender" ? attacker : defender;
+                if (winner) {
+                    return game.i18n.format("ROE_COC7.Combat.Summary.Hit", {
+                        winner: winner.actorName ?? "",
+                        target: target?.actorName ?? ""
+                    });
+                }
+            }
+            return "";
+        }
+
+        #buildTacticalOptions(flags) {
+            return [
+                { key: "outnumbered", label: game.i18n.localize("ROE_COC7.Combat.Tactical.Outnumbered"), active: Boolean(flags.outnumbered) },
+                { key: "surprised", label: game.i18n.localize("ROE_COC7.Combat.Tactical.Surprised"), active: Boolean(flags.surprised) },
+                { key: "proneTarget", label: game.i18n.localize("ROE_COC7.Combat.Tactical.ProneTarget"), active: Boolean(flags.proneTarget) }
+            ];
+        }
+
+        #buildDefenderDetailOptions(defActor, reaction, sys) {
+            if (reaction === "fightBack") {
+                const weapons = defActor.items.filter((i) => i.type === "weapon" && !i.system?.properties?.rngd);
+                const brawl = CoC7DataMapper.findActorSkill(defActor, { name: `skill.${game.i18n.localize("ROE_COC7.SkillList.FightingBrawl")}` });
+                const brawlVal = brawl ? CoC7DataMapper.getSkillValue(brawl) : 25;
+
+                const opts = [
+                    {
+                        value: "unarmed",
+                        label: `${game.i18n.localize("ROE_COC7.Combat.UnarmedBrawl")} (${brawlVal}%)`,
+                        selected: !sys.defenderWeaponId || sys.defenderWeaponId === "unarmed"
+                    }
+                ];
+
+                for (const w of weapons) {
+                    const skill = CoC7DataMapper.findActorSkill(defActor, w.system?.skill?.main);
+                    const val = skill ? CoC7DataMapper.getSkillValue(skill) : brawlVal;
+                    opts.push({
+                        value: w.id,
+                        label: `${w.name} (${val}%)`,
+                        selected: sys.defenderWeaponId === w.id
+                    });
+                }
+                return opts;
+            }
+
+            if (reaction === "maneuver") {
+                return ["disarm", "grapple", "knockdown", "push"].map((m) => ({
+                    value: m,
+                    label: game.i18n.localize(`ROE_COC7.Combat.Maneuvers.${m}`),
+                    selected: (sys.maneuverType || "disarm") === m
+                }));
+            }
+
+            return [];
+        }
+
+        static async #onToggleTacticalFlag(event, target) {
+            const flagKey = target.dataset.flag;
+            const sys = this.session;
+            if (!flagKey || !sys) return;
+
+            const nextFlags = { ...(sys.tacticalFlags ?? {}), [flagKey]: !sys.tacticalFlags?.[flagKey] };
+            await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { tacticalFlags: nextFlags });
+        }
+
+        static async #onRollInitiatorAttack() {
+            const sys = this.session;
+            const attacker = sys?.participants?.find((p) => p.key === "attacker");
+            if (!attacker || attacker.hasRolled || sys.isResolved) return;
+
+            const flags = sys.tacticalFlags ?? {};
+            const flagBonus =
+                (flags.outnumbered ? 1 : 0) +
+                (flags.surprised ? 1 : 0) +
+                (flags.pointBlank ? 1 : 0) +
+                (flags.proneTarget ? 1 : 0) -
+                (flags.cover ? 1 : 0);
+            const totalMod = Math.clamp(flagBonus + Number(attacker.modifierDice ?? 0), -2, 2);
+
+            const roll = await new Roll(CoC7CheckResolver.buildRollFormula(totalMod)).evaluate();
+            const total = roll.total === 0 ? 100 : roll.total;
+            const successLevel = CoC7CheckResolver.evaluateResult(total, Number(attacker.targetValue));
+            const tacticalFlags = ["outnumbered", "surprised", "pointBlank", "proneTarget", "cover"].filter((key) => flags[key]);
+            const rollBreakdown = CoC7CheckResolver.buildBreakdown(roll, Number(attacker.targetValue), successLevel, { modifierDice: totalMod, tacticalFlags });
+            const reqRank = CoC7CheckResolver.LEVEL_RANK[sys.difficulty] ?? 2;
+            const isSuccess = (CoC7CheckResolver.LEVEL_RANK[successLevel] ?? 0) >= reqRank;
+            const rollMode = RollVisibilityPolicy.getCurrentRollMode();
+
+            await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "attacker", {
+                total,
+                successLevel,
+                isSuccess,
+                modifierDice: totalMod,
+                rollMode,
+                rollerUserId: game.user.id,
+                rollBreakdown
             });
         }
-        if (sys.combatPhase === "resolution") {
-            const winner = sys.participants?.find((p) => p.key === sys.hitWinnerKey);
-            const target = winner?.key === "defender" ? attacker : defender;
-            if (winner) {
-                return game.i18n.format("ROE_COC7.Combat.Summary.Hit", {
-                    winner: winner.actorName ?? "",
-                    target: target?.actorName ?? ""
-                });
-            }
-        }
-        return "";
-    }
-
-    #buildTacticalOptions(flags) {
-        return [
-            { key: "outnumbered", label: game.i18n.localize("ROE_COC7.Combat.Tactical.Outnumbered"), active: Boolean(flags.outnumbered) },
-            { key: "surprised", label: game.i18n.localize("ROE_COC7.Combat.Tactical.Surprised"), active: Boolean(flags.surprised) },
-            { key: "proneTarget", label: game.i18n.localize("ROE_COC7.Combat.Tactical.ProneTarget"), active: Boolean(flags.proneTarget) }
-        ];
-    }
-
-    #buildDefenderDetailOptions(defActor, reaction, sys) {
-        if (reaction === "fightBack") {
-            const weapons = defActor.items.filter((i) => i.type === "weapon" && !i.system?.properties?.rngd);
-            const brawl = CoC7DataMapper.findActorSkill(defActor, { name: `skill.${game.i18n.localize("ROE_COC7.SkillList.FightingBrawl")}` });
-            const brawlVal = brawl ? CoC7DataMapper.getSkillValue(brawl) : 25;
-
-            const opts = [
-                {
-                    value: "unarmed",
-                    label: `${game.i18n.localize("ROE_COC7.Combat.UnarmedBrawl")} (${brawlVal}%)`,
-                    selected: !sys.defenderWeaponId || sys.defenderWeaponId === "unarmed"
-                }
-            ];
-
-            for (const w of weapons) {
-                const skill = CoC7DataMapper.findActorSkill(defActor, w.system?.skill?.main);
-                const val = skill ? CoC7DataMapper.getSkillValue(skill) : brawlVal;
-                opts.push({
-                    value: w.id,
-                    label: `${w.name} (${val}%)`,
-                    selected: sys.defenderWeaponId === w.id
-                });
-            }
-            return opts;
-        }
-
-        if (reaction === "maneuver") {
-            return ["disarm", "grapple", "knockdown", "push"].map((m) => ({
-                value: m,
-                label: game.i18n.localize(`ROE_COC7.Combat.Maneuvers.${m}`),
-                selected: (sys.maneuverType || "disarm") === m
-            }));
-        }
-
-        return [];
-    }
-
-    static async #onToggleTacticalFlag(event, target) {
-        const flagKey = target.dataset.flag;
-        const sys = this.session;
-        if (!flagKey || !sys) return;
-
-        const nextFlags = { ...(sys.tacticalFlags ?? {}), [flagKey]: !sys.tacticalFlags?.[flagKey] };
-        await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { tacticalFlags: nextFlags });
-    }
-
-    static async #onRollInitiatorAttack() {
-        const sys = this.session;
-        const attacker = sys?.participants?.find((p) => p.key === "attacker");
-        if (!attacker || attacker.hasRolled || sys.isResolved) return;
-
-        const flags = sys.tacticalFlags ?? {};
-        const flagBonus =
-            (flags.outnumbered ? 1 : 0) +
-            (flags.surprised ? 1 : 0) +
-            (flags.pointBlank ? 1 : 0) +
-            (flags.proneTarget ? 1 : 0) -
-            (flags.cover ? 1 : 0);
-        const totalMod = Math.clamp(flagBonus + Number(attacker.modifierDice ?? 0), -2, 2);
-
-        const roll = await new Roll(CoC7CheckResolver.buildRollFormula(totalMod)).evaluate();
-        const total = roll.total === 0 ? 100 : roll.total;
-        const successLevel = CoC7CheckResolver.evaluateResult(total, Number(attacker.targetValue));
-        const tacticalFlags = ["outnumbered", "surprised", "pointBlank", "proneTarget", "cover"].filter((key) => flags[key]);
-        const rollBreakdown = CoC7CheckResolver.buildBreakdown(roll, Number(attacker.targetValue), successLevel, { modifierDice: totalMod, tacticalFlags });
-        const reqRank = CoC7CheckResolver.LEVEL_RANK[sys.difficulty] ?? 2;
-        const isSuccess = (CoC7CheckResolver.LEVEL_RANK[successLevel] ?? 0) >= reqRank;
-        const rollMode = RollVisibilityPolicy.getCurrentRollMode();
-        
-        await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "attacker", {
-            total,
-            successLevel,
-            isSuccess,
-            modifierDice: totalMod,
-            rollMode,
-            rollerUserId: game.user.id,
-            rollBreakdown
-        });
-    }
-    static async #onGmForceAutoSuccess() {
-        if (!game.user.isGM) return;
-        const sys = this.session;
-        const attacker = sys?.participants?.find((p) => p.key === "attacker");
-        if (!attacker || attacker.hasRolled) return;
-        const flags = sys.tacticalFlags ?? {};
-        const flagBonus = Number(Boolean(flags.outnumbered)) + Number(Boolean(flags.surprised)) +
-            Number(Boolean(flags.pointBlank)) + Number(Boolean(flags.proneTarget)) - Number(Boolean(flags.cover));
-        await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "attacker", {
-            total: 1,
-            successLevel: "critical",
-            isSuccess: true,
-            modifierDice: Math.clamp(Number(attacker.modifierDice ?? 0) + flagBonus, -2, 2),
-            rollMode: "gmroll",
-            rollerUserId: game.user.id
-        });
-    }
-    static async #onResetCombatPhase(event, target) {
-        if (!game.user.isGM || !target.dataset.phase) return;
-        await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { resetCombatPhase: target.dataset.phase });
-    }
-
-    static async #onSetDefenderReaction(event, target) {
-        const reaction = target.dataset.reaction;
-        if (!reaction) return;
-        await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { defenderReaction: reaction });
-    }
-    static async #onRollOpponentReaction() {
-        const sys = this.session;
-        const defender = sys?.participants?.find((p) => p.key === "defender");
-        if (!defender || defender.hasRolled || sys.isResolved) return;
-        const rollMode = RollVisibilityPolicy.getCurrentRollMode();
-        if (sys.defenderReaction === "none") {
-            await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "defender", {
-                total: null,
-                successLevel: "none",
-                isSuccess: false,
-                modifierDice: 0,
-                rollMode,
+        static async #onGmForceAutoSuccess() {
+            if (!game.user.isGM) return;
+            const sys = this.session;
+            const attacker = sys?.participants?.find((p) => p.key === "attacker");
+            if (!attacker || attacker.hasRolled) return;
+            const flags = sys.tacticalFlags ?? {};
+            const flagBonus = Number(Boolean(flags.outnumbered)) + Number(Boolean(flags.surprised)) +
+                Number(Boolean(flags.pointBlank)) + Number(Boolean(flags.proneTarget)) - Number(Boolean(flags.cover));
+            await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "attacker", {
+                total: 1,
+                successLevel: "critical",
+                isSuccess: true,
+                modifierDice: Math.clamp(Number(attacker.modifierDice ?? 0) + flagBonus, -2, 2),
+                rollMode: "gmroll",
                 rollerUserId: game.user.id
             });
-            return;
         }
-        const mod = Number(defender.modifierDice ?? 0);
-        const roll = await new Roll(CoC7CheckResolver.buildRollFormula(mod)).evaluate();
-        const total = roll.total === 0 ? 100 : roll.total;
-        const successLevel = CoC7CheckResolver.evaluateResult(total, Number(defender.targetValue));
-        const isSuccess = (CoC7CheckResolver.LEVEL_RANK[successLevel] ?? 0) >= 2;
-        const rollBreakdown = CoC7CheckResolver.buildBreakdown(roll, Number(defender.targetValue), successLevel, { modifierDice: mod });
-        await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "defender", {
-            total,
-            successLevel,
-            isSuccess,
-            modifierDice: mod,
-            rollMode,
-            rollerUserId: game.user.id,
-            rollBreakdown
-        });
-    }
-    static async #onExecuteDamageRoll() {
-        await DamageRollSubmitter.submit(this._messageId);
-    }
-    #resolveActor(participant) {
-        if (!participant) return null;
-        return SessionStore.resolveActor(participant);
-    }
+        static async #onResetCombatPhase(event, target) {
+            if (!game.user.isGM || !target.dataset.phase) return;
+            await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { resetCombatPhase: target.dataset.phase });
+        }
+
+        static async #onSetDefenderReaction(event, target) {
+            const reaction = target.dataset.reaction;
+            if (!reaction) return;
+            await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { defenderReaction: reaction });
+        }
+        static async #onRollOpponentReaction() {
+            const sys = this.session;
+            const defender = sys?.participants?.find((p) => p.key === "defender");
+            if (!defender || defender.hasRolled || sys.isResolved) return;
+            const rollMode = RollVisibilityPolicy.getCurrentRollMode();
+            if (sys.defenderReaction === "none") {
+                await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "defender", {
+                    total: null,
+                    successLevel: "none",
+                    isSuccess: false,
+                    modifierDice: 0,
+                    rollMode,
+                    rollerUserId: game.user.id
+                });
+                return;
+            }
+            const mod = Number(defender.modifierDice ?? 0);
+            const roll = await new Roll(CoC7CheckResolver.buildRollFormula(mod)).evaluate();
+            const total = roll.total === 0 ? 100 : roll.total;
+            const successLevel = CoC7CheckResolver.evaluateResult(total, Number(defender.targetValue));
+            const isSuccess = (CoC7CheckResolver.LEVEL_RANK[successLevel] ?? 0) >= 2;
+            const rollBreakdown = CoC7CheckResolver.buildBreakdown(roll, Number(defender.targetValue), successLevel, { modifierDice: mod });
+            await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "defender", {
+                total,
+                successLevel,
+                isSuccess,
+                modifierDice: mod,
+                rollMode,
+                rollerUserId: game.user.id,
+                rollBreakdown
+            });
+        }
+        static async #onExecuteDamageRoll() {
+            await DamageRollSubmitter.submit(this._messageId);
+        }
+        #resolveActor(participant) {
+            if (!participant) return null;
+            return SessionStore.resolveActor(participant);
+        }
     };
 }
 
@@ -3725,129 +3876,130 @@ const OPPOSED_ROLL_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/template
 export function createOpposedRollPromptApp(core) {
     const CorePromptApp = core.createPromptClass({ template: OPPOSED_ROLL_TEMPLATE });
     return class OpposedRollPromptApp extends CorePromptApp {
-    /** @type {Map<string, number>} */
-    #modifierDiceByKey = new Map();
+        /** @type {Map<string, number>} */
+        #modifierDiceByKey = new Map();
 
-    static DEFAULT_OPTIONS = {
-        actions: {
-            setContestantModifier: OpposedRollPromptApp.#onSetContestantModifier,
-            rollContestant: OpposedRollPromptApp.#onRollContestant
+        static DEFAULT_OPTIONS = {
+            actions: {
+                setContestantModifier: OpposedRollPromptApp.#onSetContestantModifier,
+                rollContestant: OpposedRollPromptApp.#onRollContestant
+            }
+        };
+
+        /** @override */
+        _getPhases(sys) {
+            return (sys?.participants ?? []).map((p) => ({ id: p.key, isActive: !p.hasRolled, isCompleted: p.hasRolled }));
         }
-    };
 
-    /** @override */
-    _getPhases(sys) {
-        return (sys?.participants ?? []).map((p) => ({ id: p.key, isActive: !p.hasRolled, isCompleted: p.hasRolled }));
-    }
+        /** @override */
+        _buildPhaseSummary(sys) {
+            const names = (sys.participants ?? []).map((p) => p.actorName).join(" vs. ");
+            return game.i18n.format("ROE_COC7.RollSession.Summary.Opposed", { title: sys.title ?? "", names });
+        }
 
-    /** @override */
-    _buildPhaseSummary(sys) {
-        const names = (sys.participants ?? []).map((p) => p.actorName).join(" vs. ");
-        return game.i18n.format("ROE_COC7.RollSession.Summary.Opposed", { title: sys.title ?? "", names });
-    }
+        async _prepareContext(options) {
+            const context = await super._prepareContext(options);
+            const sys = this.session;
+            const rawParticipants = sys?.participants ?? [];
 
-    async _prepareContext(options) {
-        const context = await super._prepareContext(options);
-        const sys = this.session;
-        const rawParticipants = sys?.participants ?? [];
+            const enriched = rawParticipants.map((p) => {
+                const actor = SessionStore.resolveActor(p);
+                const isOwner = Boolean(actor?.isOwner);
+                const opts = this._evaluateParticipantOptions(p, sys);
+                const modDice = p.modifierDice ?? 0;
+                const diceArray = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, modDice);
 
-        const enriched = rawParticipants.map((p) => {
-            const actor = SessionStore.resolveActor(p);
-            const isOwner = Boolean(actor?.isOwner);
-            const opts = this._evaluateParticipantOptions(p, sys);
-            const modDice = p.modifierDice ?? 0;
-            const diceArray = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, modDice);
+                return {
+                    ...p,
+                    ...opts,
+                    isOwner,
+                    isDelegatedToPlayer: this._isDelegatedToActivePlayer(p),
+                    modifierDice: modDice,
+                    modifierDisplay: this._formatModifierLabel(modDice),
+                    dice: diceArray,
+                    diceLabel: this._formatDiceFormulaLabel(diceArray)
+                };
+            });
 
-            return {
-                ...p,
-                ...opts,
-                isOwner,
-                isDelegatedToPlayer: this._isDelegatedToActivePlayer(p),
-                modifierDice: modDice,
-                modifierDisplay: this._formatModifierLabel(modDice),
-                dice: diceArray,
-                diceLabel: this._formatDiceFormulaLabel(diceArray)
-            };
-        });
+            const hasPendingOwnAction =
+                !game.user.isGM && enriched.some((p) => p.isOwner && p.hasRolled && (p.canSpendLuck || p.canPush));
 
-        const hasPendingOwnAction =
-            !game.user.isGM && enriched.some((p) => p.isOwner && p.hasRolled && (p.canSpendLuck || p.canPush));
+            const canRevealOpposedResults =
+                game.user.isGM || (context.allRolled && !hasPendingOwnAction) || Boolean(sys?.isResolved);
 
-        const canRevealOpposedResults =
-            game.user.isGM || (context.allRolled && !hasPendingOwnAction) || Boolean(sys?.isResolved);
-
-        const participants = enriched.map((p, index) => {
-            const canView = RollVisibilityPolicy.canViewParticipantRoll(p, sys);
-            const showDetails = canView && (game.user.isGM || p.isOwner || canRevealOpposedResults);
-            const canRoll = !p.hasRolled && (game.user.isGM || p.isOwner);
-            return {
-                ...p,
-                phaseNumber: index + 1,
-                isPhaseActive: !p.hasRolled,
-                hiddenInCompact: p.hasRolled ? (!p.canSpendLuck && !p.canPush && !p.isOwner) : !canRoll,
-                canRoll,
-                statusText: p.hasRolled
-                    ? !canView
-                        ? game.i18n.localize("ROE.RollSession.HiddenRoll")
-                        : showDetails
+            const participants = enriched.map((p, index) => {
+                const canView = RollVisibilityPolicy.canViewParticipantRoll(p, sys);
+                const isOwnParticipant = Boolean(p.isOwner);
+                const showDetails = isOwnParticipant || canRevealOpposedResults;
+                const canRoll = !p.hasRolled && (game.user.isGM || isOwnParticipant);
+                return {
+                    ...p,
+                    phaseNumber: index + 1,
+                    isPhaseActive: !p.hasRolled,
+                    hiddenInCompact: p.hasRolled ? (!p.canSpendLuck && !p.canPush && !isOwnParticipant) : !canRoll,
+                    canRoll,
+                    canInspect: p.hasRolled && (canView || isOwnParticipant),
+                    statusText: p.hasRolled
+                        ? showDetails
                             ? CoC7ResultFormatter.formatRollOutcome({
                                 total: p.total,
                                 targetValue: p.targetValue,
-                                successLevel: p.successLevel
+                                successLevel: p.successLevel,
+                                allowNumbers: canView || isOwnParticipant
                             })
                             : game.i18n.localize("ROE_COC7.Combat.Card.HiddenUntilOwnRoll")
-                    : game.i18n.localize("ROE_COC7.Combat.Card.PendingRoll")
+                        : game.i18n.localize("ROE_COC7.Combat.Card.PendingRoll")
+                };
+            });
+
+            return {
+                ...context,
+                title: sys?.title ?? "",
+                participants
             };
-        });
+        }
 
-        return {
-            ...context,
-            title: sys?.title ?? "",
-            participants
-        };
-    }
+        static async #onSetContestantModifier(event, target) {
+            const key = target.dataset.key;
+            const sys = this.session;
+            const participant = sys?.participants?.find((p) => p.key === key);
+            if (!participant || participant.hasRolled || sys.isResolved) return;
 
-    static async #onSetContestantModifier(event, target) {
-        const key = target.dataset.key;
-        const sys = this.session;
-        const participant = sys?.participants?.find((p) => p.key === key);
-        if (!participant || participant.hasRolled || sys.isResolved) return;
+            const current = participant.modifierDice ?? 0;
+            const step = Number(target.dataset.step);
+            const next = !Number.isNaN(step)
+                ? Math.clamp(current + step, -2, 2)
+                : current >= 2
+                    ? -2
+                    : current + 1;
 
-        const current = participant.modifierDice ?? 0;
-        const step = Number(target.dataset.step);
-        const next = !Number.isNaN(step)
-            ? Math.clamp(current + step, -2, 2)
-            : current >= 2
-                ? -2
-                : current + 1;
+            await UniversalRollOrchestrator.setParticipantModifier(this._messageId, key, next);
+        }
 
-        await UniversalRollOrchestrator.setParticipantModifier(this._messageId, key, next);
-    }
+        static async #onRollContestant(event, target) {
+            const key = target.dataset.key;
+            const sys = this.session;
+            const participant = sys?.participants?.find((p) => p.key === key);
+            if (!participant || participant.hasRolled) return;
 
-    static async #onRollContestant(event, target) {
-        const key = target.dataset.key;
-        const sys = this.session;
-        const participant = sys?.participants?.find((p) => p.key === key);
-        if (!participant || participant.hasRolled) return;
+            const modDice = participant.modifierDice ?? 0;
+            const formula = CoC7CheckResolver.buildRollFormula(modDice);
+            const roll = await new Roll(formula).evaluate();
+            const total = roll.total === 0 ? 100 : roll.total;
+            const successLevel = CoC7CheckResolver.evaluateResult(total, Number(participant.targetValue));
+            const rollBreakdown = CoC7CheckResolver.buildBreakdown(roll, Number(participant.targetValue), successLevel, { modifierDice: modDice });
+            const isSuccess = (CoC7CheckResolver.LEVEL_RANK[successLevel] ?? 0) >= 2;
 
-        const modDice = participant.modifierDice ?? 0;
-        const formula = CoC7CheckResolver.buildRollFormula(modDice);
-        const roll = await new Roll(formula).evaluate();
-        const total = roll.total === 0 ? 100 : roll.total;
-        const successLevel = CoC7CheckResolver.evaluateResult(total, Number(participant.targetValue));
-        const rollBreakdown = CoC7CheckResolver.buildBreakdown(roll, Number(participant.targetValue), successLevel, { modifierDice: modDice });
-        const isSuccess = (CoC7CheckResolver.LEVEL_RANK[successLevel] ?? 0) >= 2;
-
-        await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, key, {
-            total,
-            successLevel,
-            isSuccess,
-            modifierDice: modDice,
-            rollMode: RollVisibilityPolicy.getCurrentRollMode(),
-            rollerUserId: game.user.id,
-            rollBreakdown
-        });
-    }
+            await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, key, {
+                total,
+                successLevel,
+                isSuccess,
+                modifierDice: modDice,
+                rollMode: RollVisibilityPolicy.getCurrentRollMode(),
+                rollerUserId: game.user.id,
+                rollBreakdown
+            });
+        }
     };
 }
 
@@ -3890,191 +4042,191 @@ const RANGED_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templat
 export function createRangedPromptApp(core, BasicPromptApp) {
     const ParentPromptApp = core.extendPromptClass(BasicPromptApp, { template: RANGED_PROMPT_TEMPLATE });
     return class RangedPromptApp extends ParentPromptApp {
-    static DEFAULT_OPTIONS = {
-        actions: {
-            executeRoll: RangedPromptApp.#onRollAttack,
-            chooseCover: RangedPromptApp.#onChooseCover,
-            executeDamageRoll: RangedPromptApp.#onExecuteDamageRoll
-        }
-    };
+        static DEFAULT_OPTIONS = {
+            actions: {
+                executeRoll: RangedPromptApp.#onRollAttack,
+                chooseCover: RangedPromptApp.#onChooseCover,
+                executeDamageRoll: RangedPromptApp.#onExecuteDamageRoll
+            }
+        };
 
-    /** @override */
-    async _prepareContext(options) {
-        const context = await super._prepareContext(options);
-        const sys = this.session;
-        if (!sys) return context;
+        /** @override */
+        async _prepareContext(options) {
+            const context = await super._prepareContext(options);
+            const sys = this.session;
+            if (!sys) return context;
 
-        const phase = sys.combatPhase || "reaction";
-        const attacker = this.#findParticipant(sys, "attacker");
-        const target = this.#findParticipant(sys, "defender");
-        const damageEntry = this.#findParticipant(sys, "damage");
+            const phase = sys.combatPhase || "reaction";
+            const attacker = this.#findParticipant(sys, "attacker");
+            const target = this.#findParticipant(sys, "defender");
+            const damageEntry = this.#findParticipant(sys, "damage");
 
-        const isGM = game.user.isGM;
-        const tookCover = Boolean(target?.tookCover);
-        const manualMod = Number(attacker?.modifierDice ?? 0);
-        const coverPenalty = tookCover ? COVER_PENALTY_DICE : 0;
-        // Taking cover contributes a penalty die to the attacker's manual modifier.
-        const effectiveMod = Math.clamp(manualMod + coverPenalty, -2, 2);
+            const isGM = game.user.isGM;
+            const tookCover = Boolean(target?.tookCover);
+            const manualMod = Number(attacker?.modifierDice ?? 0);
+            const coverPenalty = tookCover ? COVER_PENALTY_DICE : 0;
+            // Taking cover contributes a penalty die to the attacker's manual modifier.
+            const effectiveMod = Math.clamp(manualMod + coverPenalty, -2, 2);
 
-        const canViewAttackerRoll = attacker ? RollVisibilityPolicy.canViewParticipantRoll(attacker, sys) : false;
-        const canViewDamage = damageEntry ? RollVisibilityPolicy.canViewParticipantRoll(damageEntry, sys) : false;
-        const damageActor = this.#resolveActor(damageEntry);
-        const attackerDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, effectiveMod);
-        const damageDice = canViewDamage
-            ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageEntry?.diceFormula ?? sys.damageFormula })
-            : [];
+            const isAttackerOwner = Boolean(this.#resolveActor(attacker)?.isOwner);
+            const canViewAttackerRoll = attacker ? (isAttackerOwner || RollVisibilityPolicy.canViewParticipantRoll(attacker, sys)) : false;
+            const canViewDamage = damageEntry ? RollVisibilityPolicy.canViewParticipantRoll(damageEntry, sys) : false;
+            const damageActor = this.#resolveActor(damageEntry);
+            const attackerDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, effectiveMod);
+            const damageDice = canViewDamage
+                ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageEntry?.diceFormula ?? sys.damageFormula })
+                : [];
 
-        return {
-            ...context,
-            isPhaseReaction: phase === "reaction",
-            isPhaseAttack: phase === "attack",
-            isPhaseResolution: phase === "resolution",
+            return {
+                ...context,
+                isPhaseReaction: phase === "reaction",
+                isPhaseAttack: phase === "attack",
+                isPhaseResolution: phase === "resolution",
 
-            weaponName: sys.weaponName || sys.title,
-            attackerName: attacker?.actorName ?? "",
-            attackerImg: attacker?.actorImg ?? "",
-            targetName: target?.actorName ?? "",
-            targetImg: target?.actorImg ?? "",
+                weaponName: sys.weaponName || sys.title,
+                attackerName: attacker?.actorName ?? "",
+                attackerImg: attacker?.actorImg ?? "",
+                targetName: target?.actorName ?? "",
+                targetImg: target?.actorImg ?? "",
 
-            canActAsTarget: isGM || Boolean(this.#resolveActor(target)?.isOwner),
-            isTargetDelegated: this._isDelegatedToActivePlayer(target),
-            isAttackerDelegated: this._isDelegatedToActivePlayer(attacker),
-            isDamageDelegated: this._isDelegatedToActivePlayer(damageEntry),
-            canRollAttack: phase === "attack" && Boolean(attacker && !attacker.hasRolled) &&
-                (isGM || Boolean(this.#resolveActor(attacker)?.isOwner)),
-            targetTookCover: tookCover,
-            coverResultText: target?.hasRolled
-                ? game.i18n.localize(tookCover ? "ROE_COC7.Ranged.CoverTaken" : "ROE_COC7.Ranged.NoCover")
-                : "",
+                canActAsTarget: isGM || Boolean(this.#resolveActor(target)?.isOwner),
+                isTargetDelegated: this._isDelegatedToActivePlayer(target),
+                isAttackerDelegated: this._isDelegatedToActivePlayer(attacker),
+                isDamageDelegated: this._isDelegatedToActivePlayer(damageEntry),
+                canRollAttack: phase === "attack" && Boolean(attacker && !attacker.hasRolled) &&
+                    (isGM || Boolean(this.#resolveActor(attacker)?.isOwner)),
+                targetTookCover: tookCover,
+                coverResultText: target?.hasRolled
+                    ? game.i18n.localize(tookCover ? "ROE_COC7.Ranged.CoverTaken" : "ROE_COC7.Ranged.NoCover")
+                    : "",
 
-            manualModifierDice: manualMod,
-            flagModifierDice: coverPenalty,
-            effectiveModifierDice: effectiveMod,
-            effectiveModifierLabel: this._formatModifierLabel(effectiveMod),
-            attackerDice,
-            attackerDiceLabel: this._formatDiceFormulaLabel(attackerDice),
-            damageDice,
-            damageDiceLabel: canViewDamage ? this._formatDiceFormulaLabel(damageDice) : "",
-            attackerRollBtnLabel: `${attacker?.label ?? ""} (${attacker?.targetValue ?? 0}%)`,
-            attackerResultText: attacker?.hasRolled
-                ? canViewAttackerRoll
+                manualModifierDice: manualMod,
+                flagModifierDice: coverPenalty,
+                effectiveModifierDice: effectiveMod,
+                effectiveModifierLabel: this._formatModifierLabel(effectiveMod),
+                attackerDice,
+                attackerDiceLabel: this._formatDiceFormulaLabel(attackerDice),
+                damageDice,
+                damageDiceLabel: canViewDamage ? this._formatDiceFormulaLabel(damageDice) : "",
+                attackerRollBtnLabel: `${attacker?.label ?? ""} (${attacker?.targetValue ?? 0}%)`,
+                attackerResultText: attacker?.hasRolled
                     ? CoC7ResultFormatter.formatRollOutcome({
                         total: attacker.total,
                         targetValue: attacker.targetValue,
-                        successLevel: attacker.successLevel
+                        successLevel: attacker.successLevel,
+                        allowNumbers: canViewAttackerRoll
                     })
-                    : game.i18n.localize("ROE.RollSession.HiddenRoll")
-                : "",
+                    : "",
 
-            hasDamageStep: Boolean(damageEntry),
-            damageLabel: damageEntry?.label ?? "",
-            damageFormula: canViewDamage ? (damageEntry?.diceFormula ?? sys.damageFormula) : "???",
-            damageRolled: Boolean(damageEntry?.hasRolled),
-            damageTotal: canViewDamage ? (damageEntry?.total ?? 0) : "?",
-            canViewDamage,
-            canRollDamage: Boolean(
-                phase === "resolution" && damageEntry && !damageEntry.hasRolled &&
-                (isGM || damageActor?.isOwner) && !sys.isResolved
-            ),
-            hasCombatDamage: Boolean(canViewDamage && sys.finalDamage !== null && sys.finalDamage !== undefined),
-            finalDamage: sys.finalDamage ?? 0,
-            armorApplied: sys.armorApplied ?? 0,
-            majorWoundTriggered: Boolean(sys.majorWoundTriggered)
-        };
-    }
-
-    /** @override */
-    _getPhases(sys) {
-        const current = PHASE_ORDER.indexOf(sys?.combatPhase || "reaction");
-        return PHASE_ORDER.map((id, index) => ({ id, isActive: index === current, isCompleted: index < current }));
-    }
-
-    /** @override */
-    _hasPendingPlayerAction() {
-        const sys = this.session;
-        if (!sys || sys.isResolved) return false;
-
-        const participant = this.#findParticipant(sys, PENDING_PARTICIPANT_BY_PHASE[sys.combatPhase]);
-        return Boolean(participant && !participant.hasRolled && this.#resolveActor(participant)?.isOwner);
-    }
-
-    /** @override */
-    _buildPhaseSummary(sys) {
-        const attacker = this.#findParticipant(sys, "attacker");
-        const target = this.#findParticipant(sys, "defender");
-        const names = { attacker: attacker?.actorName ?? "", target: target?.actorName ?? "" };
-
-        if (sys.combatPhase === "reaction") {
-            return game.i18n.format("ROE_COC7.Ranged.Summary.Reaction", { ...names, weapon: sys.weaponName || sys.title });
+                hasDamageStep: Boolean(damageEntry),
+                damageLabel: damageEntry?.label ?? "",
+                damageFormula: canViewDamage ? (damageEntry?.diceFormula ?? sys.damageFormula) : "???",
+                damageRolled: Boolean(damageEntry?.hasRolled),
+                damageTotal: canViewDamage ? (damageEntry?.total ?? 0) : "?",
+                canViewDamage,
+                canRollDamage: Boolean(
+                    phase === "resolution" && damageEntry && !damageEntry.hasRolled &&
+                    (isGM || damageActor?.isOwner) && !sys.isResolved
+                ),
+                hasCombatDamage: Boolean(canViewDamage && sys.finalDamage !== null && sys.finalDamage !== undefined),
+                finalDamage: sys.finalDamage ?? 0,
+                armorApplied: sys.armorApplied ?? 0,
+                majorWoundTriggered: Boolean(sys.majorWoundTriggered)
+            };
         }
-        if (sys.combatPhase === "attack") {
-            const key = target?.tookCover ? "ROE_COC7.Ranged.Summary.Cover" : "ROE_COC7.Ranged.Summary.NoCover";
-            return game.i18n.format(key, names);
+
+        /** @override */
+        _getPhases(sys) {
+            const current = PHASE_ORDER.indexOf(sys?.combatPhase || "reaction");
+            return PHASE_ORDER.map((id, index) => ({ id, isActive: index === current, isCompleted: index < current }));
         }
-        if (sys.hitWinnerKey) {
-            return game.i18n.format("ROE_COC7.Combat.Summary.Hit", { winner: names.attacker, target: names.target });
+
+        /** @override */
+        _hasPendingPlayerAction() {
+            const sys = this.session;
+            if (!sys || sys.isResolved) return false;
+
+            const participant = this.#findParticipant(sys, PENDING_PARTICIPANT_BY_PHASE[sys.combatPhase]);
+            return Boolean(participant && !participant.hasRolled && this.#resolveActor(participant)?.isOwner);
         }
-        return "";
-    }
 
-    #findParticipant(sys, key) {
-        return sys?.participants?.find((p) => p.key === key) ?? null;
-    }
+        /** @override */
+        _buildPhaseSummary(sys) {
+            const attacker = this.#findParticipant(sys, "attacker");
+            const target = this.#findParticipant(sys, "defender");
+            const names = { attacker: attacker?.actorName ?? "", target: target?.actorName ?? "" };
 
-    #resolveActor(participant) {
-        if (!participant) return null;
-        return SessionStore.resolveActor(participant);
-    }
+            if (sys.combatPhase === "reaction") {
+                return game.i18n.format("ROE_COC7.Ranged.Summary.Reaction", { ...names, weapon: sys.weaponName || sys.title });
+            }
+            if (sys.combatPhase === "attack") {
+                const key = target?.tookCover ? "ROE_COC7.Ranged.Summary.Cover" : "ROE_COC7.Ranged.Summary.NoCover";
+                return game.i18n.format(key, names);
+            }
+            if (sys.hitWinnerKey) {
+                return game.i18n.format("ROE_COC7.Combat.Summary.Hit", { winner: names.attacker, target: names.target });
+            }
+            return "";
+        }
 
-    static async #onChooseCover(event, trigger) {
-        const sys = this.session;
-        const target = sys?.participants?.find((p) => p.key === "defender");
-        if (!target || target.hasRolled || sys.isResolved) return;
+        #findParticipant(sys, key) {
+            return sys?.participants?.find((p) => p.key === key) ?? null;
+        }
 
-        const tookCover = trigger.dataset.cover === "true";
-        await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "defender", {
-            total: null,
-            successLevel: "none",
-            isSuccess: tookCover,
-            tookCover,
-            modifierDice: 0,
-            rollMode: RollVisibilityPolicy.getCurrentRollMode(),
-            rollerUserId: game.user.id
-        });
-    }
+        #resolveActor(participant) {
+            if (!participant) return null;
+            return SessionStore.resolveActor(participant);
+        }
 
-    static async #onRollAttack() {
-        const sys = this.session;
-        const attacker = sys?.participants?.find((p) => p.key === "attacker");
-        const target = sys?.participants?.find((p) => p.key === "defender");
-        if (!attacker || attacker.hasRolled || sys.isResolved || sys.combatPhase !== "attack") return;
+        static async #onChooseCover(event, trigger) {
+            const sys = this.session;
+            const target = sys?.participants?.find((p) => p.key === "defender");
+            if (!target || target.hasRolled || sys.isResolved) return;
 
-        const coverPenalty = target?.tookCover ? COVER_PENALTY_DICE : 0;
-        const modifierDice = Math.clamp(Number(attacker.modifierDice ?? 0) + coverPenalty, -2, 2);
-        const targetValue = Number(attacker.targetValue);
+            const tookCover = trigger.dataset.cover === "true";
+            await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "defender", {
+                total: null,
+                successLevel: "none",
+                isSuccess: tookCover,
+                tookCover,
+                modifierDice: 0,
+                rollMode: RollVisibilityPolicy.getCurrentRollMode(),
+                rollerUserId: game.user.id
+            });
+        }
 
-        const roll = await new Roll(CoC7CheckResolver.buildRollFormula(modifierDice)).evaluate();
-        const total = roll.total === 0 ? 100 : roll.total;
-        const successLevel = CoC7CheckResolver.evaluateResult(total, targetValue);
-        const rank = CoC7CheckResolver.LEVEL_RANK;
+        static async #onRollAttack() {
+            const sys = this.session;
+            const attacker = sys?.participants?.find((p) => p.key === "attacker");
+            const target = sys?.participants?.find((p) => p.key === "defender");
+            if (!attacker || attacker.hasRolled || sys.isResolved || sys.combatPhase !== "attack") return;
 
-        await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "attacker", {
-            total,
-            successLevel,
-            isSuccess: (rank[successLevel] ?? 0) >= (rank[sys.difficulty] ?? 2),
-            modifierDice,
-            rollMode: RollVisibilityPolicy.getCurrentRollMode(),
-            rollerUserId: game.user.id,
-            rollBreakdown: CoC7CheckResolver.buildBreakdown(roll, targetValue, successLevel, {
+            const coverPenalty = target?.tookCover ? COVER_PENALTY_DICE : 0;
+            const modifierDice = Math.clamp(Number(attacker.modifierDice ?? 0) + coverPenalty, -2, 2);
+            const targetValue = Number(attacker.targetValue);
+
+            const roll = await new Roll(CoC7CheckResolver.buildRollFormula(modifierDice)).evaluate();
+            const total = roll.total === 0 ? 100 : roll.total;
+            const successLevel = CoC7CheckResolver.evaluateResult(total, targetValue);
+            const rank = CoC7CheckResolver.LEVEL_RANK;
+
+            await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "attacker", {
+                total,
+                successLevel,
+                isSuccess: (rank[successLevel] ?? 0) >= (rank[sys.difficulty] ?? 2),
                 modifierDice,
-                tacticalFlags: target?.tookCover ? ["cover"] : []
-            })
-        });
-    }
+                rollMode: RollVisibilityPolicy.getCurrentRollMode(),
+                rollerUserId: game.user.id,
+                rollBreakdown: CoC7CheckResolver.buildBreakdown(roll, targetValue, successLevel, {
+                    modifierDice,
+                    tacticalFlags: target?.tookCover ? ["cover"] : []
+                })
+            });
+        }
 
-    static async #onExecuteDamageRoll() {
-        await DamageRollSubmitter.submit(this._messageId);
-    }
+        static async #onExecuteDamageRoll() {
+            await DamageRollSubmitter.submit(this._messageId);
+        }
     };
 }
 
@@ -6054,6 +6206,106 @@ export class SkillRollStrategy extends BasicRollStrategy {
     color: var(--roe-critical);
 }
 
+/* Resolved Combat Layouts (Narrative & Duel) */
+.roe-overlay[data-nre-system="CoC7"] .resolved-combat-narrative {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    background: var(--roe-bg-panel);
+    border: 1px solid var(--roe-border-dark);
+    border-left: 3px solid var(--roe-gold);
+    font-style: italic;
+    font-size: 0.78rem;
+    color: var(--roe-text-main);
+    text-align: center;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-combat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: stretch;
+    gap: 0.35rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-grid.is-single {
+    grid-template-columns: 1fr;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-card {
+    position: relative;
+    background: var(--roe-bg-panel);
+    border: 1px solid var(--roe-border-dark);
+    padding: 0.4rem 0.35rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.18rem;
+    text-align: center;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-card.is-winner {
+    border-color: var(--roe-gold);
+    background: rgba(197, 160, 89, 0.1);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-crown {
+    position: absolute;
+    top: 4px;
+    right: 5px;
+    font-size: 0.68rem;
+    color: var(--roe-gold-bright);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-name {
+    font-size: 0.76rem;
+    color: var(--roe-text-main);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-role {
+    font-size: 0.66rem;
+    color: var(--roe-text-muted);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-duel-vs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--roe-font-display);
+    font-size: 0.72rem;
+    font-weight: bold;
+    color: var(--roe-gold);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-consequences-box {
+    width: 100%;
+    margin-top: 0.15rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--roe-gold-dim);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-maneuver-badge {
+    font-family: var(--roe-font-display);
+    font-size: 0.82rem;
+    font-weight: bold;
+    color: #7ee2a8;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .resolved-cover-note {
+    font-size: 0.72rem;
+    color: var(--roe-text-muted);
+}
+
 
 
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\templates\chat ===
@@ -6385,6 +6637,92 @@ export class SkillRollStrategy extends BasicRollStrategy {
     {{else if resolvedHeadline}}
     <div class="resolved-summary-line">{{resolvedHeadline}}</div>
     {{/if}}
+</div>
+
+
+
+=== C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\templates\core\prompts\partials\resolved-combat-consequences.hbs ===
+{{#if resolvedHasConsequences}}
+<div class="resolved-consequences-box">
+    {{#if resolvedHasDamage}}
+    <div class="resolved-combat-damage" {{#if resolvedCanViewDamage}}data-inspect-key="damage"{{/if}}>
+        <i class="fa-solid fa-burst"></i>
+        {{#if resolvedCanViewDamage}}
+        -{{resolvedFinalDamage}} {{localize "ROE_COC7.Resources.HPAbbr"}}
+        {{#if resolvedArmorApplied}}<small>({{resolvedArmorApplied}} {{localize "ROE_COC7.Combat.Armor"}})</small>{{/if}}
+        {{else}}
+        {{localize "ROE.RollSession.HiddenRoll"}}
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{#if resolvedMajorWound}}
+    <div class="resolved-major-wound">
+        <i class="fa-solid fa-skull-crossbones"></i> {{localize "ROE_COC7.Conditions.MajorWound"}}
+    </div>
+    {{/if}}
+
+    {{#if resolvedManeuverLabel}}
+    <div class="resolved-maneuver-badge">
+        <i class="fa-solid fa-hand-fist"></i> {{resolvedManeuverLabel}}
+    </div>
+    {{/if}}
+
+    {{#if resolvedTargetTookCover}}
+    <div class="resolved-cover-note">
+        <i class="fa-solid fa-person-running"></i> {{localize "ROE_COC7.Ranged.LosesNextAction" actor=resolvedDefenderName}}
+    </div>
+    {{/if}}
+</div>
+{{/if}}
+
+
+
+=== C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\templates\core\prompts\partials\resolved-combat-duel.hbs ===
+<div class="resolved-single-result">
+    <div class="resolved-duel-grid {{#unless resolvedHasDefender}}is-single{{/unless}}">
+        <div class="resolved-duel-card {{#if resolvedAttackerWon}}is-winner{{/if}}" {{#if resolvedCanViewAttacker}}data-inspect-key="attacker"{{/if}}>
+            {{#if resolvedAttackerWon}}<i class="fa-solid fa-trophy resolved-duel-crown"></i>{{/if}}
+            <img class="combatant-avatar" src="{{resolvedAttackerImg}}" alt="{{resolvedAttackerName}}" />
+            <strong class="resolved-duel-name">{{resolvedAttackerName}}</strong>
+            <small class="resolved-duel-role">{{resolvedAttackerLabel}}</small>
+            <span class="resolved-level-text {{resolvedAttackerLevel}}">{{resolvedAttackerOutcome}}</span>
+        </div>
+
+        {{#if resolvedHasDefender}}
+        <div class="resolved-duel-vs">VS</div>
+
+        <div class="resolved-duel-card {{#if resolvedDefenderWon}}is-winner{{/if}}" {{#if resolvedCanViewDefender}}data-inspect-key="defender"{{/if}}>
+            {{#if resolvedDefenderWon}}<i class="fa-solid fa-trophy resolved-duel-crown"></i>{{/if}}
+            <img class="combatant-avatar" src="{{resolvedDefenderImg}}" alt="{{resolvedDefenderName}}" />
+            <strong class="resolved-duel-name">{{resolvedDefenderName}}</strong>
+            <small class="resolved-duel-role">{{resolvedDefenderLabel}}</small>
+            <span class="resolved-level-text {{resolvedDefenderLevel}}">{{resolvedDefenderOutcome}}</span>
+        </div>
+        {{/if}}
+    </div>
+
+    {{> roeCocResolvedCombatConsequences}}
+</div>
+
+
+
+=== C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\templates\core\prompts\partials\resolved-combat-narrative.hbs ===
+<div class="resolved-single-result">
+    <div class="resolved-combat-narrative">{{resolvedCombatNarrative}}</div>
+
+    <div class="resolved-combat-chips">
+        <span class="result-chip is-compact {{resolvedAttackerChipClass}}" {{#if resolvedCanViewAttacker}}data-inspect-key="attacker"{{/if}}>
+            {{resolvedAttackerName}}: {{resolvedAttackerOutcome}}
+        </span>
+        {{#if resolvedHasDefender}}
+        <span class="result-chip is-compact {{resolvedDefenderChipClass}}" {{#if resolvedCanViewDefender}}data-inspect-key="defender"{{/if}}>
+            {{resolvedDefenderName}}: {{resolvedDefenderOutcome}}
+        </span>
+        {{/if}}
+    </div>
+
+    {{> roeCocResolvedCombatConsequences}}
 </div>
 
 
@@ -6904,7 +7242,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
 {{/if}}
 
 <section
-    class="combat-phase-section {{#if isPhaseInitiator}}is-active{{else}}is-completed{{/if}} {{#if hideInitiatorInCompact}}is-compact-hidden{{/if}}">
+    class="combat-phase-section {{#if isPhaseInitiator}}is-active{{else}}is-completed{{/if}} {{#if isPhaseInitiator}}{{#unless canActAsInitiator}}is-compact-hidden{{/unless}}{{else}}{{#if hideInitiatorInCompact}}is-compact-hidden{{/if}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseInitiator}}fa-crosshairs{{else}}fa-check-circle{{/if}}"></i>
@@ -6943,11 +7281,6 @@ export class SkillRollStrategy extends BasicRollStrategy {
             <i class="fa-solid fa-dice-d20"></i> {{attackerRollBtnLabel}}
         </button>
     </div>
-    {{else}}
-    <div class="pending-badge">
-        <i class="fa-solid fa-hourglass-half"></i>
-        {{localize "ROE_COC7.Combat.WaitingForInitiator" actor=attackerName}}
-    </div>
     {{/if}}
     {{else}}
     <div class="combined-check-row">
@@ -6965,7 +7298,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
 
 {{#if showPhaseOpponent}}
 <section
-    class="combat-phase-section {{#if isPhaseOpponent}}is-active{{else}}is-completed{{/if}} {{#if hideOpponentInCompact}}is-compact-hidden{{/if}}">
+    class="combat-phase-section {{#if isPhaseOpponent}}is-active{{else}}is-completed{{/if}} {{#if isPhaseOpponent}}{{#unless canActAsOpponent}}is-compact-hidden{{/unless}}{{else}}{{#if hideOpponentInCompact}}is-compact-hidden{{/if}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseOpponent}}fa-shield-halved{{else}}fa-check-circle{{/if}}"></i>
@@ -7010,11 +7343,6 @@ export class SkillRollStrategy extends BasicRollStrategy {
             <i class="fa-solid fa-shield-halved"></i> {{defenderRollBtnLabel}}
         </button>
     </div>
-    {{else}}
-    <div class="pending-badge">
-        <i class="fa-solid fa-hourglass-half"></i>
-        {{localize "ROE_COC7.Combat.WaitingForOpponent" actor=defenderName}}
-    </div>
     {{/if}}
     {{else}}
     <div class="combined-check-row">
@@ -7041,11 +7369,9 @@ export class SkillRollStrategy extends BasicRollStrategy {
         <span><i class="fa-solid fa-burst"></i> {{damageLabel}}</span>
         <strong {{#if damageRolled}}data-inspect-key="damage" {{/if}}>
             {{#if damageRolled}}
-            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize
-            "ROE.RollSession.HiddenRoll"}}{{/if}}
+            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
             {{else}}
-            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize
-                "ROE.RollSession.PendingRoll"}}</span>{{/if}}
+            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>{{/if}}
             {{/if}}
         </strong>
     </div>
@@ -7057,16 +7383,15 @@ export class SkillRollStrategy extends BasicRollStrategy {
         <i class="fa-solid fa-dice"></i> {{localize "ROE_COC7.Combat.RollDamageBtn"}}
     </button>
     {{/if}}
+    {{/if}}
 
     {{#if showPlayerWaitingHint}}
     <div class="prompt-phase-summary">
         <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
     </div>
-    {{/if}}
-
-    {{/if}}
-
+    {{else}}
     {{> (lookup . "resultPartial")}}
+    {{/if}}
 
     {{#if canApplyConsequences}}
     <div class="gm-exclusive-zone">
@@ -7087,15 +7412,20 @@ export class SkillRollStrategy extends BasicRollStrategy {
     </footer>
     {{/if}}
 </section>
+{{else if showPlayerWaitingHint}}
+<div class="prompt-phase-summary">
+    <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+</div>
 {{/if}}
 {{/inline}}
 {{/roePromptLayout}}
 
 
+
 === C:\Users\mheil\AppData\Local\FoundryVTT\Data\modules\narrative-rolls-and-effects-coc7\templates\systems\coc7\prompts\combined-roll-prompt.hbs ===
 {{#> roePromptLayout}}
 {{#*inline "promptHeader"}}
-<div class="prompt-actor-name">{{localize "ROE_COC7.RollSession.Types.opposed"}}</div>
+<div class="prompt-actor-name">{{actorName}}</div>
 {{#if hasPromptDescription}}
 <button type="button" class="prompt-skill-name prompt-title-toggle" data-action="toggleDescription"
     aria-expanded="{{#if isDescriptionExpanded}}true{{else}}false{{/if}}"
@@ -7176,16 +7506,14 @@ export class SkillRollStrategy extends BasicRollStrategy {
 {{/inline}}
 
 {{#*inline "promptResults"}}
-{{#if outcomeHeadline}}
-<div class="prompt-outcome-banner">{{outcomeHeadline}}</div>
-{{/if}}
-{{> roePushFailurePhase}}
-
 {{#if showPlayerWaitingHint}}
 <div class="prompt-phase-summary">
     <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
 </div>
+{{else if outcomeHeadline}}
+<div class="prompt-outcome-banner">{{outcomeHeadline}}</div>
 {{/if}}
+{{> roePushFailurePhase}}
 
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">
@@ -7243,7 +7571,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
             </div>
 
             {{#unless canRoll}}
-            <span class="pending-badge" {{#if hasRolled}}data-inspect-key="{{key}}" {{/if}}>
+            <span class="pending-badge" {{#if canInspect}}data-inspect-key="{{key}}"{{/if}}>
                 {{statusText}}
             </span>
             {{/unless}}
@@ -7275,14 +7603,14 @@ export class SkillRollStrategy extends BasicRollStrategy {
 {{/inline}}
 
 {{#*inline "promptResults"}}
-{{> (lookup . "resultPartial")}}
-{{> roePushFailurePhase}}
-
 {{#if showPlayerWaitingHint}}
 <div class="prompt-phase-summary">
     <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
 </div>
+{{else}}
+{{> (lookup . "resultPartial")}}
 {{/if}}
+{{> roePushFailurePhase}}
 
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">
@@ -7317,6 +7645,9 @@ export class SkillRollStrategy extends BasicRollStrategy {
         {{else}}
         <div class="prompt-skill-name">{{weaponName}}</div>
         {{/if}}
+        {{#if targetName}}
+        <div class="prompt-actor-name">{{localize "ROE_COC7.Combat.TargetLabel"}}: {{targetName}}</div>
+        {{/if}}
     </div>
 </div>
 {{/inline}}
@@ -7328,7 +7659,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
 <div class="prompt-phase-summary">{{phaseSummaryText}}</div>
 {{/if}}
 
-<section class="combat-phase-section {{#if isPhaseReaction}}is-active{{else}}is-completed{{/if}}">
+<section class="combat-phase-section {{#if isPhaseReaction}}is-active{{else}}is-completed{{/if}} {{#if isPhaseReaction}}{{#unless canActAsTarget}}is-compact-hidden{{/unless}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseReaction}}fa-person-running{{else}}fa-check-circle{{/if}}"></i>
@@ -7350,11 +7681,6 @@ export class SkillRollStrategy extends BasicRollStrategy {
             </button>
         </div>
     </div>
-    {{else}}
-    <div class="pending-badge">
-        <i class="fa-solid fa-hourglass-half"></i>
-        {{localize "ROE_COC7.Ranged.WaitingForTarget" actor=targetName}}
-    </div>
     {{/if}}
     {{else}}
     <div class="combined-check-row">
@@ -7365,7 +7691,7 @@ export class SkillRollStrategy extends BasicRollStrategy {
 </section>
 
 {{#unless isPhaseReaction}}
-<section class="combat-phase-section {{#if isPhaseAttack}}is-active{{else}}is-completed{{/if}}">
+<section class="combat-phase-section {{#if isPhaseAttack}}is-active{{else}}is-completed{{/if}} {{#if isPhaseAttack}}{{#unless canRollAttack}}is-compact-hidden{{/unless}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseAttack}}fa-crosshairs{{else}}fa-check-circle{{/if}}"></i>
@@ -7390,11 +7716,6 @@ export class SkillRollStrategy extends BasicRollStrategy {
         <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">
             <i class="fa-solid fa-dice-d20"></i> {{attackerRollBtnLabel}}
         </button>
-    </div>
-    {{else}}
-    <div class="pending-badge">
-        <i class="fa-solid fa-hourglass-half"></i>
-        {{localize "ROE_COC7.Combat.WaitingForInitiator" actor=attackerName}}
     </div>
     {{/if}}
     {{else}}
@@ -7437,10 +7758,16 @@ export class SkillRollStrategy extends BasicRollStrategy {
     {{/if}}
     {{/if}}
 
+    {{#if showPlayerWaitingHint}}
+    <div class="prompt-phase-summary">
+        <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
+    </div>
+    {{else}}
     {{> (lookup . "resultPartial")}}
 
     {{#if targetTookCover}}
     <div class="prompt-phase-summary">{{localize "ROE_COC7.Ranged.LosesNextAction" actor=targetName}}</div>
+    {{/if}}
     {{/if}}
 
     {{#if canApplyConsequences}}
@@ -7462,14 +7789,11 @@ export class SkillRollStrategy extends BasicRollStrategy {
     </footer>
     {{/if}}
 </section>
-{{/if}}
-
-{{#if showPlayerWaitingHint}}
+{{else if showPlayerWaitingHint}}
 <div class="prompt-phase-summary">
     <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}
 </div>
 {{/if}}
-
 {{/inline}}
 {{/roePromptLayout}}
 
@@ -7621,13 +7945,11 @@ export class SkillRollStrategy extends BasicRollStrategy {
     {{/if}}
 </section>
 {{else}}
-{{else}}
 <div class="sanity-immersion-panel">
     <div class="sanity-flavor-line">
         <i class="fa-solid fa-hourglass-half"></i> {{#if playerWaitingHint}}{{playerWaitingHint}}{{else}}{{sanityEvaluationHint}}{{/if}}
     </div>
 </div>
-{{/if}}
 {{/if}}
 {{/if}}
 {{/inline}}

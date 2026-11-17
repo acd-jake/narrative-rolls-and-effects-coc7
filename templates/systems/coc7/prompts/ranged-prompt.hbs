@@ -27,7 +27,7 @@
 <div class="prompt-phase-summary">{{phaseSummaryText}}</div>
 {{/if}}
 
-<section class="combat-phase-section {{#if isPhaseReaction}}is-active{{else}}is-completed{{/if}} {{#if isPhaseReaction}}{{#unless canActAsTarget}}is-compact-hidden{{/unless}}{{/if}}">
+<section class="combat-phase-section {{#if isPhaseReaction}}is-active{{else}}is-completed{{/if}} {{#if isPhaseReaction}}{{#unless canActAsTarget}}is-compact-hidden{{/unless}}{{else}}{{#unless isTargetOwner}}is-compact-hidden{{/unless}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseReaction}}fa-person-running{{else}}fa-check-circle{{/if}}"></i>
@@ -59,7 +59,7 @@
 </section>
 
 {{#unless isPhaseReaction}}
-<section class="combat-phase-section {{#if isPhaseAttack}}is-active{{else}}is-completed{{/if}} {{#if isPhaseAttack}}{{#unless canRollAttack}}is-compact-hidden{{/unless}}{{/if}}">
+<section class="combat-phase-section {{#if isPhaseAttack}}is-active{{else}}is-completed{{/if}} {{#if isPhaseAttack}}{{#unless canRollAttack}}is-compact-hidden{{/unless}}{{else}}{{#unless isAttackerOwner}}is-compact-hidden{{/unless}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseAttack}}fa-crosshairs{{else}}fa-check-circle{{/if}}"></i>

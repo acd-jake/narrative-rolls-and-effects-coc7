@@ -42,7 +42,9 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             // Taking cover contributes a penalty die to the attacker's manual modifier.
             const effectiveMod = Math.clamp(manualMod + coverPenalty, -2, 2);
 
-            const canViewAttackerRoll = attacker ? RollVisibilityPolicy.canViewParticipantRoll(attacker, sys) : false;
+            const isAttackerOwner = Boolean(this.#resolveActor(attacker)?.isOwner);
+            const isTargetOwner = Boolean(this.#resolveActor(target)?.isOwner);
+            const canViewAttackerRoll = attacker ? (isAttackerOwner || RollVisibilityPolicy.canViewParticipantRoll(attacker, sys)) : false;
             const canViewDamage = damageEntry ? RollVisibilityPolicy.canViewParticipantRoll(damageEntry, sys) : false;
             const damageActor = this.#resolveActor(damageEntry);
             const attackerDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, effectiveMod);
@@ -62,6 +64,8 @@ export function createRangedPromptApp(core, BasicPromptApp) {
                 targetName: target?.actorName ?? "",
                 targetImg: target?.actorImg ?? "",
 
+                isAttackerOwner,
+                isTargetOwner,
                 canActAsTarget: isGM || Boolean(this.#resolveActor(target)?.isOwner),
                 isTargetDelegated: this._isDelegatedToActivePlayer(target),
                 isAttackerDelegated: this._isDelegatedToActivePlayer(attacker),

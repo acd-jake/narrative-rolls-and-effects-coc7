@@ -67,8 +67,8 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
             const reaction = sys.defenderReaction || "dodge";
             const defenderDetailOptions = defActor ? this.#buildDefenderDetailOptions(defActor, reaction, sys) : [];
 
-            const canViewAttackerRoll = attacker ? RollVisibilityPolicy.canViewParticipantRoll(attacker, sys) : false;
-            const canViewDefenderRoll = defender ? RollVisibilityPolicy.canViewParticipantRoll(defender, sys) : false;
+            const canViewAttackerRoll = attacker ? (isAttackerOwner || RollVisibilityPolicy.canViewParticipantRoll(attacker, sys)) : false;
+            const canViewDefenderRoll = defender ? (isDefenderOwner || RollVisibilityPolicy.canViewParticipantRoll(defender, sys)) : false;
             const canViewDamage = damageEntry ? RollVisibilityPolicy.canViewParticipantRoll(damageEntry, sys) : false;
 
             const damageActor = this.#resolveActor(damageEntry);

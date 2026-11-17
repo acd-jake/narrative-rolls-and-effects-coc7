@@ -512,7 +512,6 @@
 }
 
 .roe-overlay[data-nre-system="CoC7"] .roe-roll-prompt-frame.no-phase-headers .combat-phase-header,
-.roe-overlay[data-nre-system="CoC7"] .roe-roll-prompt-frame.is-compact .combat-phase-section.is-completed,
 .roe-overlay[data-nre-system="CoC7"] .roe-roll-prompt-frame.is-compact .is-compact-hidden {
     display: none;
 }

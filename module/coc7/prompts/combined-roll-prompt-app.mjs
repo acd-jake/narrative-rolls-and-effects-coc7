@@ -21,30 +21,27 @@ export function createCombinedRollPromptApp(core) {
         const firstOpts = this._evaluateParticipantOptions(first, sys);
         const secondOpts = this._evaluateParticipantOptions(second, sys);
 
-              const canSpendAnyLuck = Boolean(firstOpts.canSpendLuck || secondOpts.canSpendLuck);
-      const hasPendingCombinedAction = Boolean(canSpendAnyLuck || canPushCombined);
-      const declineCombinedLabel = canSpendAnyLuck && canPushCombined
-          ? game.i18n.localize("ROE_COC7.RollSession.DeclineLuckAndPushBtn")
-          : canSpendAnyLuck
-              ? game.i18n.localize("ROE_COC7.RollSession.DeclineLuckBtn")
-              : canPushCombined
-                  ? game.i18n.localize("ROE_COC7.RollSession.DeclinePushBtn")
-                  : "";
-
-
-        // Push is available if the combined check failed overall and neither part was pushed yet
         const overallPassed =
             sys?.combinedMode === "or"
                 ? Boolean(first?.isSuccess || second?.isSuccess)
                 : Boolean(first?.isSuccess && second?.isSuccess);
 
-        // A combined roll is pushed as one result, so both checks must still be eligible.
         const canPushCombined = Boolean(
             first?.hasRolled &&
             !sys?.isResolved &&
             !overallPassed &&
             (firstOpts.canPush || secondOpts.canPush)
         );
+
+        const canSpendAnyLuck = Boolean(firstOpts.canSpendLuck || secondOpts.canSpendLuck);
+        const hasPendingCombinedAction = Boolean(canSpendAnyLuck || canPushCombined);
+        const declineCombinedLabel = canSpendAnyLuck && canPushCombined
+            ? game.i18n.localize("ROE_COC7.RollSession.DeclineLuckAndPushBtn")
+            : canSpendAnyLuck
+                ? game.i18n.localize("ROE_COC7.RollSession.DeclineLuckBtn")
+                : canPushCombined
+                    ? game.i18n.localize("ROE_COC7.RollSession.DeclinePushBtn")
+                    : "";
 
         const modDice = sys?.participants?.[0]?.modifierDice ?? 0;
         const rollDiceArray = context.rollDice ?? [];

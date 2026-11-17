@@ -57,9 +57,10 @@ export class CoC7PostRollHandler {
 
     /** Calculates which Luck and push actions the current user may take for a rolled participant. */
     evaluateParticipantOptions(participant, session, isDelegatedToPlayer) {
-        if (!participant?.hasRolled || session.isResolved || session.rollType === "other") {
+        if (!participant?.hasRolled || session.isResolved || ["other", "combat", "ranged"].includes(session.rollType)) {
             return { canSpendLuck: false, luckCost: 0, luckTargetLevel: "", luckTargetLabel: "", canPush: false, hasPendingAction: false, isDelegatedToPlayer };
         }
+
         const actor = SessionStore.resolveActor(participant);
         if (!actor || (!game.user.isGM && !actor.isOwner)) {
             return { canSpendLuck: false, luckCost: 0, luckTargetLevel: "", luckTargetLabel: "", canPush: false, hasPendingAction: false, isDelegatedToPlayer };

@@ -1,5 +1,30 @@
 {
   "ROE_COC7": {
+    "PushEditor": {
+      "Title": "Konsequenzen forcierter Proben",
+      "Open": "Konsequenzen bearbeiten",
+      "Hint": "Bearbeitet Konsequenzen je Fertigkeit und Geisteszustand.",
+      "Instructions": "Wähle eine konkrete forcierbare Fertigkeit. Änderungen werden erst mit Speichern übernommen und gelten für die aktuelle Sprache.",
+      "Skill": "Fertigkeit",
+      "CustomSkill": "Eigene Fertigkeit oder Spezialisierung",
+      "AddSkill": "Fertigkeit hinzufügen",
+      "SkillRequired": "Bitte einen Fertigkeitsnamen eingeben.",
+      "Consequence": "Konsequenz",
+      "EntryTitle": "Titel",
+      "Insane": "Bei Geistesgestörtheit",
+      "Description": "Beschreibung und Regelwirkung",
+      "Narration": "Vorlesetext",
+      "Foreshadowing": "Foreshadowing",
+      "Add": "Konsequenz hinzufügen",
+      "Remove": "Entfernen",
+      "Reset": "Fertigkeit auf Vorgaben zurücksetzen",
+      "ConfirmReset": "Alle Konsequenzen dieser Fertigkeit auf die Vorgaben zurücksetzen? Die Änderung muss anschließend gespeichert werden.",
+      "ConfirmClose": "Ungespeicherte Änderungen verwerfen und den Editor schließen?",
+      "Save": "Speichern",
+      "Saved": "Konsequenzen gespeichert.",
+      "FieldsRequired": "Bitte alle Textfelder jeder Konsequenz ausfüllen.",
+      "EnrichmentError": "Die Vorschau des Konsequenztexts konnte nicht aktualisiert werden."
+    },
     "Settings": {
       "ResultDisplayMode": {
         "Name": "Anzeige von Würfelergebnissen",

@@ -1168,3 +1168,36 @@
     font-size: 0.72rem;
     color: var(--roe-text-muted);
 }
+.roe-coc7-push-editor .window-content {
+    overflow-y: auto;
+}
+
+.roe-coc7-push-editor .push-editor-content,
+.roe-coc7-push-editor .push-editor-entries,
+.roe-coc7-push-editor fieldset,
+.roe-coc7-push-editor .push-editor-field,
+.roe-coc7-push-editor fieldset label:not(.push-editor-checkbox) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.roe-coc7-push-editor .push-editor-skill,
+.roe-coc7-push-editor .push-editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.roe-coc7-push-editor .push-editor-skill select,
+.roe-coc7-push-editor .push-editor-skill input {
+    flex: 1;
+}
+
+.roe-coc7-push-editor prose-mirror {
+    width: 100%;
+}
+
+.roe-coc7-push-editor prose-mirror .editor-content {
+    min-height: 3rem;
+}

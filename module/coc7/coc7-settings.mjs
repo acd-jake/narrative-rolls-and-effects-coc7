@@ -1,8 +1,25 @@
+import { createPushConsequenceEditor } from "./push-consequence-editor.mjs";
+import { PUSH_CONSEQUENCES_SETTING } from "./coc7-constants.mjs";
+
 export const COC7_MODULE_ID = "narrative-rolls-and-effects-coc7";
 
 /** Registers world-level preferences for displaying roll results. */
 export class CoC7Settings {
     static register() {
+        game.settings.register(COC7_MODULE_ID, PUSH_CONSEQUENCES_SETTING, {
+            scope: "world",
+            config: false,
+            type: Object,
+            default: {}
+        });
+        game.settings.registerMenu(COC7_MODULE_ID, "pushConsequenceEditor", {
+            name: "ROE_COC7.PushEditor.Title",
+            label: "ROE_COC7.PushEditor.Open",
+            hint: "ROE_COC7.PushEditor.Hint",
+            icon: "fa-solid fa-book-open",
+            type: createPushConsequenceEditor(),
+            restricted: true
+        });
         game.settings.register(COC7_MODULE_ID, "resultDisplayMode", {
             name: "ROE_COC7.Settings.ResultDisplayMode.Name",
             hint: "ROE_COC7.Settings.ResultDisplayMode.Hint",

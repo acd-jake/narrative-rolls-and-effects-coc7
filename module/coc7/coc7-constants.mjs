@@ -1,0 +1,1 @@
+export const PUSH_CONSEQUENCES_SETTING = "pushConsequences";

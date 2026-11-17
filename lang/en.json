@@ -1,5 +1,30 @@
 {
   "ROE_COC7": {
+    "PushEditor": {
+      "Title": "Pushed Roll Consequences",
+      "Open": "Edit Consequences",
+      "Hint": "Edit consequences for each skill and state of insanity.",
+      "Instructions": "Select an individual pushable skill. Changes are saved only when you press Save and apply to the current language.",
+      "Skill": "Skill",
+      "CustomSkill": "Custom skill or specialization",
+      "AddSkill": "Add Skill",
+      "SkillRequired": "Enter a skill name.",
+      "Consequence": "Consequence",
+      "EntryTitle": "Title",
+      "Insane": "While insane",
+      "Description": "Description and rules effect",
+      "Narration": "Read-aloud text",
+      "Foreshadowing": "Foreshadowing",
+      "Add": "Add Consequence",
+      "Remove": "Remove",
+      "Reset": "Reset Skill to Defaults",
+      "ConfirmReset": "Reset all consequences for this skill to their defaults? Save to keep the change.",
+      "ConfirmClose": "Discard unsaved changes and close the editor?",
+      "Save": "Save",
+      "Saved": "Consequences saved.",
+      "FieldsRequired": "Complete every text field of each consequence.",
+      "EnrichmentError": "The consequence text preview could not be updated."
+    },
     "Settings": {
       "ResultDisplayMode": {
         "Name": "Roll Result Display Mode",

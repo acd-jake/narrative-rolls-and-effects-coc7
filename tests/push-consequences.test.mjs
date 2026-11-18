@@ -1,5 +1,5 @@
 import assert from "assert";
-import { getPushDefaults } from "../module/coc7/push-consequence-defaults.mjs";
+import { getPushDefaults, PUSH_CONSEQUENCE_DEFAULTS } from "../module/coc7/push-consequence-defaults.mjs";
 import { collectPushableSkills, createPushConsequenceEditor, getSkillKey } from "../module/coc7/push-consequence-editor.mjs";
 
 const skill = (name, id, push = true) => ({
@@ -7,9 +7,9 @@ const skill = (name, id, push = true) => ({
     flags: { CoC7: { cocidFlag: { id } } }
 });
 const library = skill("Library Use", "i.skill.library-use");
-const biology = skill("Science (Biology)", "i.skill.science-biology");
+const engineering = skill("Science (Engineering)", "i.skill.science-engineering");
 const custom = skill("Science (Dreams)", "i.skill.science-any");
-const packSkills = [library, biology, skill("Science (Any)", "i.skill.science-any"), skill("Dodge", "i.skill.dodge", false)];
+const packSkills = [library, engineering, skill("Science (Any)", "i.skill.science-any"), skill("Dodge", "i.skill.dodge", false)];
 const systemIndexFields = ["system.properties", "flags.CoC7.cocidFlag"];
 const skillPack = {
     getIndex: async ({ fields = [] } = {}) => {
@@ -39,7 +39,7 @@ globalThis.game = {
         set: async (_module, _setting, value) => { stored = value; }
     }
 };
-globalThis.ui = { notifications: { warn: message => warnings.push(message), info: () => {} } };
+globalThis.ui = { notifications: { warn: message => warnings.push(message), info: () => { } } };
 globalThis.document = {
     createElement: () => {
         let html = "";
@@ -56,8 +56,8 @@ globalThis.document = {
 };
 class MockApplication {
     async _prepareContext() { return {}; }
-    _onRender() {}
-    render() {}
+    _onRender() { }
+    render() { }
     async close() { return "closed"; }
 }
 let confirmation = true;
@@ -78,15 +78,19 @@ globalThis.foundry = {
 
 assert.equal(getSkillKey(custom), "name:science (dreams)");
 const skills = await collectPushableSkills();
-assert.deepEqual([...skills.keys()].sort(), ["i.skill.library-use", "i.skill.science-biology", "name:science (dreams)"]);
-for (const language of ["en", "de"]) for (const id of ["i.skill.library-use", "i.skill.locksmith"]) {
-    const defaults = getPushDefaults(language, id);
-    assert.equal(defaults.filter(entry => entry.insane).length, 5);
-    assert.equal(defaults.filter(entry => !entry.insane).length, 5);
-    assert.equal(new Set(defaults.map(entry => entry.title)).size, 10);
-    assert.ok(defaults.every(entry => entry.title && entry.description && entry.narration && entry.foreshadowing));
-    defaults[0].title = "modified";
-    assert.notEqual(getPushDefaults(language, id)[0].title, "modified");
+assert.deepEqual([...skills.keys()].sort(), ["i.skill.library-use", "i.skill.science-engineering", "name:science (dreams)"]);
+for (const language of ["en", "de"]) {
+    const skillIds = Object.keys(PUSH_CONSEQUENCE_DEFAULTS[language]);
+    assert.ok(skillIds.length >= 50, `${language} should contain all default skills and specializations`);
+    for (const id of skillIds) {
+        const defaults = getPushDefaults(language, id);
+        assert.equal(defaults.filter(entry => entry.insane).length, 5, `${language}:${id} insane count`);
+        assert.equal(defaults.filter(entry => !entry.insane).length, 5, `${language}:${id} sane count`);
+        assert.equal(new Set(defaults.map(entry => entry.title)).size, 10, `${language}:${id} unique titles`);
+        assert.ok(defaults.every(entry => entry.title && entry.description && entry.narration && entry.foreshadowing), `${language}:${id} complete fields`);
+        defaults[0].title = "modified";
+        assert.notEqual(getPushDefaults(language, id)[0].title, "modified");
+    }
 }
 
 const Editor = createPushConsequenceEditor();
@@ -125,7 +129,7 @@ rows[0].description = "<p><strong>Evidence</strong> @UUID[Item.example]{Clue} [[
 editor._onRender({}, {});
 await editorClose();
 assert.equal(preview.innerHTML, `ENRICHED:${rows[0].description}`);
-change({ currentTarget: { value: "i.skill.science-biology" } });
+change({ currentTarget: { value: "i.skill.science-engineering" } });
 context = await editor._prepareContext({});
 assert.equal(context.entries.length, 0);
 rows = [];
@@ -143,11 +147,11 @@ await actions.save.call(editor);
 assert.equal(stored.en["i.skill.library-use"].entries[0].title, "Edited");
 assert.equal(stored.en["i.skill.library-use"].entries[0].description, "<p><strong>Evidence</strong> @UUID[Item.example]{Clue} [[/r 1d4]]</p>");
 assert.equal(stored.en["i.skill.library-use"].entries[0].richText, true);
-assert.equal(stored.en["i.skill.science-biology"].entries[0].insane, true);
+assert.equal(stored.en["i.skill.science-engineering"].entries[0].insane, true);
 await actions.reset.call(editor);
 rows = [];
 await actions.save.call(editor);
-assert.deepEqual(stored.en["i.skill.science-biology"].entries, []);
+assert.deepEqual(stored.en["i.skill.science-engineering"].entries, []);
 newSkill = "Language (Martian)";
 actions.addSkill.call(editor);
 rows = [];
@@ -161,10 +165,16 @@ assert.equal(await editor.close(), undefined);
 confirmation = true;
 assert.equal(await editor.close(), "closed");
 
-stored = { en: { "i.skill.library-use": { name: "Library Use", entries: [{
-    title: "Old text", description: "A < B & C\nNext", narration: "Old narration",
-    foreshadowing: "@UUID[Item.example]{Clue}", insane: false
-}] } } };
+stored = {
+    en: {
+        "i.skill.library-use": {
+            name: "Library Use", entries: [{
+                title: "Old text", description: "A < B & C\nNext", narration: "Old narration",
+                foreshadowing: "@UUID[Item.example]{Clue}", insane: false
+            }]
+        }
+    }
+};
 const legacyEditor = new Editor();
 legacyEditor.element = editor.element;
 context = await legacyEditor._prepareContext({});

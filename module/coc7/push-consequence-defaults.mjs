@@ -1,5 +1,15 @@
-// Defaults are keyed by CoC7's language-independent CoCID, never by skill group.
-export const PUSH_CONSEQUENCE_DEFAULTS = {
+import { PUSH_CONSEQUENCE_DEFAULTS_PART1 } from "./push-consequence-defaults-part1.mjs";
+import { PUSH_CONSEQUENCE_DEFAULTS_PART2 } from "./push-consequence-defaults-part2.mjs";
+import { PUSH_CONSEQUENCE_DEFAULTS_PART3 } from "./push-consequence-defaults-part3.mjs";
+import { PUSH_CONSEQUENCE_DEFAULTS_PART4 } from "./push-consequence-defaults-part4.mjs";
+import { PUSH_CONSEQUENCE_DEFAULTS_PART5 } from "./push-consequence-defaults-part5.mjs";
+import { PUSH_CONSEQUENCE_DEFAULTS_PART6 } from "./push-consequence-defaults-part6.mjs";
+import { PUSH_CONSEQUENCE_DEFAULTS_PART7 } from "./push-consequence-defaults-part7.mjs";
+import { PUSH_CONSEQUENCE_DEFAULTS_PART8 } from "./push-consequence-defaults-part8.mjs";
+import { PUSH_CONSEQUENCE_DEFAULTS_PART9 } from "./push-consequence-defaults-part9.mjs";
+import { PUSH_CONSEQUENCE_DEFAULTS_PART10 } from "./push-consequence-defaults-part10.mjs";
+
+const CORE_PUSH_CONSEQUENCE_DEFAULTS = {
     de: {
         "i.skill.library-use": [
             { insane: false, title: "Unerwünschte Aufmerksamkeit", description: "Der Archivar verweigert weiteren Zutritt und meldet das Interesse einem Informanten.", narration: "Ein Schatten fällt auf die aufgeschlagenen Register. Der Archivar notiert deinen Namen und weist dich hinaus.", foreshadowing: "Der Archivar beobachtet deinen Tisch bereits mit wachsendem Misstrauen." },
@@ -11,7 +21,7 @@ export const PUSH_CONSEQUENCE_DEFAULTS = {
             { insane: true, title: "Seiten voller Augen", description: "Der Ermittler zerstört das gesuchte Dokument; der Hinweis geht an diesem Fundort verloren.", narration: "Aus den Buchstaben starren dich Augen an. Du reißt die Seite heraus, doch das Rascheln verfolgt dich weiter.", foreshadowing: "Dunkle Flecken im Druck erinnern dich beunruhigend an Pupillen." },
             { insane: true, title: "Das falsche Geständnis", description: "Der Ermittler vertraut einem Unbeteiligten seine Verdächtigungen an; dieser alarmiert die Leitung.", narration: "Die Person neben dir muss es wissen. Deine Worte überschlagen sich, während sie langsam nach der Glocke greift.", foreshadowing: "Der Fremde scheint genau zuzuhören, obwohl er nicht zu dir herübersieht." },
             { insane: true, title: "Verfolgung zwischen Regalen", description: "Der Ermittler flieht aus dem Archiv und lässt seine mitgebrachten Notizen zurück.", narration: "Schritte folgen dir zwischen den Regalen. Du stürzt ins Freie; erst draußen bemerkst du, dass deine Notizen noch auf dem Tisch liegen.", foreshadowing: "Hinter jedem Regal knarrt das Holz, als folge dir jemand." },
-            { insane: true, title: "Verbotene Ordnung", description: "Der Ermittler ordnet die Akten nach einem Wahnmuster um; der Zutritt wird ihm verweigert.", narration: "Nur die richtige Reihenfolge kann sie aufhalten. Als der Archivar dich findet, liegen offene Akten wie ein Zeichen auf dem Boden.", foreshadowing: "Die Signaturen wirken wie Teile eines Musters, das du unbedingt vervollständigen musst." }
+            { insane: true, title: "Verbotene Ordnung", description: "Der Ermittler ordnet die Akten nach einem Wahnmuster um; der Zutritt wird ihm verweigert.", narration: "Nur die richtige Ordnung kann sie aufhalten. Als der Archivar dich findet, liegen offene Akten wie ein Zeichen auf dem Boden.", foreshadowing: "Die Signaturen wirken wie Teile eines Musters, das du unbedingt vervollständigen musst." }
         ],
         "i.skill.locksmith": [
             { insane: false, title: "Verborgene Nadel", description: "Eine Nadel im Schloss verursacht 1W3 TP Schaden; für einen Tag erhält der Ermittler einen Strafwürfel auf Geschicklichkeitsproben.", narration: "Ein metallisches Klicken, dann sticht etwas in deine Hand. Blut tropft auf den Schließzylinder.", foreshadowing: "Neben dem Schlüsselloch ragt eine feine Spitze aus dem Metall." },
@@ -53,7 +63,27 @@ export const PUSH_CONSEQUENCE_DEFAULTS = {
         ]
     }
 };
-
+const PARTS = [
+    CORE_PUSH_CONSEQUENCE_DEFAULTS,
+    PUSH_CONSEQUENCE_DEFAULTS_PART1,
+    PUSH_CONSEQUENCE_DEFAULTS_PART2,
+    PUSH_CONSEQUENCE_DEFAULTS_PART3,
+    PUSH_CONSEQUENCE_DEFAULTS_PART4,
+    PUSH_CONSEQUENCE_DEFAULTS_PART5,
+    PUSH_CONSEQUENCE_DEFAULTS_PART6,
+    PUSH_CONSEQUENCE_DEFAULTS_PART7,
+    PUSH_CONSEQUENCE_DEFAULTS_PART8,
+    PUSH_CONSEQUENCE_DEFAULTS_PART9,
+    PUSH_CONSEQUENCE_DEFAULTS_PART10
+];
+function mergeLanguageDefaults(language) {
+    return Object.assign({}, ...PARTS.map((part) => part[language] ?? {}));
+}
+export const PUSH_CONSEQUENCE_DEFAULTS = {
+    de: mergeLanguageDefaults("de"),
+    en: mergeLanguageDefaults("en")
+};
+/** Returns a deep-cloned list of default consequences for a given language and skill key. */
 export function getPushDefaults(language, skillId) {
-    return (PUSH_CONSEQUENCE_DEFAULTS[language]?.[skillId] ?? []).map(entry => ({ ...entry }));
+    return (PUSH_CONSEQUENCE_DEFAULTS[language]?.[skillId] ?? []).map((entry) => ({ ...entry }));
 }

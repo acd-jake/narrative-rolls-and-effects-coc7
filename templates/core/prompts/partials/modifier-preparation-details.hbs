@@ -8,6 +8,16 @@
     </div>
 </div>
 {{/if}}
+{{#if preparationRanges.length}}
+<div class="prompt-sub-box">
+    <div class="section-header">{{localize "ROE_COC7.Ranged.RangeLabel"}}</div>
+    <div class="modifier-difficulty-options">
+        {{#each preparationRanges}}
+        <button type="button" class="tab-btn {{#if selected}}active{{/if}}" data-action="setPreparedRangeTier" data-range="{{value}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}">{{label}}</button>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
 {{#each preparationParticipants}}
 <div class="prompt-sub-box">
     <div class="combined-check-row"><span>{{actorName}}</span><strong>{{preparationLabel}}</strong></div>

@@ -111,7 +111,19 @@ export class CoC7Adapter {
             rawDamage: null,
             armorApplied: 0,
             finalDamage: null,
-            majorWoundTriggered: false
+            majorWoundTriggered: false,
+            rangedRangeTier: cfg.rangedRangeTier ?? "normal",
+            rangedDistance: cfg.rangedDistance ?? null,
+            rangedFireMode: cfg.rangedFireMode ?? "single",
+            rangedShots: cfg.rangedShots ?? [],
+            rangedHits: cfg.rangedHits ?? [],
+            rangedShotsFired: cfg.rangedShotsFired ?? 0,
+            rangedBulletsSpent: cfg.rangedBulletsSpent ?? 0,
+            rangedVolleyIndex: cfg.rangedVolleyIndex ?? 0,
+            rangedReloadedInRound: cfg.rangedReloadedInRound ?? false,
+            rangedMalfunction: cfg.rangedMalfunction ?? false,
+            weaponProfile: cfg.weaponProfile ?? null,
+
         };
     }
 
@@ -145,7 +157,7 @@ export class CoC7Adapter {
         if (actionName === "spendLuck") return this.#postRollHandler.handleSpendLuck(prompt, target);
         if (actionName === "declineLuck") return this.#postRollHandler.handleDeclineLuck(prompt, target);
         if (actionName === "pushRoll") return this.#postRollHandler.pushRoll(prompt, target);
-        if (actionName === "togglePreparedTactical" || actionName === "setPreparedDifficulty") {
+        if (actionName === "togglePreparedTactical" || actionName === "setPreparedDifficulty" || actionName === "setPreparedRangeTier") {
             return this.#promptPresenter.handlePreparationAction(prompt, actionName, target);
         }
         return undefined;

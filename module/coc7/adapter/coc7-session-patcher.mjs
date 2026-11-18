@@ -3,6 +3,46 @@ import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 
 /** Validates CoC7 roll submissions and applies phase-aware session updates. */
 export class CoC7SessionPatcher {
+    /** Computes effective CoC 7e ranged modifier dice from tactical flags, cover, and fire mode. */
+    static computeRangedModifierDice(session, attacker, { fireMode = null, shotIndex = null, volleyIndex = null } = {}) {
+        const flags = session.tacticalFlags ?? {};
+        const tookCover = Boolean(session.participants?.find((entry) => entry.key === "defender")?.tookCover);
+        const mode = fireMode ?? session.rangedFireMode ?? "single";
+        const shotNo = shotIndex ?? Number(session.rangedShotsFired ?? 0);
+        const volleyNo = volleyIndex ?? Number(session.rangedVolleyIndex ?? 0);
+
+        let mod = Number(attacker?.modifierDice ?? 0);
+        if (flags.pointBlank) mod += 1;
+        if (flags.aiming) mod += 1;
+        if (flags.largeTarget) mod += 1;
+        if (flags.cover) mod -= 1;
+        if (flags.fastTarget) mod -= 1;
+        if (flags.inMelee) mod -= 1;
+        if (flags.proneTarget) mod -= 1;
+        if (flags.smallTarget) mod -= 1;
+        if (tookCover) mod -= 1;
+
+        if (mode === "multiple" && shotNo >= 1) mod -= 1;
+        if (mode === "auto" && volleyNo >= 1) mod -= volleyNo;
+
+        return mod;
+    }
+
+    /** Computes required difficulty rank for ranged attacks including range tier and auto-fire overflow. */
+    static computeRangedRequiredDifficulty(session, rawModifierDice) {
+        const tierOrder = ["regular", "hard", "extreme"];
+        const baseTier = session.rangedRangeTier === "extreme"
+            ? "extreme"
+            : session.rangedRangeTier === "long"
+                ? "hard"
+                : session.difficulty || "regular";
+        let idx = Math.max(0, tierOrder.indexOf(baseTier));
+        if (rawModifierDice < -2) {
+            idx = Math.min(2, idx + Math.abs(rawModifierDice + 2));
+        }
+        return tierOrder[idx];
+    }
+
     /** Verifies that a submitted roll uses the modifier dice allowed by its session state. */
     validateSubmittedRoll(session, participant, rollData) {
         if (session.rollType === "other" || participant.key === "damage") return true;
@@ -14,7 +54,7 @@ export class CoC7SessionPatcher {
                 Number(Boolean(flags.pointBlank)) + Number(Boolean(flags.proneTarget)) - Number(Boolean(flags.cover));
         }
         if (session.rollType === "ranged" && participant.key === "attacker") {
-            if (session.participants.find((entry) => entry.key === "defender")?.tookCover) expected--;
+            expected = CoC7SessionPatcher.computeRangedModifierDice(session, participant);
         }
         return Number(rollData.modifierDice ?? 0) === Math.clamp(expected, -2, 2);
     }

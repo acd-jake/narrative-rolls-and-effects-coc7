@@ -59,7 +59,7 @@
 </section>
 
 {{#unless isPhaseReaction}}
-<section class="combat-phase-section {{#if isPhaseAttack}}is-active{{else}}is-completed{{/if}} {{#if isPhaseAttack}}{{#unless canRollAttack}}is-compact-hidden{{/unless}}{{else}}{{#unless isAttackerOwner}}is-compact-hidden{{/unless}}{{/if}}">
+<section class="combat-phase-section {{#if isPhaseAttack}}is-active{{else}}is-completed{{/if}} {{#if isPhaseAttack}}{{#unless isAttackerOwner}}{{#unless isGM}}is-compact-hidden{{/unless}}{{/unless}}{{else}}{{#unless isAttackerOwner}}is-compact-hidden{{/unless}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseAttack}}fa-crosshairs{{else}}fa-check-circle{{/if}}"></i>
@@ -68,8 +68,41 @@
         <span class="phase-actor-tag">{{attackerName}}</span>
     </header>
 
+    {{#if tracksAmmo}}
+    <div class="combined-check-row ranged-ammo-bar">
+        <span><i class="fa-solid fa-bullets"></i> {{localize "ROE_COC7.Ranged.AmmoLabel"}}</span>
+        <strong class="{{#if isOutOfAmmo}}is-out-of-ammo{{/if}}">{{ammoCurrent}} / {{ammoMax}}</strong>
+    </div>
+    {{/if}}
+
+    {{#if isJammed}}
+    <div class="prompt-outcome-banner push-failure-warning">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{localize "ROE_COC7.Combat.Malfunction"}}
+    </div>
+    {{/if}}
+    {{#if hasRangedShots}}
+    <div class="prompt-sub-box ranged-shots-log">
+        {{#each rangedShots}}
+        <div class="combined-check-row">
+            {{#if isTargetSwitch}}
+            <span><i class="fa-solid fa-arrows-turn-right"></i> {{localize "ROE_COC7.Ranged.TargetSwitched" target=targetName}}</span>
+            <span>-{{bulletsSpent}} {{localize "ROE_COC7.Ranged.BulletsAbbr"}}</span>
+            {{else}}
+            <span>#{{index}} ({{targetName}})</span>
+            <strong class="{{successLevel}}" {{#if rollBreakdown}}data-inspect-key="shot_{{index}}"{{/if}}>
+                {{#if malfunction}}
+                {{localize "ROE_COC7.Combat.Malfunction"}} ({{total}})
+                {{else}}
+                {{total}} ({{levelLabel}}){{#if hits}} – {{hits}}× {{localize "ROE_COC7.Ranged.Badges.Hit"}}{{/if}}
+                {{/if}}
+            </strong>
+            {{/if}}
+        </div>
+        {{/each}}
+    </div>
+    {{/if}}
+
     {{#if isPhaseAttack}}
-    {{#if canRollAttack}}
     <div class="prompt-player-controls {{#if isAttackerDelegated}}gm-delegated-region{{/if}}">
         {{#if targetTookCover}}
         <div class="pending-badge">
@@ -78,14 +111,67 @@
         </div>
         {{/if}}
 
+        {{#if hasStartedFiring}}
+        <div class="combined-check-row ranged-active-mode-bar">
+            <span><strong>{{activeFireModeLabel}}</strong></span>
+            {{#if showRemainingShots}}
+            <span>{{remainingShotsLabel}}</span>
+            {{/if}}
+        </div>
+        {{else if hasMultipleFireModes}}
+        <div class="ranged-firemode-tabs">
+            {{#each fireModeOptions}}
+            <button type="button" class="tab-btn {{#if active}}active{{/if}}" data-action="setFireMode"
+                data-mode="{{id}}">
+                {{label}}
+            </button>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if fireModeHint}}
+        <div class="pending-badge">{{fireModeHint}}</div>
+        {{/if}}
+
+        {{#if showRequiredDifficulty}}
+        <div class="difficulty-display">{{requiredDifficultyLabel}}</div>
+        {{/if}}
+
         {{> roeModifierSummary modifierDice=effectiveModifierDice modifierDisplay=effectiveModifierLabel}}
         {{> roeDiceDisplay dice=attackerDice modifierTooltip=effectiveModifierLabel}}
 
+        {{#if canClearMalfunction}}
+        <button type="button" class="prompt-action-btn push" data-action="clearMalfunction">
+            <i class="fa-solid fa-wrench"></i> {{localize "ROE_COC7.Ranged.ClearMalfunctionBtn"}}
+        </button>
+        {{/if}}
+
+        {{#if canFireNext}}
         <button type="button" class="prompt-action-btn roll-now" data-action="executeRoll">
             <i class="fa-solid fa-dice-d20"></i> {{attackerRollBtnLabel}}
         </button>
+        {{/if}}
+
+        <div class="reaction-grid-2x2">
+            {{#if canReload}}
+            <button type="button" class="prompt-action-btn secondary compact" data-action="reloadWeapon">
+                <i class="fa-solid fa-rotate"></i> {{localize "ROE_COC7.Ranged.ReloadBtn"}}
+            </button>
+            {{/if}}
+
+            {{#if canSwitchTarget}}
+            <button type="button" class="prompt-action-btn secondary compact" data-action="switchRangedTarget">
+                <i class="fa-solid fa-crosshairs"></i> {{localize "ROE_COC7.Ranged.SwitchTargetBtn"}}
+            </button>
+            {{/if}}
+        </div>
+
+        {{#if canFinishSeries}}
+        <button type="button" class="prompt-action-btn primary compact" data-action="finishRangedAttack">
+            <i class="fa-solid fa-flag-checkered"></i> {{localize "ROE_COC7.Ranged.FinishSeriesBtn"}}
+        </button>
+        {{/if}}
     </div>
-    {{/if}}
     {{else}}
     <div class="combined-check-row">
         <span>{{weaponName}}</span>
@@ -95,7 +181,6 @@
 </section>
 {{/unless}}
 {{/inline}}
-
 {{#*inline "promptResults"}}
 {{#if isPhaseResolution}}
 <section class="combat-phase-section is-active">

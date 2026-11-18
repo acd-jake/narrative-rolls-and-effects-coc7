@@ -21,5 +21,29 @@
         {{/if}}
     </div>
 
+    {{#if resolvedHasRangedShots}}
+    <details class="resolved-shots-details">
+        <summary class="resolved-combat-narrative is-inspectable" title="{{localize 'ROE_COC7.Ranged.ToggleShotsHint'}}">
+            <span>{{resolvedCombatNarrative}}</span>
+            <i class="fa-solid fa-chevron-down resolved-shots-chevron"></i>
+        </summary>
+        <div class="prompt-sub-box resolved-combined-list">
+            {{#each resolvedRangedShots}}
+            <div class="combined-check-row">
+                {{#if isTargetSwitch}}
+                <span><i class="fa-solid fa-arrows-turn-right"></i> {{outcomeText}}</span>
+                <small>-{{bulletsSpent}} {{localize "ROE_COC7.Ranged.BulletsAbbr"}}</small>
+                {{else}}
+                <span>#{{index}} ({{targetName}})</span>
+                <strong class="resolved-level-text {{successLevel}}" {{#if canInspect}}data-inspect-key="shot_{{index}}"{{/if}}>
+                    {{outcomeText}}{{#if hits}} • {{hits}}× {{localize "ROE_COC7.Ranged.Badges.Hit"}}{{/if}}
+                </strong>
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+    </details>
+    {{/if}}
+
     {{> roeCocResolvedCombatConsequences}}
 </div>

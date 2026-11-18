@@ -120,9 +120,24 @@ export class CoC7SessionFactory {
         };
     }
 
-    /** Creates a ranged session whose target chooses cover before the attack roll. */
-    static createRanged({ attacker, target, weapon, attackSkillLabel, attackTargetValue, difficulty = "regular", prepareModifiers = false }) {
+    /** Creates a ranged session with weapon ammo/malfunction profile and detected tactical context. */
+    static createRanged({
+        attacker,
+        target,
+        weapon,
+        attackSkillLabel,
+        attackTargetValue,
+        difficulty = "regular",
+        prepareModifiers = false,
+        weaponProfile = null,
+        rangeTier = "normal",
+        distance = null,
+        tacticalFlags = null
+    }) {
         const weaponLabel = weapon?.name || attackSkillLabel;
+        const profile = weaponProfile ?? CoC7DataMapper.getWeaponCombatProfile(weapon, attackTargetValue);
+        const effectiveDifficulty = rangeTier === "extreme" ? "extreme" : rangeTier === "long" ? "hard" : difficulty;
+
         return {
             rollType: "ranged",
             prepareModifiers,
@@ -130,12 +145,34 @@ export class CoC7SessionFactory {
             combatType: "ranged",
             title: weaponLabel,
             weaponName: weaponLabel,
+            weaponId: weapon?.id ?? "",
             weaponImg: weapon?.img || attacker.img,
-            difficulty,
+            difficulty: effectiveDifficulty,
             canChangeDifficulty: false,
-            damageFormula: weapon?.system?.range?.normal?.damage || "1d6",
+            damageFormula: profile.normalDamage || weapon?.system?.range?.normal?.damage || "1d6",
             damageBonus: "0",
             defenderReaction: "none",
+            rangedRangeTier: rangeTier,
+            rangedDistance: distance,
+            tacticalFlags: tacticalFlags ?? {
+                pointBlank: false,
+                aiming: false,
+                cover: false,
+                fastTarget: false,
+                inMelee: false,
+                proneTarget: false,
+                smallTarget: false,
+                largeTarget: false
+            },
+            rangedFireMode: "single",
+            rangedShots: [],
+            rangedHits: [],
+            rangedShotsFired: 0,
+            rangedBulletsSpent: 0,
+            rangedVolleyIndex: 0,
+            rangedReloadedInRound: false,
+            rangedMalfunction: Boolean(profile.isJammed),
+            weaponProfile: profile,
             participants: [
                 SessionStore.buildParticipant("attacker", attacker, attackSkillLabel, attackTargetValue, weapon?.id ?? ""),
                 SessionStore.buildParticipant("defender", target, game.i18n.localize("ROE_COC7.Ranged.Phases.Reaction"), 0)
@@ -225,6 +262,12 @@ export class CoC7SessionFactory {
             if (data.rollType === "ranged") {
                 resultBadges.push({ cls: "outcome", icon: winner ? "fa-bullseye" : "fa-ban", label: game.i18n.localize(winner ? "ROE_COC7.Ranged.Badges.Hit" : "ROE_COC7.Ranged.Badges.Miss") });
                 if (defender?.tookCover) resultBadges.push({ cls: "outcome", icon: "fa-person-running", label: game.i18n.localize("ROE_COC7.Ranged.Badges.Cover") });
+                if (data.rangedMalfunction) {
+                    resultBadges.push({ cls: "outcome is-failure", icon: "fa-triangle-exclamation", label: game.i18n.localize("ROE_COC7.Combat.Malfunction") });
+                }
+                if ((data.rangedShots?.length ?? 0) > 1) {
+                    resultBadges.push({ cls: "outcome", icon: "fa-bullets", label: game.i18n.format("ROE_COC7.Ranged.Badges.ShotsCount", { count: data.rangedShots.length }) });
+                }
             } else {
                 resultBadges.push({ cls: "outcome", icon: winner ? "fa-trophy" : "fa-scale-balanced", label: game.i18n.localize(`ROE_COC7.Combat.Badges.Winner${winnerKey}`) });
             }

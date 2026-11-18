@@ -92,9 +92,9 @@
       "Summary": {
         "Opposed": "Opposed roll {title}: {names}"
       },
-    "DeclineLuckBtn": "Decline Luck",
-    "DeclinePushBtn": "Do Not Push",
-    "DeclineLuckAndPushBtn": "Decline Luck & Do Not Push",
+      "DeclineLuckBtn": "Decline Luck",
+      "DeclinePushBtn": "Do Not Push",
+      "DeclineLuckAndPushBtn": "Decline Luck & Do Not Push",
       "Types": {
         "basic": "Check",
         "other": "Roll",
@@ -147,8 +147,52 @@
       "Badges": {
         "Hit": "Hit",
         "Miss": "Miss",
-        "Cover": "In cover"
-      }
+        "Cover": "In cover",
+        "ShotsCount": "{count} shots/volleys"
+      },
+      "RangeLabel": "Distance / Range",
+      "AmmoLabel": "Magazine",
+      "BulletsAbbr": "rds",
+      "ReloadBtn": "Reload",
+      "ClearMalfunctionBtn": "Clear Malfunction",
+      "MalfunctionCleared": "Malfunction cleared ({roll} vs. {target}%)!",
+      "MalfunctionClearFailed": "Failed to clear jam ({roll} vs. {target}%).",
+      "RepairSkillMech": "Mechanical Repair",
+      "SwitchTargetBtn": "Switch Target",
+      "TargetSwitched": "Switched target to {target}",
+      "FinishSeriesBtn": "Cease Fire (Resolve)",
+      "FireShotBtn": "Shot #{number}",
+      "FireBurstBtn": "Burst ({bullets} rds)",
+      "FireVolleyBtn": "Volley #{number} ({bullets} rds)",
+      "FireModes": {
+        "single": "Single Shot",
+        "multiple": "Multiple Shots",
+        "burst": "Burst",
+        "auto": "Full Auto"
+      },
+      "FireModeHints": {
+        "multiple": "Up to {max} shots per round (1 penalty die from 2nd shot onward).",
+        "burst": "Consumes {bullets} rounds: half volley hits (full volley on Extreme/Critical).",
+        "auto": "Volley of {bullets} rounds (+1 penalty die per extra volley, current: {difficulty})."
+      },
+      "Ranges": {
+        "Normal": "Base Range",
+        "Long": "Long Range (Hard)",
+        "Extreme": "Extreme Range (Extreme)"
+      },
+      "ResolvedNarrative": {
+        "MultiHit": "{attacker} fires {shots} shots with {weapon} and lands {hits} hits on {defender}.",
+        "MultiMiss": "{attacker} fires {shots} shots with {weapon} at {defender}, missing every shot.",
+        "BurstHit": "{attacker} fires a burst with {weapon} and scores {hits} hits on {defender}.",
+        "BurstMiss": "{attacker}'s burst with {weapon} misses {defender}.",
+        "AutoHit": "{attacker} fires {shots} full-auto volleys with {weapon} and scores {hits} hits.",
+        "AutoMiss": "{attacker} fires {shots} full-auto volleys with {weapon}, missing completely.",
+        "JamSingle": "Malfunction! {attacker}'s {weapon} jams while firing at {defender}.",
+        "JamMultiMiss": "Malfunction! After {shots} shots, {attacker}'s {weapon} jams with no hits.",
+        "JamAfterHits": "{attacker} lands {hits} hits with {weapon} before the weapon jams after {shots} shots!"
+      },
+      "RemainingShots": "Remaining: {remaining} / {max}",
+      "ToggleShotsHint": "Show or hide individual shots/volleys"
     },
     "Chat": {
       "PushRoll": "Push Roll",
@@ -229,7 +273,12 @@
         "Surprised": "Surprised",
         "PointBlank": "Point-Blank Range",
         "Cover": "Target in Cover",
-        "ProneTarget": "Prone Target"
+        "ProneTarget": "Prone Target",
+        "Aiming": "Aiming (+1 Bonus)",
+        "FastTarget": "Fast-Moving Target (-1 Penalty)",
+        "InMelee": "Firing into Melee (-1 Penalty)",
+        "SmallTarget": "Small Target (-1 Penalty)",
+        "LargeTarget": "Large Target (+1 Bonus)"
       },
       "Maneuvers": {
         "disarm": "Disarm",

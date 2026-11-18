@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Full-auto ranged volleys with target traverse penalties, ammunition tracking, and cease fire.
 - Standalone Call of Cthulhu 7th Edition companion module for Narrative Rolls and Effects.
 - Hook-based adapter registration without cross-module ES imports.
 - CoC7-specific result-display and success-level format settings.
@@ -33,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Placed a unified post-roll decline button below Luck and Push options with dynamic labels based on available choices.
 
 ### Fixed
+- Restored the display of resolved melee combat results.
 - Kept modifier sliders in preparation and summarized active bonus or penalty dice in roll prompts.
 - Pointed bonus and penalty dice visuals to this module's assets and marked chat cards with the CoC7 system identifier.
 - Showed failed forced-roll consequences in the normal resolution step instead of a separate phase.

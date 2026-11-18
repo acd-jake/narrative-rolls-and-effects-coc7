@@ -23,6 +23,16 @@ Install and enable both Narrative Rolls and Effects and this companion module. T
 - Call of Cthulhu bonus and penalty dice in roll prompts and roll inspection
 - Difficulty selection during modifier preparation for eligible checks
 
+## Full-auto ranged attacks
+
+Select Full Auto in the ranged attack prompt. After each volley, fire again, switch
+to a scene token or a canvas target, or choose Cease Fire to roll damage for each
+hit target. A volley uses up to one tenth of the attack skill in rounds, with a
+minimum of three. Each later volley and each three metres or yards traversed adds
+a penalty die. The prompt prevents firing when the combined modifier would exceed
+two penalty dice; choose a closer target or cease fire. The weapon's ammunition
+and malfunction state are updated immediately, unless the system ignores ammunition.
+
 ## Pushed-roll consequences
 
 The GM can open the consequence editor from this module's settings. Entries belong to

@@ -164,6 +164,13 @@
       "FireShotBtn": "Schuss #{number}",
       "FireBurstBtn": "Feuerstoß ({bullets} Schuss)",
       "FireVolleyBtn": "Salve #{number} ({bullets} Schuss)",
+      "FireNextVolleyBtn": "Nächste Salve abfeuern",
+      "StopAutoFireBtn": "Feuer einstellen",
+      "VolleyStatus": "Salve {volley} ({ammo} Schuss verbleibend)",
+      "SwitchTargetLabel": "Ziel wechseln (Schwenk)",
+      "TraversePenaltyNote": "Schwenk-Malus ({distance} m): {penalty} Strafwürfel",
+      "WeaponJammed": "Waffenstörung! Feuer unterbrochen.",
+      "AutoPenaltyLimit": "Die nächste Salve überschreitet die Grenze von zwei Strafwürfeln. Feuer einstellen oder ein näheres Ziel wählen.",
       "FireModes": {
         "single": "Einzelschuss",
         "multiple": "Mehrfachschüsse",

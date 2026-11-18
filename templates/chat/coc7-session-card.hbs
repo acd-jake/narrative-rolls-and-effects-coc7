@@ -71,7 +71,7 @@
             {{/if}}
 
             {{!-- PHASE 3: AUFLÖSUNG & SCHADEN --}}
-            {{#if hasResult}}
+            {{#if showCombatResolution}}
             <section class="combat-phase-section is-active result-section">
                 <header class="combat-phase-header">
                     <span class="phase-title">
@@ -79,7 +79,18 @@
                     </span>
                 </header>
 
-                {{#if damageRoll}}
+                {{#if autoDamageRolls.length}}
+                {{#each autoDamageRolls}}
+                <div class="combined-check-row" data-participant-key="{{key}}">
+                    <span><i class="fa-solid fa-burst"></i> {{label}}</span>
+                    {{#if hasRolled}}
+                    <span class="roll-badge">{{#if isPublicRoll}}{{total}} ({{diceFormula}}){{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}</span>
+                    {{else}}
+                    <span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>
+                    {{/if}}
+                </div>
+                {{/each}}
+                {{else if damageRoll}}
                 <div class="combined-check-row" data-participant-key="damage">
                     <span><i class="fa-solid fa-burst"></i> {{damageRoll.label}}</span>
                     {{#if damageRoll.hasRolled}}

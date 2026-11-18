@@ -131,6 +131,7 @@ export class CoC7SessionFactory {
         difficulty = "regular",
         prepareModifiers = false,
         weaponProfile = null,
+        targetToken = null,
         rangeTier = "normal",
         distance = null,
         tacticalFlags = null
@@ -166,6 +167,16 @@ export class CoC7SessionFactory {
                 largeTarget: false
             },
             rangedFireMode: "single",
+            isAutoFire: Boolean(profile.hasAuto),
+            volleySize: Math.max(3, Math.floor(Number(attackTargetValue) / 10)),
+            remainingAmmo: profile.ammo,
+            volleyCount: 0,
+            volleyLog: [],
+            autoFireEnded: false,
+            traversePenaltyDice: 0,
+            traverseDistance: 0,
+            rangedTargetTokenId: targetToken?.id ?? target?.token?.id
+                ?? globalThis.canvas?.tokens?.placeables?.find((token) => token.actor?.id === target?.id)?.id ?? "",
             rangedShots: [],
             rangedHits: [],
             rangedShotsFired: 0,
@@ -225,6 +236,9 @@ export class CoC7SessionFactory {
         const attacker = isCombat ? data.participants?.find((p) => p.key === "attacker") ?? null : null;
         const defender = isCombat ? data.participants?.find((p) => p.key === "defender") ?? null : null;
         const damageRoll = isCombat ? data.participants?.find((p) => p.key === "damage") ?? null : null;
+        const autoDamageRolls = data.rollType === "ranged" && data.rangedFireMode === "auto"
+            ? data.participants?.filter((p) => p.key === "damage" || p.key.startsWith("damage_"))
+                .map((p) => ({ ...p, isPublicRoll: !p.rollMode || p.rollMode === "publicroll" })) ?? [] : [];
         const showCombatOpponentPhase = Boolean(isCombat && defender && data.combatType === "melee");
         const reactionKey = data.defenderReaction || "dodge";
 
@@ -301,6 +315,9 @@ export class CoC7SessionFactory {
             attacker,
             defender,
             damageRoll,
+            autoDamageRolls,
+            showCombatResolution: allRolled && Boolean(data.outcomeHeadline || hasSanityResult || hasCombatDamage)
+                || data.rollType === "ranged" && data.rangedFireMode === "auto" && data.combatPhase === "resolution",
             showCombatOpponentPhase,
             defenderReactionLabel: isCombat ? game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${reactionKey}`) : ""
         };

@@ -22,8 +22,9 @@ export class RangedWeaponService {
         const rules = this.getWorldCombatRules();
 
         const bullets = Math.max(0, Number(sys.bullets ?? 0));
-        const rawAmmo = sys.ammo !== undefined && sys.ammo !== null ? Number(sys.ammo) : bullets;
-        const tracksAmmo = !rules.disregardAmmo && (bullets > 0 || Number(sys.ammo ?? 0) > 0);
+        const ammoValue = sys.ammo ?? sys.data?.ammo;
+        const rawAmmo = ammoValue !== undefined && ammoValue !== null ? Number(ammoValue) : bullets;
+        const tracksAmmo = !rules.disregardAmmo && (bullets > 0 || ammoValue !== undefined && ammoValue !== null);
         const ammo = tracksAmmo ? Math.max(0, rawAmmo) : null;
 
         const maxUses = Math.max(1, Number(uses.max ?? 1) || 1);
@@ -37,9 +38,9 @@ export class RangedWeaponService {
         if (hasBurst) fireModes.push("burst");
         if (hasAuto) fireModes.push("auto");
 
-        const rawMalfunction = Number(sys.malfunction ?? 0);
+        const rawMalfunction = Number(sys.malfunction ?? 100);
         const isValidMalfunction = Number.isFinite(rawMalfunction) && rawMalfunction > 0 && !(rawMalfunction > 100);
-        const malfunctionThreshold = isValidMalfunction ? rawMalfunction : 0;
+        const malfunctionThreshold = isValidMalfunction ? rawMalfunction : 100;
         const isJammed = Boolean(weapon?.getFlag?.(COC7_MODULE_ID, "jammed") || weapon?.flags?.[COC7_MODULE_ID]?.jammed);
 
         return {
@@ -158,7 +159,9 @@ export class RangedWeaponService {
         const profile = this.getWeaponCombatProfile(weapon);
         if (!profile.tracksAmmo) return null;
         const nextAmmo = Math.max(0, profile.ammo - amount);
-        await weapon.update({ "system.ammo": nextAmmo });
+        const ammoPath = weapon.system?.data?.ammo !== undefined && weapon.system?.ammo === undefined
+            ? "system.data.ammo" : "system.ammo";
+        await weapon.update({ [ammoPath]: nextAmmo });
         return nextAmmo;
     }
 

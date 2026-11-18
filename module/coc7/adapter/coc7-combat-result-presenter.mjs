@@ -44,7 +44,7 @@ export class CoC7CombatResultPresenter {
             resolvedDefenderLevel: defender?.total !== null ? (defender?.successLevel ?? "") : "",
             resolvedDefenderOutcome: this.#formatMeleeDefenderOutcome(defender, canViewDef),
             resolvedHasConsequences: base.fields.resolvedHasDamage || isManeuverWin,
-            resolvedManeuverLabel,
+            resolvedManeuverLabel: maneuverLabel,
             resolvedTargetTookCover: false,
             resolvedHasRangedShots: false,
             resolvedRangedShots: [],
@@ -89,7 +89,27 @@ export class CoC7CombatResultPresenter {
             resolvedTargetTookCover: targetTookCover,
             resolvedHasRangedShots: resolvedRangedShots.length > 0,
             resolvedRangedShots,
+            resolvedRangedDamage: this.#buildRangedDamage(session),
             resolvedRangedMalfunction: Boolean(canViewAtt && session.rangedMalfunction)
+        };
+    }
+
+    static #buildRangedDamage(session) {
+        if (session.rangedFireMode !== "auto" || !session.rangedDamageByActor) return [];
+        return Object.entries(session.rangedDamageByActor).map(([key, info]) =>
+            this.#buildRangedDamageEntry(session, key, info)
+        );
+    }
+
+    static #buildRangedDamageEntry(session, key, info) {
+        const hit = session.rangedHits?.find((entry) =>
+            (entry.targetActorUuid || entry.targetActorId) === key || !entry.targetActorUuid && entry.targetActorId === info.actorId
+        );
+        const participant = session.participants?.find((entry) => entry.targetKey === hit?.targetKey);
+        return {
+            key: participant?.key, name: hit?.targetName ?? "", damage: info.damage,
+            majorWound: info.majorWound,
+            canView: Boolean(participant && RollVisibilityPolicy.canViewParticipantRoll(participant, session))
         };
     }
 

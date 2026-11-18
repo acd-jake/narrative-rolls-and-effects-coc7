@@ -1,13 +1,14 @@
 import { SessionStore } from "../../core-bridge.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 import { RangedCombatRules } from "../ranged/ranged-combat-rules.mjs";
+import { RangedRollStrategy } from "../strategies/ranged-roll-strategy.mjs";
 
 /** Validates CoC7 roll submissions and applies phase-aware session updates. */
 export class CoC7SessionPatcher {
 
     /** Verifies that a submitted roll uses the modifier dice allowed by its session state. */
     validateSubmittedRoll(session, participant, rollData) {
-        if (session.rollType === "other" || participant.key === "damage") return true;
+        if (session.rollType === "other" || participant.key === "damage" || participant.key.startsWith("damage_")) return true;
         if (participant.key === "defender" && (session.rollType === "ranged" || session.defenderReaction === "none")) return true;
         let expected = Number(participant.modifierDice ?? 0);
         if (session.rollType === "combat" && participant.key === "attacker") {
@@ -17,12 +18,17 @@ export class CoC7SessionPatcher {
         }
         if (session.rollType === "ranged" && participant.key === "attacker") {
             expected = RangedCombatRules.computeModifierDice(session, participant);
+            if (session.rangedFireMode === "auto" && (session.combatPhase !== "attack" || expected < -2)) return false;
         }
         return Number(rollData.modifierDice ?? 0) === Math.clamp(expected, -2, 2);
     }
 
     /** Applies CoC7-specific resets and defender-reaction changes to session patches. */
     transformSessionPatch(session, patch) {
+        if (session.rollType === "ranged" && patch.stopAutoFire === true) return this.#stopAutoFire(session);
+        if (session.rollType === "ranged" && patch.switchRangedTarget) {
+            return this.#switchRangedTarget(session, patch.switchRangedTarget);
+        }
         if (patch.resetCombatPhase || patch.resetSanityPhase) {
             if (session.consequencesApplied) return session;
             const clearResult = {
@@ -41,6 +47,45 @@ export class CoC7SessionPatcher {
             return this.#transformDefenderPatch(session, patch);
         }
         return { ...session, ...patch };
+    }
+
+    #stopAutoFire(session) {
+        if (session.isResolved || session.combatPhase !== "attack" || session.rangedFireMode !== "auto" || !session.volleyCount) return session;
+        const participants = session.participants.map((participant) =>
+            participant.key === "attacker" ? { ...participant, hasRolled: true } : participant
+        );
+        const state = { ...session, participants, autoFireEnded: true };
+        const followUps = new RangedRollStrategy().advanceToResolution(state);
+        state.participants.push(...followUps);
+        state.phase = followUps.length ? "rolling" : "awaitingResolution";
+        return state;
+    }
+
+    #switchRangedTarget(session, tokenId) {
+        if (session.isResolved || session.combatPhase !== "attack" || session.rangedFireMode !== "auto" || !session.volleyCount) return session;
+        const tokens = canvas?.tokens?.placeables ?? [];
+        const defender = session.participants.find((entry) => entry.key === "defender");
+        const previous = tokens.find((token) => token.id === session.lastVolleyTargetTokenId)
+            ?? tokens.find((token) => token.id === session.rangedTargetTokenId)
+            ?? tokens.find((token) => token.actor?.id === defender?.actorId);
+        const next = tokens.find((token) => token.id === tokenId);
+        if (!previous || !next?.actor) throw new Error("Cannot switch targets without both scene tokens.");
+        const traverse = RangedCombatRules.measureTraverse(previous, next);
+        if (!traverse) throw new Error("Cannot measure the target traverse distance.");
+        const coverTargets = [...(session.rangedCoverTargets ?? [])];
+        if (defender.tookCover && !coverTargets.some((entry) => entry.tokenId === session.rangedTargetTokenId)) {
+            coverTargets.push({ ...defender, tokenId: session.rangedTargetTokenId });
+        }
+        const updated = {
+            ...SessionStore.buildParticipant("defender", next.actor, defender.label, 0),
+            hasRolled: true, tookCover: coverTargets.some((entry) => entry.tokenId === next.id)
+        };
+        return {
+            ...session,
+            participants: session.participants.map((participant) => participant.key === "defender" ? updated : participant),
+            rangedTargetTokenId: next.id, traverseDistance: traverse.distance, traversePenaltyDice: traverse.penalty,
+            rangedCoverTargets: coverTargets
+        };
     }
 
     #rewindCombatPhase(session, resetPhase, clearResult) {

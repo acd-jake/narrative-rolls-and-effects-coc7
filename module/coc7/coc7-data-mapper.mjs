@@ -33,6 +33,7 @@ export class CoC7DataMapper {
         return clean ? skills.find((s) => s.name.toLowerCase() === clean) ?? null : null;
     }
 
+    /** Resolves the selected weapon, target, skill, and ranged weapon characteristics. */
     static resolveWeaponAttack(attacker, weapon) {
         const mainSkill = weapon.system?.skill?.main;
         const attackSkill =
@@ -62,7 +63,12 @@ export class CoC7DataMapper {
 
         const weaponProfile = RangedWeaponService.getWeaponCombatProfile(weapon, attackTargetValue);
         const detected = RangedWeaponService.detectRangedContext(attacker, defender, weapon, { attackerToken, targetToken });
-        return { ...base, weaponProfile, ...detected };
+        return {
+            ...base, weaponProfile, ...detected,
+            isAutoFire: Boolean(weapon.system?.properties?.auto),
+            malfunction: Number(weapon.system?.malfunction ?? 100),
+            remainingAmmo: weapon.system?.ammo ?? weapon.system?.data?.ammo ?? null
+        };
     }
 
     static async setCondition(actor, conditionKey, active) {

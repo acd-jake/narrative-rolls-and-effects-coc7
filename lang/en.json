@@ -164,6 +164,13 @@
       "FireShotBtn": "Shot #{number}",
       "FireBurstBtn": "Burst ({bullets} rds)",
       "FireVolleyBtn": "Volley #{number} ({bullets} rds)",
+      "FireNextVolleyBtn": "Fire Next Volley",
+      "StopAutoFireBtn": "Cease Fire",
+      "VolleyStatus": "Volley {volley} ({ammo} rounds remaining)",
+      "SwitchTargetLabel": "Switch Target (Traverse)",
+      "TraversePenaltyNote": "Traverse penalty ({distance} yds): {penalty} penalty dice",
+      "WeaponJammed": "Weapon malfunction! Auto-fire halted.",
+      "AutoPenaltyLimit": "The next volley exceeds the two-penalty-dice limit. Cease fire or choose a closer target.",
       "FireModes": {
         "single": "Single Shot",
         "multiple": "Multiple Shots",

@@ -1,6 +1,15 @@
 {{#if resolvedHasConsequences}}
 <div class="resolved-consequences-box">
     {{#if resolvedHasDamage}}
+    {{#if resolvedRangedDamage.length}}
+    {{#each resolvedRangedDamage}}
+    <div class="resolved-combat-damage" {{#if canView}}data-inspect-key="{{key}}"{{/if}}>
+        {{#if canView}}{{name}}: {{/if}}<i class="fa-solid fa-burst"></i>
+        {{#if canView}}-{{damage}} {{localize "ROE_COC7.Resources.HPAbbr"}}{{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
+        {{#if majorWound}}{{#if canView}}<i class="fa-solid fa-skull-crossbones" title="{{localize 'ROE_COC7.Conditions.MajorWound'}}"></i>{{/if}}{{/if}}
+    </div>
+    {{/each}}
+    {{else}}
     <div class="resolved-combat-damage" {{#if resolvedCanViewDamage}}data-inspect-key="damage"{{/if}}>
         {{#if resolvedCanViewDamage}}{{resolvedDamageTargetName}}: {{/if}}
         <i class="fa-solid fa-burst"></i>
@@ -12,11 +21,14 @@
         {{/if}}
     </div>
     {{/if}}
+    {{/if}}
 
     {{#if resolvedMajorWound}}
+    {{#unless resolvedRangedDamage.length}}
     <div class="resolved-major-wound">
         <i class="fa-solid fa-skull-crossbones"></i> {{localize "ROE_COC7.Conditions.MajorWound"}}
     </div>
+    {{/unless}}
     {{/if}}
 
     {{#if resolvedManeuverLabel}}

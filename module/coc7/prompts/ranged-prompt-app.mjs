@@ -21,12 +21,13 @@ export function createRangedPromptApp(core, BasicPromptApp) {
                 reloadWeapon: RangedPromptApp.#onReloadWeapon,
                 clearMalfunction: RangedPromptApp.#onClearMalfunction,
                 switchRangedTarget: RangedPromptApp.#onSwitchRangedTarget,
+                stopAutoFire: RangedPromptApp.#onStopAutoFire,
                 finishRangedAttack: RangedPromptApp.#onFinishRangedAttack,
                 executeDamageRoll: RangedPromptApp.#onExecuteDamageRoll
             }
         };
 
-        /** @override */
+        /** Prepares the current ranged phase, available actions, and damage display. */
         async _prepareContext(options) {
             const context = await super._prepareContext(options);
             const sys = this.session;
@@ -35,7 +36,8 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             const phase = sys.combatPhase || "reaction";
             const attacker = this.#findParticipant(sys, "attacker");
             const target = this.#findParticipant(sys, "defender");
-            const damageEntry = this.#findParticipant(sys, "damage");
+            const damageEntries = (sys.participants ?? []).filter((p) => p.key === "damage" || p.key.startsWith("damage_"));
+            const damageEntry = damageEntries.find((p) => !p.hasRolled) ?? damageEntries[damageEntries.length - 1];
 
             const isGM = game.user.isGM;
             const attActor = this.#resolveActor(attacker);
@@ -47,7 +49,7 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             const fireMode = sys.rangedFireMode || "single";
             const shots = Array.isArray(sys.rangedShots) ? sys.rangedShots : [];
             const shotsFired = Number(sys.rangedShotsFired ?? 0);
-            const volleyIndex = Number(sys.rangedVolleyIndex ?? 0);
+            const volleyIndex = Number(sys.volleyCount ?? sys.rangedVolleyIndex ?? 0);
             const isJammed = Boolean(sys.rangedMalfunction || profile.isJammed);
 
             const rawMod = attacker
@@ -64,8 +66,10 @@ export function createRangedPromptApp(core, BasicPromptApp) {
 
             const bulletsPerAction = RangedCombatRules.getBulletsForNextAction(fireMode, profile);
             const remainingCapacity = RangedCombatRules.getRemainingRoundCapacity(sys, profile);
-            const hasEnoughAmmo = !profile.tracksAmmo || profile.ammo >= bulletsPerAction;
+            const hasEnoughAmmo = !profile.tracksAmmo || profile.ammo >= (fireMode === "auto" ? 3 : bulletsPerAction);
             const hasStartedFiring = shotsFired > 0;
+            const isAuto = fireMode === "auto";
+            const targetOptions = this.#buildTargetOptions(sys);
 
             const fireModeOptions = profile.fireModes.map((mode) => ({
                 id: mode,
@@ -74,8 +78,9 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             }));
 
             const attackerDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, effectiveMod);
+            const damageHit = sys.rangedHits?.find((hit) => !damageEntry?.targetKey || hit.targetKey === damageEntry.targetKey);
             const damageDice = canViewDamage
-                ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageEntry?.diceFormula ?? sys.damageFormula })
+                ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageHit?.formula ?? damageEntry?.diceFormula ?? sys.damageFormula })
                 : [];
             return {
                 ...context,
@@ -101,11 +106,19 @@ export function createRangedPromptApp(core, BasicPromptApp) {
                 ammoMax: profile.ammoMax,
                 isOutOfAmmo: profile.tracksAmmo && profile.ammo === 0,
                 isJammed,
-                canReload: phase === "attack" && !sys.isResolved && canActAttacker && profile.tracksAmmo && profile.ammo !== profile.ammoMax && remainingCapacity > 0,
+                canReload: phase === "attack" && !sys.isResolved && canActAttacker && !isAuto && profile.tracksAmmo && profile.ammo !== profile.ammoMax && remainingCapacity > 0,
                 canClearMalfunction: phase === "attack" && !sys.isResolved && canActAttacker && isJammed,
-                canSwitchTarget: phase === "attack" && !sys.isResolved && canActAttacker && fireMode === "auto" && hasStartedFiring && !isJammed && remainingCapacity > 0,
-                canFinishSeries: phase === "attack" && !sys.isResolved && canActAttacker && hasStartedFiring,
-                canFireNext: phase === "attack" && !sys.isResolved && canActAttacker && !isJammed && hasEnoughAmmo && remainingCapacity > 0,
+                canSwitchTarget: phase === "attack" && !sys.isResolved && canActAttacker && isAuto && hasStartedFiring && !isJammed,
+                canStopAutoFire: phase === "attack" && !sys.isResolved && canActAttacker && isAuto && hasStartedFiring,
+                canFinishSeries: phase === "attack" && !sys.isResolved && canActAttacker && !isAuto && hasStartedFiring,
+                canFireNext: phase === "attack" && !sys.isResolved && canActAttacker && !isJammed && hasEnoughAmmo
+                    && (isAuto ? rawMod >= -2 : remainingCapacity > 0),
+                targetOptions,
+                isAutoFire: isAuto,
+                volleyStatus: isAuto ? game.i18n.format("ROE_COC7.Ranged.VolleyStatus", { volley: volleyIndex + 1, ammo: profile.ammo ?? "-" }) : "",
+                traversePenaltyNote: sys.traversePenaltyDice
+                    ? game.i18n.format("ROE_COC7.Ranged.TraversePenaltyNote", { distance: Number(sys.traverseDistance).toFixed(1), penalty: sys.traversePenaltyDice }) : "",
+                autoPenaltyLimit: isAuto && rawMod < -2,
 
                 hasStartedFiring,
                 activeFireModeLabel: game.i18n.localize(`ROE_COC7.Ranged.FireModes.${fireMode}`),
@@ -113,7 +126,7 @@ export function createRangedPromptApp(core, BasicPromptApp) {
                     remaining: remainingCapacity,
                     max: fireMode === "multiple" || fireMode === "auto" ? profile.maxUses : 1
                 }),
-                showRemainingShots: (fireMode === "multiple" || fireMode === "auto") && remainingCapacity > 0,
+                showRemainingShots: fireMode === "multiple" && remainingCapacity > 0,
                 hasMultipleFireModes: !hasStartedFiring && fireModeOptions.length > 1,
                 fireModeOptions,
                 fireModeHint: this.#buildFireModeHint(fireMode, profile, bulletsPerAction, requiredDifficulty),
@@ -135,7 +148,9 @@ export function createRangedPromptApp(core, BasicPromptApp) {
                 attackerDiceLabel: this._formatDiceFormulaLabel(attackerDice),
                 damageDice,
                 damageDiceLabel: canViewDamage ? this._formatDiceFormulaLabel(damageDice) : "",
-                attackerRollBtnLabel: this.#buildFireButtonLabel(attacker, fireMode, bulletsPerAction, shotsFired),
+                attackerRollBtnLabel: isAuto && hasStartedFiring
+                    ? game.i18n.localize("ROE_COC7.Ranged.FireNextVolleyBtn")
+                    : this.#buildFireButtonLabel(attacker, fireMode, bulletsPerAction, shotsFired),
                 attackerResultText: attacker?.hasRolled
                     ? CoC7ResultFormatter.formatRollOutcome({
                         total: attacker.total,
@@ -146,12 +161,16 @@ export function createRangedPromptApp(core, BasicPromptApp) {
                     : "",
 
                 hasDamageStep: Boolean(damageEntry),
+                damageEntries: damageEntries.map((entry) => ({
+                    ...entry, canView: RollVisibilityPolicy.canViewParticipantRoll(entry, sys)
+                })),
                 damageLabel: damageEntry?.label ?? "",
                 damageFormula: canViewDamage ? (damageEntry?.diceFormula ?? sys.damageFormula) : "???",
                 damageRolled: Boolean(damageEntry?.hasRolled),
                 damageTotal: canViewDamage ? (damageEntry?.total ?? 0) : "?",
                 canViewDamage,
                 canRollDamage: Boolean(phase === "resolution" && damageEntry && !damageEntry.hasRolled && (isGM || this.#resolveActor(damageEntry)?.isOwner) && !sys.isResolved),
+                canApplyConsequences: context.canApplyConsequences && damageEntries.every((p) => p.hasRolled),
                 hasCombatDamage: Boolean(canViewDamage && sys.finalDamage !== null && sys.finalDamage !== undefined),
                 finalDamage: sys.finalDamage ?? 0,
                 armorApplied: sys.armorApplied ?? 0,
@@ -168,11 +187,13 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             }));
         }
 
-        /** @override */
+        /** Reports whether the current player owns an outstanding ranged action. */
         _hasPendingPlayerAction() {
             const sys = this.session;
             if (!sys || sys.isResolved) return false;
-            const participant = this.#findParticipant(sys, PENDING_PARTICIPANT_BY_PHASE[sys.combatPhase]);
+            const participant = sys.combatPhase === "resolution"
+                ? sys.participants?.find((p) => (p.key === "damage" || p.key.startsWith("damage_")) && !p.hasRolled)
+                : this.#findParticipant(sys, PENDING_PARTICIPANT_BY_PHASE[sys.combatPhase]);
             return Boolean(participant && !participant.hasRolled && this.#resolveActor(participant)?.isOwner);
         }
 
@@ -196,6 +217,12 @@ export function createRangedPromptApp(core, BasicPromptApp) {
         #resolveWeapon(attActor, sys) {
             const weaponId = sys.weaponId || this.#findParticipant(sys, "attacker")?.itemId;
             return attActor && weaponId ? attActor.items?.get?.(weaponId) ?? null : null;
+        }
+
+        #buildTargetOptions(sys) {
+            return (canvas?.tokens?.placeables ?? []).filter((token) => token.actor).map((token) => ({
+                id: token.id, name: token.name || token.actor.name, selected: token.id === sys.rangedTargetTokenId
+            }));
         }
 
         #buildFireModeHint(fireMode, profile, bullets, requiredDifficulty) {
@@ -272,26 +299,17 @@ export function createRangedPromptApp(core, BasicPromptApp) {
         static async #onSwitchRangedTarget() {
             const sys = this.#getLiveSession();
             if (!sys || sys.isResolved || sys.combatPhase !== "attack" || sys.rangedFireMode !== "auto") return;
-            const newTargetToken = game.user.targets.first() ?? null;
-            const newTargetActor = newTargetToken?.actor ?? null;
-            if (!newTargetActor) return ui.notifications?.warn(game.i18n.localize("ROE_COC7.Warnings.RangedNeedsTarget"));
+            const selected = this.element?.querySelector('[name="rangedTarget"]')?.value;
+            const targeted = Array.from(game.user.targets ?? []).find((token) => token.id !== sys.rangedTargetTokenId);
+            const tokenId = selected && selected !== sys.rangedTargetTokenId ? selected : targeted?.id;
+            if (!tokenId) return ui.notifications?.warn(game.i18n.localize("ROE_COC7.Warnings.RangedNeedsTarget"));
+            await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { switchRangedTarget: tokenId });
+        }
 
-            const currentTarget = sys.participants?.find((p) => p.key === "defender");
-            const dist = RangedWeaponService.measureTokenDistance(SessionStore.resolveActor(currentTarget), newTargetToken);
-            const wastedBullets = Math.max(1, Math.floor(dist ?? 1));
-            const attacker = sys.participants?.find((p) => p.key === "attacker");
-            const weapon = this.#resolveWeapon(SessionStore.resolveActor(attacker), sys);
-            const newAmmo = await RangedWeaponService.consumeWeaponAmmo(weapon, wastedBullets);
-
-            const updatedDefender = { ...SessionStore.buildParticipant("defender", newTargetActor, game.i18n.localize("ROE_COC7.Ranged.Phases.Reaction"), 0), hasRolled: true, tookCover: false };
-            const nextShots = [...(sys.rangedShots ?? []), { index: (sys.rangedShots?.length ?? 0) + 1, isTargetSwitch: true, targetName: newTargetActor.name, bulletsSpent: wastedBullets, hits: 0, impales: 0 }];
-
-            await UniversalRollOrchestrator.updateSessionPatch(this._messageId, {
-                participants: sys.participants.map((p) => (p.key === "defender" ? updatedDefender : p)),
-                rangedShots: nextShots,
-                rangedBulletsSpent: Number(sys.rangedBulletsSpent ?? 0) + wastedBullets,
-                ...(newAmmo !== null ? { weaponProfile: { ...(sys.weaponProfile ?? {}), ammo: newAmmo } } : {})
-            });
+        static async #onStopAutoFire() {
+            const sys = this.#getLiveSession();
+            if (!sys || sys.isResolved || sys.combatPhase !== "attack" || !sys.volleyCount) return;
+            await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { stopAutoFire: true });
         }
 
         static async #onFinishRangedAttack() {
@@ -322,6 +340,7 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             if (sys.rangedMalfunction || profile.isJammed) return;
 
             const fireMode = sys.rangedFireMode || "single";
+            if (fireMode === "auto") return this.#rollVolley(sys, attacker, profile);
             const shotsFired = Number(sys.rangedShotsFired ?? 0);
             const volleyIndex = Number(sys.rangedVolleyIndex ?? 0);
             const bulletsNeeded = RangedCombatRules.getBulletsForNextAction(fireMode, profile);
@@ -378,6 +397,29 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             }
         }
 
-        static async #onExecuteDamageRoll() { await DamageRollSubmitter.submit(this._messageId); }
+        async #rollVolley(sys, attacker, profile) {
+            if (profile.tracksAmmo && profile.ammo < 3) return;
+            const rawModifier = RangedCombatRules.computeModifierDice(sys, attacker);
+            if (rawModifier < -2) return;
+            const modifierDice = Math.clamp(rawModifier, -2, 2);
+            const roll = await new Roll(CoC7CheckResolver.buildRollFormula(modifierDice)).evaluate();
+            const total = roll.total === 0 ? 100 : roll.total;
+            const targetValue = Number(attacker.targetValue);
+            const successLevel = CoC7CheckResolver.evaluateResult(total, targetValue);
+            const difficulty = RangedCombatRules.computeRequiredDifficulty(sys, rawModifier);
+            const isSuccess = total < profile.malfunctionThreshold && (CoC7CheckResolver.LEVEL_RANK[successLevel] ?? 0)
+                >= (CoC7CheckResolver.LEVEL_RANK[difficulty] ?? 2);
+            await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "attacker", {
+                total, successLevel, isSuccess, modifierDice,
+                rollMode: RollVisibilityPolicy.getCurrentRollMode(), rollerUserId: game.user.id,
+                rollBreakdown: CoC7CheckResolver.buildBreakdown(roll, targetValue, successLevel, { modifierDice })
+            });
+        }
+
+        static async #onExecuteDamageRoll() {
+            const sys = this.#getLiveSession();
+            const damage = sys?.participants?.find((p) => (p.key === "damage" || p.key.startsWith("damage_")) && !p.hasRolled);
+            if (damage) await DamageRollSubmitter.submit(this._messageId, damage.key);
+        }
     };
 }

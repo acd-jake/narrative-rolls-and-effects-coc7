@@ -77,7 +77,7 @@
 
     {{#if isJammed}}
     <div class="prompt-outcome-banner push-failure-warning">
-        <i class="fa-solid fa-triangle-exclamation"></i> {{localize "ROE_COC7.Combat.Malfunction"}}
+        <i class="fa-solid fa-triangle-exclamation"></i> {{#if isAutoFire}}{{localize "ROE_COC7.Ranged.WeaponJammed"}}{{else}}{{localize "ROE_COC7.Combat.Malfunction"}}{{/if}}
     </div>
     {{/if}}
     {{#if hasRangedShots}}
@@ -132,6 +132,15 @@
         {{#if fireModeHint}}
         <div class="pending-badge">{{fireModeHint}}</div>
         {{/if}}
+        {{#if volleyStatus}}
+        <div class="pending-badge">{{volleyStatus}}</div>
+        {{/if}}
+        {{#if traversePenaltyNote}}
+        <div class="pending-badge">{{traversePenaltyNote}}</div>
+        {{/if}}
+        {{#if autoPenaltyLimit}}
+        <div class="pending-badge">{{localize "ROE_COC7.Ranged.AutoPenaltyLimit"}}</div>
+        {{/if}}
 
         {{#if showRequiredDifficulty}}
         <div class="difficulty-display">{{requiredDifficultyLabel}}</div>
@@ -160,12 +169,23 @@
             {{/if}}
 
             {{#if canSwitchTarget}}
+            <label for="ranged-target">{{localize "ROE_COC7.Ranged.SwitchTargetLabel"}}</label>
+            <select id="ranged-target" name="rangedTarget">
+                {{#each targetOptions}}
+                <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+                {{/each}}
+            </select>
             <button type="button" class="prompt-action-btn secondary compact" data-action="switchRangedTarget">
                 <i class="fa-solid fa-crosshairs"></i> {{localize "ROE_COC7.Ranged.SwitchTargetBtn"}}
             </button>
             {{/if}}
         </div>
 
+        {{#if canStopAutoFire}}
+        <button type="button" class="prompt-action-btn primary compact" data-action="stopAutoFire">
+            <i class="fa-solid fa-flag-checkered"></i> {{localize "ROE_COC7.Ranged.StopAutoFireBtn"}}
+        </button>
+        {{/if}}
         {{#if canFinishSeries}}
         <button type="button" class="prompt-action-btn primary compact" data-action="finishRangedAttack">
             <i class="fa-solid fa-flag-checkered"></i> {{localize "ROE_COC7.Ranged.FinishSeriesBtn"}}
@@ -192,6 +212,17 @@
     </header>
 
     {{#if hasDamageStep}}
+    {{#if isAutoFire}}
+    {{#each damageEntries}}
+    <div class="combined-check-row">
+        <span><i class="fa-solid fa-burst"></i> {{label}}</span>
+        <strong {{#if hasRolled}}data-inspect-key="{{key}}"{{/if}}>
+            {{#if canView}}{{#if hasRolled}}{{total}} ({{diceFormula}}){{else}}{{diceFormula}}{{/if}}
+            {{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
+        </strong>
+    </div>
+    {{/each}}
+    {{else}}
     <div class="combined-check-row">
         <span><i class="fa-solid fa-burst"></i> {{damageLabel}}</span>
         <strong {{#if damageRolled}}data-inspect-key="damage" {{/if}}>
@@ -202,6 +233,7 @@
             {{/if}}
         </strong>
     </div>
+    {{/if}}
 
     {{#if canRollDamage}}
     {{#if canViewDamage}}{{> roeDiceDisplay dice=damageDice modifierTooltip="Damage"}}{{/if}}

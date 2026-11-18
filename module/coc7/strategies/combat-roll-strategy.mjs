@@ -3,6 +3,7 @@ import { BaseRollStrategy } from "./base-roll-strategy.mjs";
 import { getPromptApp } from "../prompts/prompt-app-registry.mjs";
 import { SessionStore } from "../../core-bridge.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
+import { CombatConsequenceApplier } from "./combat-consequence-applier.mjs";
 
 /** Resolves melee exchanges, creates damage follow-ups, and applies combat consequences. */
 export class CombatRollStrategy extends BaseRollStrategy {
@@ -111,23 +112,11 @@ export class CombatRollStrategy extends BaseRollStrategy {
         const finalDamage = Number(state.finalDamage ?? 0);
         if (finalDamage <= 0) return;
 
-        const hpResource = CoC7DataMapper.getResource(targetActor, "hp") ?? {};
-        const currentHp = Number(hpResource.value ?? 0);
-        const maxHp = Number(hpResource.max ?? 10);
-        const newHp = Math.max(0, currentHp - finalDamage);
-
-        await targetActor.update({ "system.attribs.hp.value": newHp });
-
-        if (finalDamage >= maxHp) {
-            await CoC7DataMapper.setCondition(targetActor, "dead", true);
-        } else if (newHp === 0) {
-            await CoC7DataMapper.setCondition(targetActor, "unconscious", true);
-            if (state.majorWoundTriggered) {
-                await CoC7DataMapper.setCondition(targetActor, "dying", true);
-            }
-        } else if (state.majorWoundTriggered) {
-            await CoC7DataMapper.setCondition(targetActor, "majorWound", true);
-        }
+        await CombatConsequenceApplier.applyDamageToActor(
+            targetActor,
+            finalDamage,
+            Boolean(state.majorWoundTriggered)
+        );
     }
 
     /** @override */

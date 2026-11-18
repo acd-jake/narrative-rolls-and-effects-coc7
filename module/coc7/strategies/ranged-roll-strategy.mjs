@@ -1,14 +1,15 @@
 import { MODULE_ID, SessionStore } from "../../core-bridge.mjs";
-import { CombatRollStrategy } from "./combat-roll-strategy.mjs";
 import { BaseRollStrategy } from "./base-roll-strategy.mjs";
+import { CombatConsequenceApplier } from "./combat-consequence-applier.mjs";
 import { getPromptApp } from "../prompts/prompt-app-registry.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
+import { RangedCombatRules } from "../ranged/ranged-combat-rules.mjs";
 
 /**
- * Ranged attack in three sequential phases: target reaction (diving for cover),
- * the shooter's attack (single, multiple, burst, or full-auto), and multi-hit damage resolution.
+ * Standalone strategy for Call of Cthulhu 7e ranged combat:
+ * target cover reaction, shot/burst/full-auto sequence, and per-bullet damage resolution.
  */
-export class RangedRollStrategy extends CombatRollStrategy {
+export class RangedRollStrategy extends BaseRollStrategy {
     /** @override */
     renderPrompt(options) {
         new (getPromptApp("ranged"))(options).render(true);
@@ -16,7 +17,7 @@ export class RangedRollStrategy extends CombatRollStrategy {
 
     /** @override */
     async onRollApplied(participant, state) {
-        if (!participant?.hasRolled) return [];
+        if (!participant?.hasRolled || participant.isShotDetail) return [];
 
         if (participant.key === "defender") {
             state.combatPhase = "attack";
@@ -25,25 +26,22 @@ export class RangedRollStrategy extends CombatRollStrategy {
 
         if (participant.key === "attacker") {
             state.combatPhase = "resolution";
-            const followUps = await this._advanceToResolution(state);
+            const followUps = await this.#advanceToResolution(state);
             this.#flagPendingCoverConsequence(state);
             return followUps;
         }
 
-        if (participant.key === "damage" && Array.isArray(state.rangedHitResults) && state.rangedHitResults.length > 0) {
-            await this.#computeMultiHitDamage(state, participant);
+        if (participant.key === "damage") {
+            await this.#resolveDamageOutcome(state, participant);
             this.#flagPendingCoverConsequence(state);
             return [];
         }
 
-        const followUps = await super.onRollApplied(participant, state);
-        this.#flagPendingCoverConsequence(state);
-        return followUps;
+        return [];
     }
 
-    /** @override */
-    async _advanceToResolution(state) {
-        const hitWinnerKey = this._determineHitWinner(state);
+    async #advanceToResolution(state) {
+        const hitWinnerKey = this.#determineHitWinner(state);
         state.hitWinnerKey = hitWinnerKey;
 
         const alreadyHasDamage = state.participants?.some((p) => p.key === "damage");
@@ -73,43 +71,20 @@ export class RangedRollStrategy extends CombatRollStrategy {
             }
         ];
     }
-    async #computeMultiHitDamage(state, damageParticipant) {
-        const defaultTarget = CombatRollStrategy.getDamageTarget(state);
+    async #resolveDamageOutcome(state, damageParticipant) {
+        const defaultTarget = state.participants?.find((p) => p.key === "defender");
         const defaultActor = SessionStore.resolveActor(defaultTarget);
-        const damageByActor = new Map();
+        const hitResults = Array.isArray(state.rangedHitResults) && state.rangedHitResults.length > 0
+            ? state.rangedHitResults
+            : [{ targetActorId: defaultActor?.id ?? "", rawDamage: Number(damageParticipant.total ?? 0), impale: false }];
 
-        let totalRaw = 0;
-        let totalArmor = 0;
-        let totalFinal = 0;
-        let majorWound = false;
-
-        for (const hit of state.rangedHitResults) {
-            const actor = (hit.targetActorId ? game.actors?.get?.(hit.targetActorId) : null) ?? defaultActor;
-            const armor = Number(CoC7DataMapper.getCombatValue(actor, "armor") ?? actor?.system?.armor?.value ?? 0);
-            const raw = Math.max(0, Number(hit.rawDamage ?? 0));
-            const final = Math.max(0, raw - armor);
-            const maxHp = Number(CoC7DataMapper.getResource(actor, "hp")?.max ?? 10);
-
-            totalRaw += raw;
-            totalArmor += armor;
-            totalFinal += final;
-            if (final > 0 && final >= Math.ceil(maxHp / 2)) majorWound = true;
-
-            if (actor?.id) {
-                const prev = damageByActor.get(actor.id) ?? { damage: 0, majorWound: false };
-                damageByActor.set(actor.id, {
-                    damage: prev.damage + final,
-                    majorWound: prev.majorWound || (final > 0 && final >= Math.ceil(maxHp / 2))
-                });
-            }
-        }
-
-        state.rawDamage = totalRaw || Number(damageParticipant.total ?? 0);
-        state.armorApplied = totalArmor;
-        state.finalDamage = totalFinal;
-        state.majorWoundTriggered = majorWound;
-        state.rangedDamageByActor = Object.fromEntries(damageByActor.entries());
-        state.hasPendingConsequences = (totalFinal > 0 || this.#targetTookCover(state)) && !state.consequencesApplied;
+        const summary = RangedCombatRules.evaluateMultiHitDamage(hitResults, defaultActor);
+        state.rawDamage = summary.rawDamage;
+        state.armorApplied = summary.armorApplied;
+        state.finalDamage = summary.finalDamage;
+        state.majorWoundTriggered = summary.majorWoundTriggered;
+        state.rangedDamageByActor = summary.damageByActor;
+        state.hasPendingConsequences = (summary.finalDamage > 0 || this.#targetTookCover(state)) && !state.consequencesApplied;
 
         const autoApply = Boolean(game.settings?.get(MODULE_ID, "autoApplyRollConsequences"));
         if (state.hasPendingConsequences && autoApply) {
@@ -119,8 +94,7 @@ export class RangedRollStrategy extends CombatRollStrategy {
         }
     }
 
-    /** @override */
-    _determineHitWinner(state) {
+    #determineHitWinner(state) {
         if (state.rangedMalfunction) return "";
         if (Array.isArray(state.rangedHits) && state.rangedHits.length > 0) return "attacker";
         const rank = BaseRollStrategy.LEVEL_RANK;
@@ -131,30 +105,9 @@ export class RangedRollStrategy extends CombatRollStrategy {
 
     /** @override */
     async applyConsequences(state) {
-        if (state.rangedDamageByActor && Object.keys(state.rangedDamageByActor).length > 0) {
-            for (const [actorId, info] of Object.entries(state.rangedDamageByActor)) {
-                const targetActor = game.actors?.get?.(actorId);
-                const finalDamage = Number(info?.damage ?? 0);
-                if (!targetActor || finalDamage <= 0) continue;
-
-                const hpResource = CoC7DataMapper.getResource(targetActor, "hp") ?? {};
-                const currentHp = Number(hpResource.value ?? 0);
-                const maxHp = Number(hpResource.max ?? 10);
-                const newHp = Math.max(0, currentHp - finalDamage);
-
-                await targetActor.update({ "system.attribs.hp.value": newHp });
-
-                if (finalDamage >= maxHp) {
-                    await CoC7DataMapper.setCondition(targetActor, "dead", true);
-                } else if (newHp === 0) {
-                    await CoC7DataMapper.setCondition(targetActor, "unconscious", true);
-                    if (info.majorWound) await CoC7DataMapper.setCondition(targetActor, "dying", true);
-                } else if (info.majorWound) {
-                    await CoC7DataMapper.setCondition(targetActor, "majorWound", true);
-                }
-            }
-        } else {
-            await super.applyConsequences(state);
+        for (const [actorId, info] of Object.entries(state.rangedDamageByActor ?? {})) {
+            const targetActor = game.actors?.get?.(actorId);
+            await CombatConsequenceApplier.applyDamageToActor(targetActor, info?.damage, Boolean(info?.majorWound));
         }
 
         if (!this.#targetTookCover(state)) return;

@@ -1,8 +1,8 @@
 import assert from "assert";
 import { setCoreApi } from "../module/core-bridge.mjs";
-import { CoC7DataMapper } from "../module/coc7/coc7-data-mapper.mjs";
+import { RangedWeaponService } from "../module/coc7/ranged/ranged-weapon-service.mjs";
+import { RangedCombatRules } from "../module/coc7/ranged/ranged-combat-rules.mjs";
 import { CoC7SessionFactory } from "../module/coc7/coc7-session-factory.mjs";
-import { CoC7SessionPatcher } from "../module/coc7/adapter/coc7-session-patcher.mjs";
 import { RangedRollStrategy } from "../module/coc7/strategies/ranged-roll-strategy.mjs";
 
 const actors = new Map();
@@ -54,22 +54,22 @@ const revolver = {
     unsetFlag: async (_mod, key) => { weaponFlags.delete(key); }
 };
 
-const profile = CoC7DataMapper.getWeaponCombatProfile(revolver, 60);
+const profile = RangedWeaponService.getWeaponCombatProfile(revolver, 60);
 assert.equal(profile.tracksAmmo, true);
 assert.equal(profile.ammo, 6);
 assert.equal(profile.maxUses, 3);
 assert.deepEqual(profile.fireModes, ["single", "multiple"]);
 
-await CoC7DataMapper.consumeWeaponAmmo(revolver, 2);
+await RangedWeaponService.consumeWeaponAmmo(revolver, 2);
 assert.equal(revolver.system.ammo, 4);
 
-await CoC7DataMapper.reloadWeapon(revolver);
+await RangedWeaponService.reloadWeapon(revolver);
 assert.equal(revolver.system.ammo, 6);
 
-await CoC7DataMapper.setWeaponMalfunction(revolver, true);
-assert.equal(CoC7DataMapper.getWeaponCombatProfile(revolver, 60).isJammed, true);
-await CoC7DataMapper.setWeaponMalfunction(revolver, false);
-assert.equal(CoC7DataMapper.getWeaponCombatProfile(revolver, 60).isJammed, false);
+await RangedWeaponService.setWeaponMalfunction(revolver, true);
+assert.equal(RangedWeaponService.getWeaponCombatProfile(revolver, 60).isJammed, true);
+await RangedWeaponService.setWeaponMalfunction(revolver, false);
+assert.equal(RangedWeaponService.getWeaponCombatProfile(revolver, 60).isJammed, false);
 // 2. Modifier & difficulty progression for multiple shots and full-auto volleys
 const attackerActor = { id: "a1", name: "Investigator", system: { characteristics: { dex: { value: 60 } }, attribs: { hp: { value: 12, max: 12 } } } };
 const defenderActor = { id: "d1", name: "Cultist", system: { attribs: { hp: { value: 10, max: 10 }, armor: { value: 2 }, build: { value: 0 } } } };
@@ -87,13 +87,13 @@ const session = CoC7SessionFactory.createRanged({
 assert.equal(session.difficulty, "hard");
 
 const attPart = session.participants[0];
-assert.equal(CoC7SessionPatcher.computeRangedModifierDice(session, attPart, { fireMode: "multiple", shotIndex: 0 }), 0);
-assert.equal(CoC7SessionPatcher.computeRangedModifierDice(session, attPart, { fireMode: "multiple", shotIndex: 1 }), -1);
+assert.equal(RangedCombatRules.computeModifierDice(session, attPart, { fireMode: "multiple", shotIndex: 0 }), 0);
+assert.equal(RangedCombatRules.computeModifierDice(session, attPart, { fireMode: "multiple", shotIndex: 1 }), -1);
 
 // Full auto volley overflow into difficulty escalation
-const rawVolley3 = CoC7SessionPatcher.computeRangedModifierDice(session, attPart, { fireMode: "auto", volleyIndex: 3 });
+const rawVolley3 = RangedCombatRules.computeModifierDice(session, attPart, { fireMode: "auto", volleyIndex: 3 });
 assert.equal(rawVolley3, -3);
-assert.equal(CoC7SessionPatcher.computeRangedRequiredDifficulty(session, rawVolley3), "extreme");
+assert.equal(RangedCombatRules.computeRequiredDifficulty(session, rawVolley3), "extreme");
 
 // 3. Per-bullet armor mitigation & major wound on multi-hit damage
 const strategy = new RangedRollStrategy();
@@ -101,8 +101,8 @@ const damageState = {
     ...session,
     hitWinnerKey: "attacker",
     rangedHitResults: [
-        { targetActorId: "d1", rawDamage: 4, impale: false }, // 4 - 2 armor = 2
-        { targetActorId: "d1", rawDamage: 7, impale: true }   // 7 - 2 armor = 5 (>= ceil(10/2) -> Major Wound)
+        { targetActorId: "d1", rawDamage: 4, impale: false },
+        { targetActorId: "d1", rawDamage: 7, impale: true }
     ]
 };
 await strategy.onRollApplied({ key: "damage", hasRolled: true, total: 11 }, damageState);
@@ -123,7 +123,7 @@ globalThis.canvas = {
         ]
     }
 };
-const detected = CoC7DataMapper.detectRangedContext(attackerActor, defenderActor, revolver);
+const detected = RangedWeaponService.detectRangedContext(attackerActor, defenderActor, revolver);
 assert.equal(detected.distance, 2);
 assert.equal(detected.tacticalFlags.pointBlank, true);
 assert.equal(detected.tacticalFlags.inMelee, true);

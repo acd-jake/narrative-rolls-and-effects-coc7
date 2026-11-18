@@ -2,7 +2,7 @@ import { RollVisibilityPolicy, UniversalRollOrchestrator } from "../../core-brid
 import { COC7_MODULE_ID } from "../coc7-settings.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 import { CoC7SessionFactory } from "../coc7-session-factory.mjs";
-import { CombatRollStrategy } from "../strategies/combat-roll-strategy.mjs";
+import { CoC7CombatResultPresenter } from "./coc7-combat-result-presenter.mjs";
 
 const PREPARATION_DIFFICULTIES = ["regular", "hard", "extreme"];
 const DIFFICULTY_PREPARATION_ROLL_TYPES = new Set(["basic", "skill", "combined"]);
@@ -78,7 +78,7 @@ export class CoC7PromptPresenter {
         if (session.rollType === "opposed") return { ...base, ...this.#buildResolvedOpposedContext(session) };
         if (session.rollType === "sanity") return { ...base, ...this.#buildResolvedSanityContext(session) };
         if (session.rollType === "combat" || session.rollType === "ranged") {
-            return { ...base, ...this.#buildResolvedCombatContext(session) };
+            return { ...base, ...CoC7CombatResultPresenter.buildResolvedContext(session) };
         }
         return base;
     }
@@ -352,180 +352,6 @@ export class CoC7PromptPresenter {
             resolvedSanityStatusText: canViewSan ? statusText : "",
             resolvedIsInsane: Boolean(canViewSan && enriched.sanityInsanityBadge)
         };
-    }
-
-    #buildResolvedCombatContext(session) {
-        const attacker = session.participants?.find((p) => p.key === "attacker");
-        const defender = session.participants?.find((p) => p.key === "defender") ?? null;
-        const damage = session.participants?.find((p) => p.key === "damage") ?? null;
-        const canViewAtt = Boolean(attacker && RollVisibilityPolicy.canViewParticipantRoll(attacker, session));
-        const canViewDef = Boolean(defender && RollVisibilityPolicy.canViewParticipantRoll(defender, session));
-        const canViewDmg = Boolean(damage && RollVisibilityPolicy.canViewParticipantRoll(damage, session));
-
-        const combatLayout = game.settings?.get(COC7_MODULE_ID, "combatResolvedLayout") || "narrative";
-        const headerActors = combatLayout === "duel"
-            ? game.i18n.localize(`ROE_COC7.RollSession.Types.${session.rollType}`)
-            : defender
-                ? `${attacker?.actorName ?? ""} vs. ${defender.actorName ?? ""}`
-                : (attacker?.actorName ?? "");
-
-        const hasDamage = Boolean(session.finalDamage !== null && session.finalDamage !== undefined);
-        const damageTarget = CombatRollStrategy.getDamageTarget(session);
-        const isManeuverWin = session.hitWinnerKey === "defender" && session.defenderReaction === "maneuver";
-        const targetTookCover = Boolean(session.rollType === "ranged" && defender?.tookCover);
-
-                const rangedShots = Array.isArray(session.rangedShots) ? session.rangedShots : [];
-        const hasRangedShots = session.rollType === "ranged" && rangedShots.length > 0;
-        const resolvedRangedShots = hasRangedShots
-            ? rangedShots.map((shot) => ({
-                ...shot,
-                canInspect: canViewAtt && Boolean(shot.rollBreakdown),
-                levelLabel: shot.successLevel ? CoC7ResultFormatter.formatSuccessLevel(shot.successLevel) : "",
-                outcomeText: canViewAtt
-                    ? shot.isTargetSwitch
-                        ? game.i18n.format("ROE_COC7.Ranged.TargetSwitched", { target: shot.targetName })
-                        : shot.malfunction
-                            ? `${game.i18n.localize("ROE_COC7.Combat.Malfunction")} (${shot.total})`
-                            : `${shot.total} vs. ${attacker?.targetValue ?? 0} • ${CoC7ResultFormatter.formatSuccessLevel(shot.successLevel)}`
-                    : game.i18n.localize("ROE.RollSession.HiddenRoll")
-            }))
-            : [];
-
-        return {
-            resolvedActorName: headerActors.toUpperCase(),
-            resolvedTitle: session.weaponName || session.title,
-            resolvedCombatNarrative: this.#buildCombatNarrative(session, attacker, defender),
-            resolvedAttackerName: attacker?.actorName ?? "",
-            resolvedAttackerImg: attacker?.actorImg ?? "",
-            resolvedAttackerLabel: attacker?.label ?? "",
-            resolvedCanViewAttacker: canViewAtt,
-            resolvedAttackerWon: session.hitWinnerKey === "attacker",
-            resolvedAttackerLevel: attacker?.successLevel ?? "",
-            resolvedAttackerOutcome: this.#formatCombatantOutcome(attacker, canViewAtt, session),
-            resolvedAttackerChipClass: this.#getOutcomeChipClass(attacker?.successLevel),
-            resolvedHasDefender: Boolean(defender),
-            resolvedDefenderName: defender?.actorName ?? "",
-            resolvedDefenderImg: defender?.actorImg ?? "",
-            resolvedDefenderLabel: session.rollType === "ranged"
-                ? game.i18n.localize("ROE_COC7.Combat.TargetLabel")
-                : game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${session.defenderReaction || "dodge"}`),
-            resolvedCanViewDefender: Boolean(canViewDef && defender?.total !== null),
-            resolvedDefenderWon: session.hitWinnerKey === "defender",
-            resolvedDefenderLevel: defender?.total !== null ? (defender?.successLevel ?? "") : "",
-            resolvedDefenderOutcome: this.#formatCombatantOutcome(defender, canViewDef, session),
-            resolvedDefenderChipClass: this.#getOutcomeChipClass(defender?.successLevel),
-            resolvedHasConsequences: hasDamage || isManeuverWin || targetTookCover,
-            resolvedHasDamage: hasDamage,
-            resolvedCanViewDamage: canViewDmg,
-            resolvedDamageTargetName: canViewDmg
-                ? damageTarget?.actorName || game.i18n.localize("ROE_COC7.Combat.UnknownTarget")
-                : "",
-            resolvedFinalDamage: session.finalDamage ?? 0,
-            resolvedArmorApplied: Number(session.armorApplied ?? 0),
-            resolvedMajorWound: Boolean(canViewDmg && session.majorWoundTriggered),
-            resolvedManeuverLabel: isManeuverWin
-                ? game.i18n.format("ROE_COC7.Combat.Badges.Maneuver", {
-                    maneuver: game.i18n.localize(`ROE_COC7.Combat.Maneuvers.${session.maneuverType || "disarm"}`)
-                })
-                : "",
-            resolvedTargetTookCover: targetTookCover,
-                        resolvedHasRangedShots: resolvedRangedShots.length > 0,
-            resolvedRangedShots,
-            resolvedRangedMalfunction: Boolean(canViewAtt && session.rangedMalfunction),
-        };
-    }
-
-    #formatCombatantOutcome(participant, canView, session) {
-        if (!participant) return "";
-        if (participant.key === "defender" && session.rollType === "ranged") {
-            return game.i18n.localize(participant.tookCover ? "ROE_COC7.Ranged.CoverTaken" : "ROE_COC7.Ranged.NoCover");
-        }
-        if (participant.total === null) return game.i18n.localize("ROE_COC7.Combat.DefenseTabs.none");
-        return CoC7ResultFormatter.formatRollOutcome({
-            total: participant.total,
-            targetValue: participant.targetValue,
-            successLevel: participant.successLevel,
-            allowNumbers: canView
-        });
-    }
-
-    #getOutcomeChipClass(level) {
-        if (!level || level === "none") return "";
-        return ["regular", "hard", "extreme", "critical"].includes(level) ? "outcome is-success" : "outcome is-failure";
-    }
-
-    #buildCombatNarrative(session, attacker, defender) {
-        const names = {
-            attacker: attacker?.actorName ?? "",
-            defender: defender?.actorName ?? game.i18n.localize("ROE_COC7.Combat.UnknownTarget"),
-            weapon: session.weaponName || session.title,
-            maneuver: game.i18n.localize(`ROE_COC7.Combat.Maneuvers.${session.maneuverType || "disarm"}`)
-        };
-        if (session.rollType === "ranged") {
-            return this.#buildRangedNarrative(session, names);
-        }
-        if (session.hitWinnerKey === "attacker") {
-            return game.i18n.format(
-                defender ? "ROE_COC7.Combat.ResolvedNarrative.Hit" : "ROE_COC7.Combat.ResolvedNarrative.HitUnopposed",
-                names
-            );
-        }
-        if (session.hitWinnerKey === "defender") {
-            return game.i18n.format(
-                session.defenderReaction === "maneuver" ? "ROE_COC7.Combat.ResolvedNarrative.Maneuver" : "ROE_COC7.Combat.ResolvedNarrative.Counter",
-                names
-            );
-        }
-        const wasDodged = defender && session.defenderReaction === "dodge" && defender.isSuccess;
-        return game.i18n.format(
-            wasDodged ? "ROE_COC7.Combat.ResolvedNarrative.Dodged" : "ROE_COC7.Combat.ResolvedNarrative.Missed",
-            names
-        );
-    }
-
-    #buildRangedNarrative(session, names) {
-        const shots = (session.rangedShots ?? []).filter((s) => !s.isTargetSwitch);
-        const shotCount = shots.length;
-        const hitCount = Array.isArray(session.rangedHits)
-            ? session.rangedHits.length
-            : (session.hitWinnerKey === "attacker" ? 1 : 0);
-        const jammed = Boolean(session.rangedMalfunction);
-        const mode = session.rangedFireMode || "single";
-        const data = { ...names, shots: shotCount, hits: hitCount };
-
-        if (jammed) {
-            if (hitCount > 0) return game.i18n.format("ROE_COC7.Ranged.ResolvedNarrative.JamAfterHits", data);
-            return game.i18n.format(
-                shotCount > 1 ? "ROE_COC7.Ranged.ResolvedNarrative.JamMultiMiss" : "ROE_COC7.Ranged.ResolvedNarrative.JamSingle",
-                data
-            );
-        }
-
-        if (mode === "burst") {
-            return game.i18n.format(
-                hitCount > 0 ? "ROE_COC7.Ranged.ResolvedNarrative.BurstHit" : "ROE_COC7.Ranged.ResolvedNarrative.BurstMiss",
-                data
-            );
-        }
-
-        if (mode === "auto") {
-            return game.i18n.format(
-                hitCount > 0 ? "ROE_COC7.Ranged.ResolvedNarrative.AutoHit" : "ROE_COC7.Ranged.ResolvedNarrative.AutoMiss",
-                data
-            );
-        }
-
-        if (mode === "multiple" || shotCount > 1) {
-            return game.i18n.format(
-                hitCount > 0 ? "ROE_COC7.Ranged.ResolvedNarrative.MultiHit" : "ROE_COC7.Ranged.ResolvedNarrative.MultiMiss",
-                data
-            );
-        }
-
-        return game.i18n.format(
-            hitCount > 0 ? "ROE_COC7.Combat.ResolvedNarrative.RangedHit" : "ROE_COC7.Combat.ResolvedNarrative.RangedMiss",
-            data
-        );
     }
 
     async #togglePreparedTactical(prompt, target) {

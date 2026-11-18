@@ -1,5 +1,6 @@
 import { SessionStore } from "../core-bridge.mjs";
 import { CoC7DataMapper } from "./coc7-data-mapper.mjs";
+import { RangedWeaponService } from "./ranged/ranged-weapon-service.mjs";
 
 /** Builds system-specific session data and derives the presentation fields used by templates. */
 export class CoC7SessionFactory {
@@ -135,7 +136,7 @@ export class CoC7SessionFactory {
         tacticalFlags = null
     }) {
         const weaponLabel = weapon?.name || attackSkillLabel;
-        const profile = weaponProfile ?? CoC7DataMapper.getWeaponCombatProfile(weapon, attackTargetValue);
+        const profile = weaponProfile ?? RangedWeaponService.getWeaponCombatProfile(weapon, attackTargetValue);
         const effectiveDifficulty = rangeTier === "extreme" ? "extreme" : rangeTier === "long" ? "hard" : difficulty;
 
         return {

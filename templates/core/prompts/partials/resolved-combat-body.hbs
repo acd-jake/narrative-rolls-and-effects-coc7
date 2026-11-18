@@ -15,7 +15,7 @@
     <div class="resolved-combat-damage" {{#if resolvedCanViewDamage}}data-inspect-key="damage"{{/if}}>
         <i class="fa-solid fa-burst"></i>
         {{#if resolvedCanViewDamage}}
-        -{{resolvedFinalDamage}} {{localize "ROE_COC7.Resources.HPAbbr"}}
+        {{localize "ROE_COC7.Combat.DamageResult" damage=resolvedFinalDamage}}
         {{#if resolvedArmorApplied}}<small>({{resolvedArmorApplied}} {{localize "ROE_COC7.Combat.Armor"}})</small>{{/if}}
         {{else}}
         {{localize "ROE.RollSession.HiddenRoll"}}

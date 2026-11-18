@@ -1,6 +1,6 @@
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
-import { SessionStore } from "../../core-bridge.mjs";
+import { RangedDamageState } from "./ranged-damage-state.mjs";
 
 /** Stateless Call of Cthulhu 7e ranged combat rule calculations. */
 export class RangedCombatRules {
@@ -116,7 +116,7 @@ export class RangedCombatRules {
         return best;
     }
 
-    /** Evaluates per-bullet armor mitigation and major wound triggers across multi-hit results. */
+    /** Evaluates per-hit armor and wound thresholds for each target. */
     static evaluateMultiHitDamage(hitResults, defaultTargetActor) {
         const damageByActor = new Map();
         let totalRaw = 0;
@@ -127,7 +127,7 @@ export class RangedCombatRules {
         for (const hit of hitResults) {
             const hasExplicitTarget = Boolean(hit.targetActorUuid || hit.targetActorId);
             const actor = hasExplicitTarget
-                ? SessionStore.resolveActor({ actorUuid: hit.targetActorUuid, actorId: hit.targetActorId }) : defaultTargetActor;
+                ? RangedDamageState.resolveActor({ actorUuid: hit.targetActorUuid, actorId: hit.targetActorId }) : defaultTargetActor;
             if (!actor) throw new Error("Cannot resolve the target actor for ranged damage.");
             const armor = Number(CoC7DataMapper.getCombatValue(actor, "armor") ?? actor?.system?.armor?.value ?? 0);
             const raw = Math.max(0, Number(hit.rawDamage ?? 0));
@@ -140,12 +140,13 @@ export class RangedCombatRules {
             if (final > 0 && final >= Math.ceil(maxHp / 2)) majorWoundTriggered = true;
 
             if (actor?.id) {
-                const actorKey = hit.targetActorUuid || actor.uuid || actor.id;
-                const prev = damageByActor.get(actorKey) ?? { damage: 0, majorWound: false };
+                const actorKey = RangedDamageState.storageKey(hit.targetActorUuid || actor.uuid || actor.id);
+                const prev = damageByActor.get(actorKey) ?? { damage: 0, majorWound: false, fatalHit: false };
                 damageByActor.set(actorKey, {
                     actorId: actor.id, actorUuid: hit.targetActorUuid || actor.uuid || "",
                     damage: prev.damage + final,
-                    majorWound: prev.majorWound || (final > 0 && final >= Math.ceil(maxHp / 2))
+                    majorWound: prev.majorWound || (final > 0 && final >= Math.ceil(maxHp / 2)),
+                    fatalHit: prev.fatalHit || (final > 0 && final >= maxHp)
                 });
             }
         }

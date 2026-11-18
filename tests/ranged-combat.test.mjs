@@ -8,10 +8,14 @@ import { CoC7SessionPatcher } from "../module/coc7/adapter/coc7-session-patcher.
 import { DamageRollSubmitter } from "../module/coc7/prompts/damage-roll-submitter.mjs";
 import { createRangedPromptApp } from "../module/coc7/prompts/ranged-prompt-app.mjs";
 import { CoC7CombatResultPresenter } from "../module/coc7/adapter/coc7-combat-result-presenter.mjs";
+import { CoC7Settings } from "../module/coc7/coc7-settings.mjs";
+import { RangedDamageState } from "../module/coc7/ranged/ranged-damage-state.mjs";
+import { CoC7Adapter } from "../module/coc7/coc7-adapter.mjs";
 
 if (!Math.clamp) Math.clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const actors = new Map();
+const uuidActors = new Map();
 globalThis.game = {
     user: { isGM: true, targets: { first: () => null } },
     actors,
@@ -31,7 +35,7 @@ const coreApi = {
             key, actorId: actor?.id ?? "", actorName: actor?.name ?? "", actorImg: "",
             label, targetValue, itemId, hasRolled: false, total: null, successLevel: "", isSuccess: false
         }),
-        resolveActor: (participant) => actors.get(participant?.actorId) ?? null
+        resolveActor: (participant) => uuidActors.get(participant?.actorUuid) ?? actors.get(participant?.actorId) ?? null
     }
 };
 setCoreApi(coreApi);
@@ -137,7 +141,7 @@ assert.equal(detected.tacticalFlags.inMelee, true);
 
 console.log("Ranged combat rules checks passed.");
 
-// Full-auto volleys retain their own targets and leave damage pending until cease fire.
+// Full-auto volleys require damage before another volley can be fired.
 const secondTarget = { id: "d2", name: "Guard", system: { attribs: { hp: { value: 10, max: 10 }, armor: { value: 1 } } } };
 actors.set(secondTarget.id, secondTarget);
 const autoWeapon = {
@@ -165,34 +169,6 @@ autoState.rangedFireMode = "auto";
 autoState.participants[1].hasRolled = true;
 let shooter = autoState.participants[0];
 const patcher = new CoC7SessionPatcher();
-assert.equal(patcher.validateSubmittedRoll(autoState, shooter, { modifierDice: 0 }), true);
-Object.assign(shooter, { hasRolled: true, total: 40, successLevel: "regular", rollBreakdown: { modifierDice: 0 } });
-assert.deepEqual(await strategy.onRollApplied(shooter, autoState), []);
-assert.equal(autoState.combatPhase, "attack");
-assert.equal(shooter.hasRolled, false);
-assert.equal(autoWeapon.system.ammo, 10);
-assert.equal(autoState.volleyLog[0].roundsHit, 3);
-
-autoState = patcher.transformSessionPatch(autoState, { switchRangedTarget: "second" });
-shooter = autoState.participants[0];
-assert.equal(autoState.traversePenaltyDice, 1);
-assert.equal(RangedCombatRules.computeModifierDice(autoState, shooter), -2);
-assert.equal(patcher.validateSubmittedRoll(autoState, shooter, { modifierDice: -1 }), false);
-assert.equal(patcher.validateSubmittedRoll(autoState, shooter, { modifierDice: -2 }), true);
-Object.assign(shooter, { hasRolled: true, total: 10, successLevel: "extreme", rollBreakdown: { modifierDice: -2 } });
-assert.deepEqual(await strategy.onRollApplied(shooter, autoState), []);
-assert.equal(autoWeapon.system.ammo, 4);
-assert.equal(autoState.volleyLog[1].roundsHit, 6);
-assert.equal(autoState.rangedHits.filter((hit) => hit.targetKey === "second" && hit.impale).length, 3);
-const excessiveTraverse = patcher.transformSessionPatch(autoState, { switchRangedTarget: "first" });
-assert.equal(patcher.validateSubmittedRoll(excessiveTraverse, shooter, { modifierDice: -2 }), false);
-autoState = patcher.transformSessionPatch(autoState, { stopAutoFire: true });
-assert.equal(autoState.combatPhase, "resolution");
-assert.equal(autoState.autoFireEnded, true);
-assert.equal(autoState.participants.find((entry) => entry.key === "attacker").hasRolled, true);
-assert.deepEqual(autoState.participants.filter((entry) => entry.key.startsWith("damage")).map((entry) => entry.targetKey), ["first", "second"]);
-
-// Each target's damage is rolled independently while preserving prior hit results.
 game.messages = new Map([["message", {}]]);
 coreApi.session.getSession = () => autoState;
 coreApi.visibility = { getCurrentRollMode: () => "publicroll", canViewParticipantRoll: () => true };
@@ -210,12 +186,54 @@ globalThis.Roll = class {
     constructor(formula) { this.formula = formula; this.terms = []; }
     async evaluate(options = {}) { this.total = options.maximize ? 6 : 4; return this; }
 };
+assert.equal(patcher.validateSubmittedRoll(autoState, shooter, { modifierDice: 0 }), true);
+Object.assign(shooter, { hasRolled: true, total: 40, successLevel: "regular", rollBreakdown: { modifierDice: 0 } });
+autoState.participants.push(...await strategy.onRollApplied(shooter, autoState));
+assert.equal(autoState.combatPhase, "attack");
+assert.equal(shooter.hasRolled, true);
+assert.equal(autoWeapon.system.ammo, 10);
+assert.equal(autoState.volleyLog[0].roundsHit, 3);
+assert.equal(patcher.validateSubmittedRoll(autoState, shooter, { modifierDice: -1 }), false);
+assert.equal((await patcher.transformSessionPatch(autoState, { stopAutoFire: true })).combatPhase, "attack");
 await DamageRollSubmitter.submit("message", "damage");
+assert.equal(shooter.hasRolled, true);
 assert.equal(autoState.rangedHitResults.length, 3);
+assert.equal(autoState.pendingRangedDamageByActor.d1.damage, 6);
+assert.equal(autoState.rangedDamageByActor.d1.preview, undefined);
+assert.equal(defenderActor.system.attribs.hp.value, 10);
+assert.equal(patcher.validateSubmittedRoll(autoState, shooter, { modifierDice: -1 }), false);
+assert.equal((await patcher.transformSessionPatch(autoState, { stopAutoFire: true })).combatPhase, "attack");
+autoState = await strategy.decideDamageConsequences(autoState, "decline");
+shooter = autoState.participants[0];
+assert.equal(shooter.hasRolled, false);
+
+autoState = patcher.transformSessionPatch(autoState, { switchRangedTarget: "second" });
+shooter = autoState.participants[0];
+assert.equal(autoState.traversePenaltyDice, 1);
+assert.equal(RangedCombatRules.computeModifierDice(autoState, shooter), -2);
+assert.equal(patcher.validateSubmittedRoll(autoState, shooter, { modifierDice: -1 }), false);
+assert.equal(patcher.validateSubmittedRoll(autoState, shooter, { modifierDice: -2 }), true);
+Object.assign(shooter, { hasRolled: true, total: 10, successLevel: "extreme", rollBreakdown: { modifierDice: -2 } });
+autoState.participants.push(...await strategy.onRollApplied(shooter, autoState));
+assert.equal(autoWeapon.system.ammo, 4);
+assert.equal(autoState.volleyLog[1].roundsHit, 6);
+assert.equal(autoState.rangedHits.filter((hit) => hit.targetKey === "second" && hit.impale).length, 3);
 await DamageRollSubmitter.submit("message", "damage_1");
 assert.equal(autoState.rangedHitResults.length, 9);
 assert.equal(autoState.rangedDamageByActor.d1.damage, 6);
 assert.equal(autoState.rangedDamageByActor.d2.damage, 24);
+assert.equal(secondTarget.system.attribs.hp.value, 10);
+autoState = await strategy.decideDamageConsequences(autoState, "decline");
+shooter = autoState.participants[0];
+const excessiveTraverse = patcher.transformSessionPatch(autoState, { switchRangedTarget: "first" });
+assert.equal(patcher.validateSubmittedRoll(excessiveTraverse, shooter, { modifierDice: -2 }), false);
+autoState = await patcher.transformSessionPatch(autoState, { stopAutoFire: true });
+assert.equal(autoState.combatPhase, "resolution");
+assert.equal(autoState.autoFireEnded, true);
+assert.equal(autoState.participants.find((entry) => entry.key === "attacker").hasRolled, true);
+assert.deepEqual(autoState.participants.filter((entry) => entry.key.startsWith("damage")).map((entry) => entry.targetKey), ["first", "second"]);
+
+// Each target's damage remains available in the resolved summary.
 assert.throws(() => RangedCombatRules.evaluateMultiHitDamage([{ targetActorId: "missing", rawDamage: 4 }], defenderActor));
 const resolvedContext = CoC7CombatResultPresenter.buildResolvedContext(autoState);
 assert.deepEqual(resolvedContext.resolvedRangedDamage.map((entry) => [entry.name, entry.damage]), [["Cultist", 6], ["Guard", 24]]);
@@ -229,9 +247,15 @@ let jamState = CoC7SessionFactory.createRanged({
 jamState.combatPhase = "attack";
 jamState.rangedFireMode = "auto";
 jamState.participants[1].hasRolled = true;
-const jamShooter = jamState.participants[0];
+let jamShooter = jamState.participants[0];
 Object.assign(jamShooter, { hasRolled: true, total: 30, successLevel: "hard" });
-await strategy.onRollApplied(jamShooter, jamState);
+jamState.participants.push(...await strategy.onRollApplied(jamShooter, jamState));
+jamState.rangedHitResults = jamState.rangedHits.map((hit) => ({ ...hit, rawDamage: 4 }));
+const firstJamDamage = jamState.participants.find((entry) => entry.key === "damage");
+Object.assign(firstJamDamage, { hasRolled: true, total: 12 });
+await strategy.onRollApplied(firstJamDamage, jamState);
+jamState = await strategy.decideDamageConsequences(jamState, "decline");
+jamShooter = jamState.participants[0];
 Object.assign(jamShooter, { hasRolled: true, total: 99, successLevel: "fumble" });
 const jamDamage = await strategy.onRollApplied(jamShooter, jamState);
 assert.equal(jamState.volleyLog[1].roundsFired, 4);
@@ -239,10 +263,25 @@ assert.equal(autoWeapon.system.ammo, 0);
 assert.equal(autoWeapon.jammed, true);
 assert.equal(jamState.combatPhase, "resolution");
 assert.equal(jamState.hitWinnerKey, "attacker");
-assert.equal(jamDamage.length, 1);
+assert.equal(jamDamage.length, 0);
+
+autoWeapon.system.ammo = 12;
+const missState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,
+    attackSkillLabel: "Firearms", attackTargetValue: 60
+});
+missState.combatPhase = "attack";
+missState.rangedFireMode = "auto";
+missState.participants[1].hasRolled = true;
+const missShooter = missState.participants[0];
+Object.assign(missShooter, { hasRolled: true, total: 95, successLevel: "failure" });
+assert.deepEqual(await strategy.onRollApplied(missShooter, missState), []);
+assert.equal(missShooter.hasRolled, false);
+assert.equal(missState.combatPhase, "attack");
+assert.equal(missState.rangedHits.length, 0);
 
 autoWeapon.system.ammo = 7;
-const depletedState = CoC7SessionFactory.createRanged({
+let depletedState = CoC7SessionFactory.createRanged({
     attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,
     attackSkillLabel: "Firearms", attackTargetValue: 60
 });
@@ -251,9 +290,16 @@ depletedState.rangedFireMode = "auto";
 depletedState.participants[1].hasRolled = true;
 const depletedShooter = depletedState.participants[0];
 Object.assign(depletedShooter, { hasRolled: true, total: 40, successLevel: "regular" });
-assert.equal((await strategy.onRollApplied(depletedShooter, depletedState)).length, 1);
-assert.equal(depletedState.combatPhase, "resolution");
+depletedState.participants.push(...await strategy.onRollApplied(depletedShooter, depletedState));
+assert.equal(depletedState.combatPhase, "attack");
 assert.equal(depletedState.remainingAmmo, 1);
+depletedState.rangedHitResults = depletedState.rangedHits.map((hit) => ({ ...hit, rawDamage: 4 }));
+const depletedDamage = depletedState.participants.find((entry) => entry.key === "damage");
+Object.assign(depletedDamage, { hasRolled: true, total: 12 });
+await strategy.onRollApplied(depletedDamage, depletedState);
+assert.equal(depletedState.combatPhase, "attack");
+depletedState = await strategy.decideDamageConsequences(depletedState, "decline");
+assert.equal(depletedState.combatPhase, "resolution");
 
 canvas.scene.grid.units = "ft";
 secondToken.center.x = 10;
@@ -280,6 +326,7 @@ if (!String.prototype.capitalize) String.prototype.capitalize = function () { re
 class TestPrompt {
     constructor(session) { this.session = session; this._messageId = "message"; }
     async _prepareContext() { return {}; }
+    _onRender() {}
     _isDelegatedToActivePlayer() { return false; }
     _formatModifierLabel(value) { return String(value); }
     _formatDiceFormulaLabel() { return ""; }
@@ -296,7 +343,12 @@ async function submitPromptRoll(_id, key, data) {
 }
 coreApi.orchestrator.submitParticipantRoll = submitPromptRoll;
 coreApi.orchestrator.updateSessionPatch = async (_id, patch) => {
-    autoState = patcher.transformSessionPatch(autoState, patch);
+    autoState = await patcher.transformSessionPatch(autoState, patch);
+};
+coreApi.orchestrator.submitConsequenceDecision = async (_id, decision) => {
+    if (autoState.pendingDamageKey === decision.participantKey) {
+        autoState = await strategy.decideDamageConsequences(autoState, decision.action);
+    }
 };
 autoWeapon.system.ammo = 12;
 autoState = CoC7SessionFactory.createRanged({
@@ -311,7 +363,129 @@ await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(prompt);
 assert.equal(autoState.volleyCount, 1);
 assert.equal(autoState.combatPhase, "attack");
 const promptContext = await prompt._prepareContext({});
-assert.equal(promptContext.canStopAutoFire, true);
+assert.equal(promptContext.canStopAutoFire, false);
+assert.equal(promptContext.canFireNext, false);
+assert.equal(promptContext.canRollDamage, true);
+await Prompt.DEFAULT_OPTIONS.actions.executeDamageRoll.call(prompt);
+prompt.session = autoState;
+const afterDamageContext = await prompt._prepareContext({});
+assert.equal(afterDamageContext.canStopAutoFire, false);
+assert.equal(afterDamageContext.canDecideDamage, true);
+assert.equal(afterDamageContext.damagePreviews[0].status, "ROE_COC7.DamagePreview.Unconscious");
+assert.equal(defenderActor.system.attribs.hp.value, 10);
+game.user.isGM = false;
+attackerActor.isOwner = true;
+const playerDamageContext = await prompt._prepareContext({});
+assert.deepEqual(playerDamageContext.damagePreviews, []);
+assert.equal(playerDamageContext.canDecideDamage, false);
+assert.equal(playerDamageContext.canFireNext, false);
+await assert.rejects(Prompt.DEFAULT_OPTIONS.actions.decideDamage.call(prompt, null, { dataset: { decision: "decline" } }), /Only a GM/);
+game.user.isGM = true;
+const queuedDamage = { key: "damage_1", hasRolled: false, actorId: "a1" };
+const queuedState = { ...autoState, combatPhase: "resolution", participants: [...autoState.participants, queuedDamage] };
+assert.equal(patcher.validateSubmittedRoll(queuedState, queuedDamage, { modifierDice: 0 }), false);
+assert.equal((await new Prompt(queuedState)._prepareContext({})).canRollDamage, false);
+
+// Foundry expands old UUID map keys; read them and prefer the newer escaped entry.
+function makeDamageTarget(uuid) {
+    return {
+        id: "d1", uuid, system: { attribs: { hp: { value: 10, max: 10 }, armor: { value: 0 } } },
+        statuses: new Set(), updates: 0,
+        async update(data) { this.updates++; this.system.attribs.hp.value = data["system.attribs.hp.value"]; },
+        async toggleStatusEffect(status) { this.statuses.add(status); }
+    };
+}
+const worldTarget = makeDamageTarget("Actor.d1");
+const tokenTarget = makeDamageTarget("Scene.scene.Token.token.Actor.d1");
+uuidActors.set(worldTarget.uuid, worldTarget);
+uuidActors.set(tokenTarget.uuid, tokenTarget);
+const worldDamage = { actorId: "d1", actorUuid: worldTarget.uuid, damage: 4, majorWound: false, fatalHit: false };
+const tokenDamage = { actorId: "d1", actorUuid: tokenTarget.uuid, damage: 2, majorWound: false, fatalHit: false };
+const calculated = RangedCombatRules.evaluateMultiHitDamage([
+    { targetActorUuid: worldTarget.uuid, targetActorId: "d1", rawDamage: 4 }
+], worldTarget);
+assert.ok(calculated.damageByActor["Actor%2Ed1"]);
+assert.equal(Object.keys(calculated.damageByActor)[0].includes("."), false);
+const legacyDamage = {
+    Actor: { d1: { ...worldDamage, damage: 1 } },
+    Scene: { scene: { Token: { token: { Actor: { d1: tokenDamage } } } } },
+    "Actor%2Ed1": worldDamage,
+    d1: { damage: 1 }
+};
+const compatibilityState = {
+    ...autoState,
+    pendingDamageKey: "",
+    rangedDamageDecisionStarted: false,
+    hasPendingConsequences: true,
+    rangedDamageByActor: legacyDamage,
+    rangedHits: [
+        { targetKey: "first", targetActorId: "d1", targetActorUuid: worldTarget.uuid, targetName: "World target" },
+        { targetKey: "second", targetActorId: "d1", targetActorUuid: tokenTarget.uuid, targetName: "Token target" }
+    ],
+    rangedCoverTargets: []
+};
+const compatibilityPrompt = new Prompt(compatibilityState);
+const compatibilityContext = await compatibilityPrompt._prepareContext({});
+const legacyAdapter = new CoC7Adapter();
+assert.equal(legacyAdapter.canResolveSession(compatibilityState), false);
+assert.equal(patcher.validateSubmittedRoll(compatibilityState, compatibilityState.participants[0], { modifierDice: -1 }), false);
+const discardedLegacy = await legacyAdapter.handleConsequenceDecision(compatibilityState, {
+    action: "decline", participantKey: "damage"
+});
+assert.equal(discardedLegacy.rangedDamageDecisionStarted, true);
+assert.equal(discardedLegacy.hasPendingConsequences, false);
+assert.equal(worldTarget.system.attribs.hp.value, 10);
+assert.deepEqual(compatibilityContext.damagePreviews.map((entry) => [entry.name, entry.remainingHp]), [
+    ["World target", 6], ["Token target", 8]
+]);
+assert.deepEqual(CoC7CombatResultPresenter.buildResolvedContext(compatibilityState).resolvedRangedDamage.map((entry) => [entry.name, entry.damage]), [
+    ["World target", 4], ["Token target", 2]
+]);
+game.user.isGM = false;
+const hiddenConditions = CoC7CombatResultPresenter.buildResolvedContext({
+    ...compatibilityState, majorWoundTriggered: true,
+    rangedDamageByActor: { d1: { ...worldDamage, majorWound: true } }
+});
+assert.equal(hiddenConditions.resolvedMajorWound, false);
+assert.equal(hiddenConditions.resolvedRangedDamage[0].majorWound, false);
+game.user.isGM = true;
+await strategy.applyConsequences(compatibilityState);
+assert.equal(worldTarget.system.attribs.hp.value, 6);
+assert.equal(tokenTarget.system.attribs.hp.value, 8);
+assert.equal(worldTarget.updates, 1);
+assert.equal(tokenTarget.updates, 1);
+const uuidOnlyState = {
+    ...compatibilityState,
+    rangedDamageByActor: { Actor: { d1: { damage: 2, majorWound: false } } }
+};
+assert.equal((await new Prompt(uuidOnlyState)._prepareContext({})).damagePreviews[0].remainingHp, 4);
+assert.equal(RangedDamageState.entries({ d1: { damage: 3 } })[0].actorId, "d1");
+
+// A missing synthetic target must not fall back to its world actor or crash the prompt.
+const missingUuid = "Scene.missing.Token.token.Actor.d1";
+const unavailableState = {
+    ...compatibilityState,
+    rangedDamageByActor: { [RangedDamageState.storageKey(missingUuid)]: { actorId: "d1", actorUuid: missingUuid, damage: 2 } },
+    rangedHits: [{ targetActorId: "d1", targetActorUuid: missingUuid, targetName: "Unavailable target" }]
+};
+const unavailablePrompt = new Prompt(unavailableState);
+const unavailablePreview = (await unavailablePrompt._prepareContext({})).damagePreviews[0];
+assert.equal(unavailablePreview.status, "ROE_COC7.DamagePreview.Unavailable");
+assert.equal(unavailablePreview.showHp, false);
+await assert.rejects(strategy.applyConsequences(unavailableState), /target actor .* is unavailable/);
+assert.equal(defenderActor.system.attribs.hp.value, 10);
+const partiallyUnavailableState = {
+    ...unavailableState,
+    rangedDamageByActor: { "Actor%2Ed1": worldDamage, ...unavailableState.rangedDamageByActor }
+};
+await assert.rejects(strategy.applyConsequences(partiallyUnavailableState), /target actor .* is unavailable/);
+assert.equal(worldTarget.updates, 1);
+assert.equal((await unavailablePrompt._prepareContext({})).damagePreviews[0].status, "ROE_COC7.DamagePreview.Unavailable");
+
+await Prompt.DEFAULT_OPTIONS.actions.decideDamage.call(prompt, null, { dataset: { decision: "decline" } });
+prompt.session = autoState;
+assert.equal(autoState.participants[0].hasRolled, false);
+assert.equal(defenderActor.system.attribs.hp.value, 10);
 prompt.element = { querySelector: () => ({ value: "second" }) };
 game.user.targets = new Set([secondToken]);
 await Prompt.DEFAULT_OPTIONS.actions.switchRangedTarget.call(prompt);
@@ -328,7 +502,8 @@ function verifyDamageDice(config) {
     return [];
 }
 coreApi.diceVisualizer.getDiceVisuals = verifyDamageDice;
-assert.equal((await prompt._prepareContext({})).canRollDamage, true);
+assert.equal((await prompt._prepareContext({})).canRollDamage, false);
+coreApi.diceVisualizer.getDiceVisuals = () => [];
 
 autoWeapon.system.ammo = 12;
 autoState = CoC7SessionFactory.createRanged({
@@ -340,6 +515,209 @@ autoState.participants[1].hasRolled = true;
 const singlePrompt = new Prompt(autoState);
 await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(singlePrompt);
 assert.equal(autoState.rangedShotsFired, 1);
+assert.equal(autoState.combatPhase, "attack");
+await Prompt.DEFAULT_OPTIONS.actions.executeDamageRoll.call(singlePrompt);
+await Prompt.DEFAULT_OPTIONS.actions.decideDamage.call(singlePrompt, null, { dataset: { decision: "decline" } });
 assert.equal(autoState.combatPhase, "resolution");
 assert.equal(autoWeapon.system.ammo, 11);
+
+// Multiple single shots also pause for damage and permit changing targets.
+attackerActor.items.set(revolver.id, revolver);
+revolver.system.ammo = 6;
+autoState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: revolver,
+    attackSkillLabel: "Firearms", attackTargetValue: 60
+});
+autoState.combatPhase = "attack";
+autoState.rangedFireMode = "multiple";
+autoState.participants[1].hasRolled = true;
+const multiplePrompt = new Prompt(autoState);
+await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(multiplePrompt);
+assert.equal((await multiplePrompt._prepareContext({})).canFireNext, false);
+await Prompt.DEFAULT_OPTIONS.actions.executeDamageRoll.call(multiplePrompt);
+await Prompt.DEFAULT_OPTIONS.actions.decideDamage.call(multiplePrompt, null, { dataset: { decision: "decline" } });
+multiplePrompt.session = autoState;
+multiplePrompt.element = { querySelector: () => ({ value: "second" }) };
+await Prompt.DEFAULT_OPTIONS.actions.switchRangedTarget.call(multiplePrompt);
+assert.equal(autoState.rangedTargetTokenId, "second");
+assert.equal(autoState.traversePenaltyDice, 0);
+multiplePrompt.session = autoState;
+await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(multiplePrompt);
+await Prompt.DEFAULT_OPTIONS.actions.executeDamageRoll.call(multiplePrompt);
+await Prompt.DEFAULT_OPTIONS.actions.decideDamage.call(multiplePrompt, null, { dataset: { decision: "decline" } });
+assert.equal(autoState.rangedHitResults.length, 2);
+assert.equal(autoState.rangedHitResults[0].targetActorId, "d1");
+assert.equal(autoState.rangedHitResults[1].targetActorId, "d2");
+assert.equal(autoState.combatPhase, "attack");
+await Prompt.DEFAULT_OPTIONS.actions.finishRangedAttack.call(multiplePrompt);
+assert.equal(autoState.combatPhase, "resolution");
+assert.equal(CoC7CombatResultPresenter.buildResolvedContext(autoState).resolvedCombatNarrative, "ROE_COC7.Ranged.ResolvedNarrative.MultiTargetHit");
+
+// World policy takes precedence over the local automatic-damage preference.
+let policy = "client";
+let automatic = true;
+let autoApply = false;
+game.user.id = "shooter";
+function readTestSetting(_module, key) {
+    if (key === "rangedDamageRollPolicy") return policy;
+    if (key === "automaticRangedDamage") return automatic;
+    if (key === "autoApplyRollConsequences") return autoApply;
+    return false;
+}
+game.settings.get = readTestSetting;
+assert.equal(CoC7Settings.shouldAutoRollRangedDamage(), true);
+policy = "manual";
+assert.equal(CoC7Settings.shouldAutoRollRangedDamage(), false);
+policy = "automatic";
+automatic = false;
+assert.equal(CoC7Settings.shouldAutoRollRangedDamage(), true);
+policy = "manual";
+automatic = true;
+autoWeapon.system.ammo = 12;
+autoState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,
+    attackSkillLabel: "Firearms", attackTargetValue: 60
+});
+autoState.combatPhase = "attack";
+autoState.rangedFireMode = "auto";
+autoState.participants[1].hasRolled = true;
+const automaticPrompt = new Prompt(autoState);
+await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(automaticPrompt);
+automaticPrompt._onRender({}, {});
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(autoState.participants.find((entry) => entry.key === "damage").hasRolled, false);
+policy = "automatic";
+automatic = false;
+automaticPrompt._onRender({}, {});
+automaticPrompt._onRender({}, {});
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(autoState.participants.find((entry) => entry.key === "damage").hasRolled, true);
+assert.equal(autoState.rangedHitResults.length, 6);
+assert.equal(autoState.participants.find((entry) => entry.key === "attacker").hasRolled, true);
+assert.equal(autoState.pendingDamageKey, "damage");
+
+// Consecutive decisions apply only their own shot, even when a middle shot is discarded.
+let manualUpdates = 0;
+defenderActor.statuses = new Set();
+defenderActor.update = async function (data) {
+    manualUpdates++;
+    this.system.attribs.hp.value = data["system.attribs.hp.value"];
+};
+defenderActor.toggleStatusEffect = async function (status) { this.statuses.add(status); };
+globalThis.Hooks = { callAll: () => {} };
+policy = "manual";
+revolver.system.ammo = 6;
+autoState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: revolver,
+    attackSkillLabel: "Handguns", attackTargetValue: 60
+});
+autoState.combatPhase = "attack";
+autoState.rangedFireMode = "multiple";
+autoState.participants[1].hasRolled = true;
+const decisionPrompt = new Prompt(autoState);
+for (const [decision, expectedHp] of [["apply", 6], ["decline", 6], ["apply", 2]]) {
+    decisionPrompt.session = autoState;
+    await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(decisionPrompt);
+    await Prompt.DEFAULT_OPTIONS.actions.executeDamageRoll.call(decisionPrompt);
+    decisionPrompt.session = autoState;
+    assert.equal((await decisionPrompt._prepareContext({})).canFireNext, false);
+    await Prompt.DEFAULT_OPTIONS.actions.decideDamage.call(decisionPrompt, null, { dataset: { decision } });
+    assert.equal(defenderActor.system.attribs.hp.value, expectedHp);
+}
+assert.equal(manualUpdates, 2);
+assert.equal(autoState.combatPhase, "resolution");
+assert.equal(autoState.consequencesApplied, true);
+await strategy.applyConsequences(autoState);
+assert.equal(manualUpdates, 2);
+assert.equal(autoState.rangedDamageByActor.d1.damage, 12);
+
+// Damage decisions remain separate after switching to another target.
+manualUpdates = 0;
+defenderActor.system.attribs.hp.value = 10;
+secondTarget.statuses = new Set();
+secondTarget.update = async function (data) { this.system.attribs.hp.value = data["system.attribs.hp.value"]; };
+secondTarget.toggleStatusEffect = async function (status) { this.statuses.add(status); };
+revolver.system.ammo = 6;
+autoState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: revolver,
+    attackSkillLabel: "Handguns", attackTargetValue: 60
+});
+autoState.combatPhase = "attack";
+autoState.rangedFireMode = "multiple";
+autoState.participants[1].hasRolled = true;
+const switchPrompt = new Prompt(autoState);
+await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(switchPrompt);
+await Prompt.DEFAULT_OPTIONS.actions.executeDamageRoll.call(switchPrompt);
+await Prompt.DEFAULT_OPTIONS.actions.decideDamage.call(switchPrompt, null, { dataset: { decision: "apply" } });
+switchPrompt.session = autoState;
+switchPrompt.element = { querySelector: () => ({ value: "second" }) };
+await Prompt.DEFAULT_OPTIONS.actions.switchRangedTarget.call(switchPrompt);
+await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(switchPrompt);
+await Prompt.DEFAULT_OPTIONS.actions.executeDamageRoll.call(switchPrompt);
+await Prompt.DEFAULT_OPTIONS.actions.decideDamage.call(switchPrompt, null, { dataset: { decision: "apply" } });
+await Prompt.DEFAULT_OPTIONS.actions.finishRangedAttack.call(switchPrompt);
+assert.equal(defenderActor.system.attribs.hp.value, 6);
+assert.equal(secondTarget.system.attribs.hp.value, 5);
+await strategy.applyConsequences(autoState);
+assert.equal(defenderActor.system.attribs.hp.value, 6);
+assert.equal(secondTarget.system.attribs.hp.value, 5);
+
+// Automatic consequence application occurs before the next volley and is not repeated at cease fire.
+autoApply = true;
+let hpUpdates = 0;
+defenderActor.system.attribs.hp.value = 10;
+defenderActor.statuses = new Set();
+defenderActor.update = async function (data) {
+    hpUpdates++;
+    this.system.attribs.hp.value = data["system.attribs.hp.value"];
+};
+defenderActor.toggleStatusEffect = async function (status) { this.statuses.add(status); };
+globalThis.Hooks = { callAll: () => {} };
+autoWeapon.system.ammo = 12;
+autoState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,
+    attackSkillLabel: "Firearms", attackTargetValue: 60
+});
+autoState.combatPhase = "attack";
+autoState.rangedFireMode = "auto";
+autoState.participants[1].hasRolled = true;
+const applyPrompt = new Prompt(autoState);
+await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(applyPrompt);
+await Prompt.DEFAULT_OPTIONS.actions.executeDamageRoll.call(applyPrompt);
+assert.equal(hpUpdates, 1);
+assert.equal(defenderActor.system.attribs.hp.value, 0);
+assert.equal(autoState.pendingDamageKey, "");
+await Prompt.DEFAULT_OPTIONS.actions.stopAutoFire.call(applyPrompt);
+assert.equal(hpUpdates, 1);
+assert.equal(defenderActor.system.attribs.hp.value, 0);
+assert.equal(defenderActor.statuses.has("unconscious"), true);
+assert.equal(defenderActor.statuses.has("dead"), false);
+assert.equal(autoState.hasPendingConsequences, false);
+
+// Automatic damage applies each volley exactly once, including the final volley.
+hpUpdates = 0;
+defenderActor.system.attribs.hp.value = 100;
+defenderActor.system.attribs.hp.max = 100;
+defenderActor.statuses.clear();
+autoWeapon.system.ammo = 12;
+autoState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,
+    attackSkillLabel: "Firearms", attackTargetValue: 60
+});
+autoState.combatPhase = "attack";
+autoState.rangedFireMode = "auto";
+autoState.participants[1].hasRolled = true;
+const autoSeriesPrompt = new Prompt(autoState);
+await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(autoSeriesPrompt);
+await Prompt.DEFAULT_OPTIONS.actions.executeDamageRoll.call(autoSeriesPrompt);
+assert.equal(defenderActor.system.attribs.hp.value, 82);
+assert.equal(autoState.participants[0].hasRolled, false);
+await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(autoSeriesPrompt);
+await Prompt.DEFAULT_OPTIONS.actions.executeDamageRoll.call(autoSeriesPrompt);
+assert.equal(defenderActor.system.attribs.hp.value, 64);
+assert.equal(hpUpdates, 2);
+assert.equal(autoState.combatPhase, "resolution");
+assert.equal(autoState.consequencesApplied, true);
+await strategy.applyConsequences(autoState);
+assert.equal(hpUpdates, 2);
 console.log("Full-auto volley checks passed.");

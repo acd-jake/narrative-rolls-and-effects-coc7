@@ -2,6 +2,7 @@ import { RollVisibilityPolicy } from "../../core-bridge.mjs";
 import { COC7_MODULE_ID } from "../coc7-settings.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 import { CombatRollStrategy } from "../strategies/combat-roll-strategy.mjs";
+import { RangedDamageState } from "../ranged/ranged-damage-state.mjs";
 
 /** Builds resolved prompt and chat-card contexts separately for melee and ranged combat. */
 export class CoC7CombatResultPresenter {
@@ -95,20 +96,19 @@ export class CoC7CombatResultPresenter {
     }
 
     static #buildRangedDamage(session) {
-        if (session.rangedFireMode !== "auto" || !session.rangedDamageByActor) return [];
-        return Object.entries(session.rangedDamageByActor).map(([key, info]) =>
-            this.#buildRangedDamageEntry(session, key, info)
+        if (!["auto", "multiple"].includes(session.rangedFireMode) || !session.rangedDamageByActor) return [];
+        return RangedDamageState.entries(session.rangedDamageByActor).map((entry) =>
+            this.#buildRangedDamageEntry(session, entry)
         );
     }
 
-    static #buildRangedDamageEntry(session, key, info) {
-        const hit = session.rangedHits?.find((entry) =>
-            (entry.targetActorUuid || entry.targetActorId) === key || !entry.targetActorUuid && entry.targetActorId === info.actorId
-        );
+    static #buildRangedDamageEntry(session, entry) {
+        const { info } = entry;
+        const hit = session.rangedHits?.find((hitEntry) => RangedDamageState.matchesHit(entry, hitEntry));
         const participant = session.participants?.find((entry) => entry.targetKey === hit?.targetKey);
         return {
             key: participant?.key, name: hit?.targetName ?? "", damage: info.damage,
-            majorWound: info.majorWound,
+            majorWound: Boolean(game.user.isGM && info.majorWound),
             canView: Boolean(participant && RollVisibilityPolicy.canViewParticipantRoll(participant, session))
         };
     }
@@ -124,6 +124,11 @@ export class CoC7CombatResultPresenter {
         }
         if (mode === "burst") return game.i18n.format(hitCount > 0 ? "ROE_COC7.Ranged.ResolvedNarrative.BurstHit" : "ROE_COC7.Ranged.ResolvedNarrative.BurstMiss", data);
         if (mode === "auto") return game.i18n.format(hitCount > 0 ? "ROE_COC7.Ranged.ResolvedNarrative.AutoHit" : "ROE_COC7.Ranged.ResolvedNarrative.AutoMiss", data);
+        const targetKeys = new Set((session.rangedShots ?? []).filter((shot) => !shot.isTargetSwitch)
+            .map((shot) => shot.targetKey || shot.targetActorId || shot.targetName));
+        if (targetKeys.size > 1) {
+            return game.i18n.format(hitCount > 0 ? "ROE_COC7.Ranged.ResolvedNarrative.MultiTargetHit" : "ROE_COC7.Ranged.ResolvedNarrative.MultiTargetMiss", data);
+        }
         if (mode === "multiple" || shotCount > 1) return game.i18n.format(hitCount > 0 ? "ROE_COC7.Ranged.ResolvedNarrative.MultiHit" : "ROE_COC7.Ranged.ResolvedNarrative.MultiMiss", data);
         return game.i18n.format(hitCount > 0 ? "ROE_COC7.Combat.ResolvedNarrative.RangedHit" : "ROE_COC7.Combat.ResolvedNarrative.RangedMiss", data);
     }
@@ -167,7 +172,7 @@ export class CoC7CombatResultPresenter {
                 resolvedDamageTargetName: canViewDmg ? damageTarget?.actorName || game.i18n.localize("ROE_COC7.Combat.UnknownTarget") : "",
                 resolvedFinalDamage: session.finalDamage ?? 0,
                 resolvedArmorApplied: Number(session.armorApplied ?? 0),
-                resolvedMajorWound: Boolean(canViewDmg && session.majorWoundTriggered)
+                resolvedMajorWound: Boolean(game.user.isGM && canViewDmg && session.majorWoundTriggered)
             }
         };
     }

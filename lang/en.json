@@ -49,7 +49,27 @@
         "Hint": "Chooses whether resolved combat prompts display an atmospheric scene summary or a side-by-side duel comparison.",
         "Narrative": "Narrative Scene & Rule Chips",
         "Duel": "Side-by-Side Duel Comparison"
+      },
+      "AutomaticRangedDamage": {
+        "Name": "Automatically Roll Ranged Damage",
+        "Hint": "Roll damage immediately after your ranged hits. The Keeper's world policy can override this preference."
+      },
+      "RangedDamageRollPolicy": {
+        "Name": "Ranged Damage Roll Policy",
+        "Hint": "Choose whether each client decides how to roll ranged damage or enforce one mode for everyone.",
+        "Client": "Use each client's preference",
+        "Automatic": "Automatic for everyone",
+        "Manual": "Manual for everyone"
       }
+    },
+    "DamagePreview": {
+      "Dead": "Would be incapacitated (dead)",
+      "Dying": "Would be incapacitated (unconscious and dying)",
+      "Unconscious": "Would be incapacitated (unconscious)",
+      "MajorWound": "Would suffer a major wound; a consciousness check may be required",
+      "Active": "Would remain above zero hit points",
+      "RemainingHP": "{hp} HP after applying damage",
+      "Unavailable": "Damage preview unavailable: the target actor cannot be found."
     },
     "Roll": {
       "PushRoll": "Push Roll",
@@ -171,6 +191,8 @@
       "TraversePenaltyNote": "Traverse penalty ({distance} yds): {penalty} penalty dice",
       "WeaponJammed": "Weapon malfunction! Auto-fire halted.",
       "AutoPenaltyLimit": "The next volley exceeds the two-penalty-dice limit. Cease fire or choose a closer target.",
+      "DamageRequired": "Roll damage for this hit before firing again.",
+      "AutomaticDamageFailed": "Automatic damage rolling failed. Use the damage button to try again.",
       "FireModes": {
         "single": "Single Shot",
         "multiple": "Multiple Shots",
@@ -190,6 +212,8 @@
       "ResolvedNarrative": {
         "MultiHit": "{attacker} fires {shots} shots with {weapon} and lands {hits} hits on {defender}.",
         "MultiMiss": "{attacker} fires {shots} shots with {weapon} at {defender}, missing every shot.",
+        "MultiTargetHit": "{attacker} fires {shots} shots with {weapon} at multiple targets and scores {hits} hits.",
+        "MultiTargetMiss": "{attacker} fires {shots} shots with {weapon} at multiple targets, missing every shot.",
         "BurstHit": "{attacker} fires a burst with {weapon} and scores {hits} hits on {defender}.",
         "BurstMiss": "{attacker}'s burst with {weapon} misses {defender}.",
         "AutoHit": "{attacker} fires {shots} full-auto volleys with {weapon} and scores {hits} hits.",
@@ -302,9 +326,14 @@
       "DamageRoll": "Damage Roll",
       "ImpalingExtreme": "Impaling / Extreme",
       "RollDamageBtn": "Roll Damage",
+      "ApplyDamageDecisionBtn": "Apply Damage",
+      "DeclineDamageDecisionBtn": "Discard Damage",
+      "AwaitingDamageDecision": "Waiting for the Keeper.",
+      "DamageDecisionUnavailable": "The core module must be updated before damage decisions can be made.",
+      "DamageResult": "Damage result: {damage} HP",
       "OutcomeMissOrDodged": "Attack missed or dodged.",
       "UnknownTarget": "the target",
-      "OutcomeDamageSummary": "{winner} hits {target} and deals {damage} HP damage.",
+      "OutcomeDamageSummary": "{winner} hits {target}; damage result: {damage} HP.",
       "OutcomeHitPendingDamage": "{winner} hits {target} – damage roll pending.",
       "OutcomeHitHiddenDamage": "{winner} hits {target} (damage hidden).",
       "OutcomeManeuverSuccess": "{winner} successfully executes “{maneuver}” against {target}.",

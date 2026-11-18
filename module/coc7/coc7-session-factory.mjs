@@ -236,7 +236,7 @@ export class CoC7SessionFactory {
         const attacker = isCombat ? data.participants?.find((p) => p.key === "attacker") ?? null : null;
         const defender = isCombat ? data.participants?.find((p) => p.key === "defender") ?? null : null;
         const damageRoll = isCombat ? data.participants?.find((p) => p.key === "damage") ?? null : null;
-        const autoDamageRolls = data.rollType === "ranged" && data.rangedFireMode === "auto"
+        const rangedDamageRolls = data.rollType === "ranged"
             ? data.participants?.filter((p) => p.key === "damage" || p.key.startsWith("damage_"))
                 .map((p) => ({ ...p, isPublicRoll: !p.rollMode || p.rollMode === "publicroll" })) ?? [] : [];
         const showCombatOpponentPhase = Boolean(isCombat && defender && data.combatType === "melee");
@@ -315,9 +315,9 @@ export class CoC7SessionFactory {
             attacker,
             defender,
             damageRoll,
-            autoDamageRolls,
+            rangedDamageRolls,
             showCombatResolution: allRolled && Boolean(data.outcomeHeadline || hasSanityResult || hasCombatDamage)
-                || data.rollType === "ranged" && data.rangedFireMode === "auto" && data.combatPhase === "resolution",
+                || data.rollType === "ranged" && data.combatPhase === "resolution",
             showCombatOpponentPhase,
             defenderReactionLabel: isCombat ? game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${reactionKey}`) : ""
         };

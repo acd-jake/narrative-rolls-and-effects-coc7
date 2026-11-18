@@ -104,6 +104,33 @@
 
     {{#if isPhaseAttack}}
     <div class="prompt-player-controls {{#if isAttackerDelegated}}gm-delegated-region{{/if}}">
+        {{#each damagePreviews}}
+        <div class="pending-badge"><strong>{{name}}</strong>: {{status}}
+            {{#if showHp}}({{localize "ROE_COC7.DamagePreview.RemainingHP" hp=remainingHp}}){{/if}}
+        </div>
+        {{/each}}
+        {{#if pendingDamageDecision}}
+        {{#if canDecideDamage}}
+        <div class="gm-exclusive-zone">
+            <button type="button" class="prompt-action-btn luck" data-action="decideDamage" data-decision="apply">
+                {{localize "ROE_COC7.Combat.ApplyDamageDecisionBtn"}}
+            </button>
+            <button type="button" class="prompt-action-btn secondary" data-action="decideDamage" data-decision="decline">
+                {{localize "ROE_COC7.Combat.DeclineDamageDecisionBtn"}}
+            </button>
+        </div>
+        {{else}}
+        <div class="pending-badge">{{localize "ROE_COC7.Combat.AwaitingDamageDecision"}}</div>
+        {{/if}}
+        {{/if}}
+        {{#if pendingShotDamage}}
+        <div class="pending-badge">{{localize "ROE_COC7.Ranged.DamageRequired"}}</div>
+        {{#if canRollDamage}}
+        <button type="button" class="prompt-action-btn push" data-action="executeDamageRoll">
+            <i class="fa-solid fa-dice"></i> {{localize "ROE_COC7.Combat.RollDamageBtn"}}
+        </button>
+        {{/if}}
+        {{/if}}
         {{#if targetTookCover}}
         <div class="pending-badge">
             <i class="fa-solid fa-person-running"></i>
@@ -212,7 +239,7 @@
     </header>
 
     {{#if hasDamageStep}}
-    {{#if isAutoFire}}
+    {{#if hasMultipleDamageEntries}}
     {{#each damageEntries}}
     <div class="combined-check-row">
         <span><i class="fa-solid fa-burst"></i> {{label}}</span>
@@ -240,6 +267,26 @@
     <button type="button" class="prompt-action-btn push {{#if isDamageDelegated}}gm-delegated{{/if}}" data-action="executeDamageRoll">
         <i class="fa-solid fa-dice"></i> {{localize "ROE_COC7.Combat.RollDamageBtn"}}
     </button>
+    {{/if}}
+    {{/if}}
+
+    {{#each damagePreviews}}
+    <div class="pending-badge"><strong>{{name}}</strong>: {{status}}
+        {{#if showHp}}({{localize "ROE_COC7.DamagePreview.RemainingHP" hp=remainingHp}}){{/if}}
+    </div>
+    {{/each}}
+    {{#if pendingDamageDecision}}
+    {{#if canDecideDamage}}
+    <div class="gm-exclusive-zone">
+        <button type="button" class="prompt-action-btn luck" data-action="decideDamage" data-decision="apply">
+            {{localize "ROE_COC7.Combat.ApplyDamageDecisionBtn"}}
+        </button>
+        <button type="button" class="prompt-action-btn secondary" data-action="decideDamage" data-decision="decline">
+            {{localize "ROE_COC7.Combat.DeclineDamageDecisionBtn"}}
+        </button>
+    </div>
+    {{else}}
+    <div class="pending-badge">{{localize "ROE_COC7.Combat.AwaitingDamageDecision"}}</div>
     {{/if}}
     {{/if}}
 

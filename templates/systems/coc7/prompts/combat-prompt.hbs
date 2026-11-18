@@ -171,6 +171,27 @@
     {{/if}}
     {{/if}}
 
+    {{#if damagePreviewLabel}}
+    <div class="pending-badge">{{damagePreviewTarget}}: {{damagePreviewLabel}}
+        {{#if showDamagePreviewHp}}({{localize "ROE_COC7.DamagePreview.RemainingHP" hp=damagePreviewHp}}){{/if}}
+    </div>
+    {{/if}}
+
+    {{#if pendingDamageDecision}}
+    {{#if canDecideDamage}}
+    <div class="gm-exclusive-zone">
+        <button type="button" class="prompt-action-btn luck" data-action="decideDamage" data-decision="apply">
+            {{localize "ROE_COC7.Combat.ApplyDamageDecisionBtn"}}
+        </button>
+        <button type="button" class="prompt-action-btn secondary" data-action="decideDamage" data-decision="decline">
+            {{localize "ROE_COC7.Combat.DeclineDamageDecisionBtn"}}
+        </button>
+    </div>
+    {{else}}
+    <div class="pending-badge">{{localize "ROE_COC7.Combat.AwaitingDamageDecision"}}</div>
+    {{/if}}
+    {{/if}}
+
     {{#if showPlayerWaitingHint}}
     <div class="prompt-phase-summary">
         <i class="fa-solid fa-hourglass-half"></i> {{playerWaitingHint}}

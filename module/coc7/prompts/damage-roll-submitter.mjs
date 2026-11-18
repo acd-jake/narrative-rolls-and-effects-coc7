@@ -1,5 +1,6 @@
 import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy } from "../../core-bridge.mjs";
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
+import { CombatDamageDecision } from "../strategies/combat-damage-decision.mjs";
 
 /**
  * Rolls pending damage for melee or multi-hit ranged attacks and submits the result.
@@ -9,15 +10,17 @@ export class DamageRollSubmitter {
     static async submit(messageId, participantKey = "damage") {
         const sys = SessionStore.getSession(game.messages.get(messageId));
         const damageEntry = sys?.participants?.find((p) => p.key === participantKey);
-        if (!damageEntry || damageEntry.hasRolled || sys.isResolved) return;
+        if (!damageEntry || damageEntry.hasRolled || sys.isResolved || CombatDamageDecision.pendingKey(sys)) return;
 
         if (sys.rollType === "ranged" && Array.isArray(sys.rangedHits) && sys.rangedHits.length > 0) {
             const hitResults = [];
             let totalRaw = 0;
             let lastBreakdown = null;
 
-            const hits = damageEntry.targetKey
-                ? sys.rangedHits.filter((hit) => hit.targetKey === damageEntry.targetKey) : sys.rangedHits;
+            const hits = damageEntry.shotNumber
+                ? sys.rangedHits.filter((hit) => hit.shotNumber === damageEntry.shotNumber)
+                : damageEntry.targetKey
+                    ? sys.rangedHits.filter((hit) => hit.targetKey === damageEntry.targetKey) : sys.rangedHits;
             for (const hit of hits) {
                 const formula = hit.formula || damageEntry.diceFormula || "1d6";
                 const roll = await new Roll(formula).evaluate(hit.impale ? { maximize: true } : {});
@@ -27,7 +30,6 @@ export class DamageRollSubmitter {
                 lastBreakdown = CoC7CheckResolver.buildBreakdown(roll, 0, "");
             }
 
-            await UniversalRollOrchestrator.updateSessionPatch(messageId, { rangedHitResults: [...(sys.rangedHitResults ?? []), ...hitResults] });
             await UniversalRollOrchestrator.submitParticipantRoll(messageId, participantKey, {
                 total: totalRaw,
                 successLevel: "regular",
@@ -35,7 +37,8 @@ export class DamageRollSubmitter {
                 modifierDice: 0,
                 rollMode: RollVisibilityPolicy.getCurrentRollMode(),
                 rollerUserId: game.user.id,
-                rollBreakdown: lastBreakdown
+                rollBreakdown: lastBreakdown,
+                rangedHitResults: hitResults
             });
             return;
         }

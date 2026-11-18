@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Damage consequence previews and immediate ranged damage rolls with client preferences and a Keeper override.
 - Full-auto ranged volleys with target traverse penalties, ammunition tracking, and cease fire.
 - Standalone Call of Cthulhu 7th Edition companion module for Narrative Rolls and Effects.
 - Hook-based adapter registration without cross-module ES imports.
@@ -19,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Configurable resolved combat prompt layout setting (`combatResolvedLayout`) supporting both narrative scene summaries and side-by-side duel comparisons with separated mechanical consequences.
 
 ### Changed
+- The Keeper decides each combat damage roll before further ranged fire; previews are Keeper-only.
 - Combat results now identify who receives the damage.
 - Resolved chat cards now show the same results as roll prompts.
 - Failed pushed checks are highlighted in prompts and chat cards to draw attention to their consequences.
@@ -34,6 +36,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Placed a unified post-roll decline button below Luck and Push options with dynamic labels based on available choices.
 
 ### Fixed
+- Prevent ranged damage previews from failing when Foundry expands saved actor UUID keys.
+- Prevented accumulated ranged hits from being treated as a single lethal hit.
 - Restored the display of resolved melee combat results.
 - Kept modifier sliders in preparation and summarized active bonus or penalty dice in roll prompts.
 - Pointed bonus and penalty dice visuals to this module's assets and marked chat cards with the CoC7 system identifier.

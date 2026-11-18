@@ -12,7 +12,7 @@ export class CombatRollStrategy extends BaseRollStrategy {
         new (getPromptApp("combat"))(options).render(true);
     }
 
-    /** @override */
+    /** Processes melee checks and prepares damage for a GM decision or automatic application. */
     async onRollApplied(participant, state) {
         if (!participant?.hasRolled) return [];
 
@@ -32,14 +32,12 @@ export class CombatRollStrategy extends BaseRollStrategy {
             state.armorApplied = armor;
             state.finalDamage = finalDamage;
             state.majorWoundTriggered = majorWoundTriggered;
-            state.hasPendingConsequences = finalDamage > 0 && !state.consequencesApplied;
+            state.pendingDamageKey = participant.key;
+            state.hasPendingConsequences = true;
+            state.consequencesApplied = false;
 
             const autoApply = Boolean(game.settings?.get(MODULE_ID, "autoApplyRollConsequences"));
-            if (finalDamage > 0 && autoApply) {
-                await this.applyConsequences(state);
-                state.consequencesApplied = true;
-                state.hasPendingConsequences = false;
-            }
+            if (autoApply) await this.#completeDamageDecision(state, "apply");
             return [];
         }
 
@@ -53,6 +51,20 @@ export class CombatRollStrategy extends BaseRollStrategy {
         }
 
         return [];
+    }
+
+    /** Applies or discards the pending melee damage without revealing the decision. */
+    async decideDamageConsequences(session, action) {
+        const state = { ...session };
+        await this.#completeDamageDecision(state, action);
+        return state;
+    }
+
+    async #completeDamageDecision(state, action) {
+        if (action === "apply") await this.applyConsequences(state);
+        state.pendingDamageKey = "";
+        state.hasPendingConsequences = false;
+        state.consequencesApplied = true;
     }
 
     async _advanceToResolution(state) {
@@ -97,7 +109,7 @@ export class CombatRollStrategy extends BaseRollStrategy {
     async applyConsequences(state) {
         const targetParticipant = CombatRollStrategy.getDamageTarget(state);
         const targetActor = this.#resolveActor(targetParticipant);
-        if (!targetActor) return;
+        if (!targetActor) throw new Error("Cannot apply combat consequences without a target actor.");
 
         if (state.hitWinnerKey === "defender" && state.defenderReaction === "maneuver") {
             const conditionByManeuver = {

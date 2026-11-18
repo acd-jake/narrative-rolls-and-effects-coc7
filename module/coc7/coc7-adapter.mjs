@@ -15,6 +15,7 @@ import { CoC7PostRollHandler } from "./adapter/coc7-post-roll-handler.mjs";
 import { CoC7SessionPatcher } from "./adapter/coc7-session-patcher.mjs";
 import { CoC7PromptPresenter } from "./adapter/coc7-prompt-presenter.mjs";
 import { CoC7DicePresenter } from "./adapter/coc7-dice-presenter.mjs";
+import { CombatDamageDecision } from "./strategies/combat-damage-decision.mjs";
 
 /** Connects CoC7 roll creation, prompts, consequences, and Foundry sheet interactions to the core API. */
 export class CoC7Adapter {
@@ -147,6 +148,19 @@ export class CoC7Adapter {
     /** Verifies that a submitted roll uses the modifier dice allowed by its session state. */ validateSubmittedRoll(session, participant, rollData) { return this.#sessionPatcher.validateSubmittedRoll(session, participant, rollData); }
     /** Rolls and packages a participant's pushed check for the core orchestrator. */ async executePushRoll(session, participantKey) { return this.#postRollHandler.executePushRoll(session, participantKey); }
     /** Applies CoC7-specific resets and defender-reaction changes to session patches. */ transformSessionPatch(session, patch) { return this.#sessionPatcher.transformSessionPatch(session, patch); }
+    /** Handles a GM decision for a pending combat damage roll. */
+    async handleConsequenceDecision(session, decision) {
+        if (!["combat", "ranged"].includes(session.rollType)) throw new Error("Damage decisions require a combat session.");
+        if (!["apply", "decline"].includes(decision?.action)) throw new Error("Invalid damage consequence decision.");
+        const pendingKey = CombatDamageDecision.pendingKey(session);
+        if (!pendingKey || pendingKey !== decision.participantKey) return session;
+        return this.getStrategy(session.rollType).decideDamageConsequences(session, decision.action);
+    }
+
+    /** Prevents a combat session from resolving while the GM's damage decision is pending. */
+    canResolveSession(session) { return !CombatDamageDecision.pendingKey(session); }
+    /** Prevents generic consequence application from bypassing a pending damage decision. */
+    canApplySessionConsequences(session) { return !CombatDamageDecision.pendingKey(session); }
     /** Applies a participant's post-roll choice and returns the updated session and finalization decision. */ async handlePostRollAction(session, participantKey, actionId, payload) { return this.#postRollHandler.handlePostRollAction(session, participantKey, actionId, payload); }
     /** Calculates available Luck and push actions for a rolled participant. */ evaluateParticipantOptions(participant, session, isDelegatedToPlayer) { return this.#postRollHandler.evaluateParticipantOptions(participant, session, isDelegatedToPlayer); }
     /** Returns participants shown in modifier preparation, or an empty list otherwise. */ buildPreparationParticipants(session) { return this.#promptPresenter.buildPreparationParticipants(session); }

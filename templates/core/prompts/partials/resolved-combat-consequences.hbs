@@ -5,7 +5,7 @@
     {{#each resolvedRangedDamage}}
     <div class="resolved-combat-damage" {{#if canView}}data-inspect-key="{{key}}"{{/if}}>
         {{#if canView}}{{name}}: {{/if}}<i class="fa-solid fa-burst"></i>
-        {{#if canView}}-{{damage}} {{localize "ROE_COC7.Resources.HPAbbr"}}{{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
+        {{#if canView}}{{localize "ROE_COC7.Combat.DamageResult" damage=damage}}{{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
         {{#if majorWound}}{{#if canView}}<i class="fa-solid fa-skull-crossbones" title="{{localize 'ROE_COC7.Conditions.MajorWound'}}"></i>{{/if}}{{/if}}
     </div>
     {{/each}}
@@ -14,7 +14,7 @@
         {{#if resolvedCanViewDamage}}{{resolvedDamageTargetName}}: {{/if}}
         <i class="fa-solid fa-burst"></i>
         {{#if resolvedCanViewDamage}}
-        -{{resolvedFinalDamage}} {{localize "ROE_COC7.Resources.HPAbbr"}}
+        {{localize "ROE_COC7.Combat.DamageResult" damage=resolvedFinalDamage}}
         {{#if resolvedArmorApplied}}<small>({{resolvedArmorApplied}} {{localize "ROE_COC7.Combat.Armor"}})</small>{{/if}}
         {{else}}
         {{localize "ROE.RollSession.HiddenRoll"}}

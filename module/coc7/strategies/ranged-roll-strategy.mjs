@@ -4,6 +4,7 @@ import { CombatConsequenceApplier } from "./combat-consequence-applier.mjs";
 import { getPromptApp } from "../prompts/prompt-app-registry.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 import { RangedCombatRules } from "../ranged/ranged-combat-rules.mjs";
+import { RangedDamageState } from "../ranged/ranged-damage-state.mjs";
 import { RangedWeaponService } from "../ranged/ranged-weapon-service.mjs";
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 
@@ -27,29 +28,34 @@ export class RangedRollStrategy extends BaseRollStrategy {
         }
 
         if (participant.key === "attacker") {
-            if (state.rangedFireMode === "auto") return this.#applyVolley(participant, state);
-            state.combatPhase = "resolution";
-            const followUps = this.advanceToResolution(state);
-            this.#flagPendingCoverConsequence(state);
-            return followUps;
+            return this.#applyShot(participant, state);
         }
 
         if (participant.key === "damage" || participant.key.startsWith("damage_")) {
+            if (Array.isArray(participant.rangedHitResults)) {
+                state.rangedHitResults = [...(state.rangedHitResults ?? []), ...participant.rangedHitResults];
+            }
             await this.#resolveDamageOutcome(state, participant);
-            this.#flagPendingCoverConsequence(state);
+            if (game.settings?.get(MODULE_ID, "autoApplyRollConsequences")) {
+                await this.#completeDamageDecision(state, "apply");
+            }
             return [];
         }
 
         return [];
     }
 
-    async #applyVolley(attacker, state) {
+    async #applyShot(attacker, state) {
         const actor = SessionStore.resolveActor(attacker);
         const weapon = actor?.items?.get?.(state.weaponId || attacker.itemId);
-        if (!weapon) throw new Error("Cannot fire a volley without the ranged weapon.");
+        if (!weapon) throw new Error("Cannot fire without the ranged weapon.");
         const profile = RangedWeaponService.getWeaponCombatProfile(weapon, attacker.targetValue);
-        const roundsFired = profile.tracksAmmo ? Math.min(profile.autoVolleySize, profile.ammo) : profile.autoVolleySize;
-        if (roundsFired < 3) throw new Error("At least three rounds are required to fire a volley.");
+        const mode = state.rangedFireMode || "single";
+        const needed = RangedCombatRules.getBulletsForNextAction(mode, profile);
+        const roundsFired = mode === "auto" && profile.tracksAmmo ? Math.min(needed, profile.ammo) : needed;
+        if (profile.tracksAmmo && (profile.ammo < roundsFired || mode === "auto" && roundsFired < 3)) {
+            throw new Error("The weapon does not have enough ammunition to fire.");
+        }
         const target = state.participants.find((entry) => entry.key === "defender");
         const modifier = RangedCombatRules.computeModifierDice(state, attacker);
         const difficulty = RangedCombatRules.computeRequiredDifficulty(state, modifier);
@@ -59,49 +65,66 @@ export class RangedRollStrategy extends BaseRollStrategy {
             >= (CoC7CheckResolver.LEVEL_RANK[difficulty] ?? 2);
         attacker.isSuccess = isHit;
         const { hits, impales } = RangedCombatRules.computeHitsForShot({
-            isHit, successLevel: attacker.successLevel, fireMode: "auto",
+            isHit, successLevel: attacker.successLevel, fireMode: mode,
             bulletsNeeded: roundsFired, isImpalingWeapon: profile.isImpaling
         });
         const remainingAmmo = await RangedWeaponService.consumeWeaponAmmo(weapon, roundsFired);
         if (malfunction) await RangedWeaponService.setWeaponMalfunction(weapon, true);
-        this.#recordVolley(state, attacker, target, profile, { roundsFired, hits, impales, isHit, malfunction });
+        const shot = this.#recordShot(state, attacker, target, profile, { roundsFired, hits, impales, isHit, malfunction });
         state.remainingAmmo = remainingAmmo;
         state.weaponProfile = { ...profile, ammo: remainingAmmo, isJammed: malfunction };
         state.rangedMalfunction = malfunction;
-        if (!malfunction && (remainingAmmo === null || remainingAmmo >= 3)) {
+        const canContinue = this.#canContinue(state, profile, remainingAmmo, malfunction);
+        if (hits > 0) {
+            state.rangedEndAfterDamage = !canContinue;
+            if (!canContinue && mode === "auto") state.autoFireEnded = true;
+            return [this.#buildShotDamageParticipant(state, attacker, actor, shot)];
+        }
+        if (canContinue) {
             attacker.hasRolled = false;
             return [];
         }
-        state.autoFireEnded = true;
-        return this.advanceToResolution(state);
+        if (mode === "auto") state.autoFireEnded = true;
+        return this.finishAttack(state);
     }
 
-    #recordVolley(state, attacker, target, profile, result) {
-        const number = Number(state.volleyCount ?? 0) + 1;
+    #canContinue(state, profile, remainingAmmo, malfunction) {
+        if (malfunction) return false;
+        if (state.rangedFireMode === "auto") return remainingAmmo === null || remainingAmmo >= 3;
+        return RangedCombatRules.getRemainingRoundCapacity(state, profile) > 0
+            && (remainingAmmo === null || remainingAmmo >= RangedCombatRules.getBulletsForNextAction(state.rangedFireMode, profile));
+    }
+
+    #recordShot(state, attacker, target, profile, result) {
+        const number = Number(state.rangedShotsFired ?? 0) + 1;
+        const mode = state.rangedFireMode || "single";
         const targetKey = state.rangedTargetTokenId || target?.actorUuid || target?.actorId || "";
         const shot = {
-            index: number, fireMode: "auto", targetKey, targetActorId: target?.actorId ?? "",
+            index: number, fireMode: mode, targetKey, targetActorId: target?.actorId ?? "",
             targetActorUuid: target?.actorUuid ?? "", targetName: target?.actorName ?? "",
             total: attacker.total, successLevel: attacker.successLevel, isHit: result.isHit,
             malfunction: result.malfunction, bulletsSpent: result.roundsFired, hits: result.hits,
             impales: result.impales, modifierDice: attacker.rollBreakdown?.modifierDice ?? 0,
             rollBreakdown: attacker.rollBreakdown
         };
-        state.volleyLog = [...(state.volleyLog ?? []), {
-            volleyNumber: number, targetKey, targetName: shot.targetName, total: attacker.total,
-            targetValue: attacker.targetValue, successLevel: attacker.successLevel, isHit: result.isHit,
-            isImpale: result.impales > 0, roundsFired: result.roundsFired, roundsHit: result.hits
-        }];
+        if (mode === "auto") {
+            state.volleyLog = [...(state.volleyLog ?? []), {
+                volleyNumber: number, targetKey, targetName: shot.targetName, total: attacker.total,
+                targetValue: attacker.targetValue, successLevel: attacker.successLevel, isHit: result.isHit,
+                isImpale: result.impales > 0, roundsFired: result.roundsFired, roundsHit: result.hits
+            }];
+            state.volleyCount = number;
+            state.rangedVolleyIndex = number;
+        }
         state.rangedShots = [...(state.rangedShots ?? []), shot];
         state.rangedHits = [...(state.rangedHits ?? []), ...this.#buildVolleyHits(state, shot, profile)];
         state.participants.push({ ...attacker, key: `shot_${number}`, hasRolled: true, isShotDetail: true });
-        state.volleyCount = number;
-        state.rangedVolleyIndex = number;
         state.rangedShotsFired = Number(state.rangedShotsFired ?? 0) + 1;
         state.rangedBulletsSpent = Number(state.rangedBulletsSpent ?? 0) + result.roundsFired;
         state.lastVolleyTargetTokenId = state.rangedTargetTokenId;
         state.traversePenaltyDice = 0;
         state.traverseDistance = 0;
+        return shot;
     }
 
     #buildVolleyHits(state, shot, profile) {
@@ -111,10 +134,16 @@ export class RangedRollStrategy extends BaseRollStrategy {
             hits.push({
                 targetKey: shot.targetKey, targetActorId: shot.targetActorId,
                 targetActorUuid: shot.targetActorUuid, targetName: shot.targetName,
-                impale: index < shot.impales, formula
+                shotNumber: shot.index, impale: index < shot.impales, formula
             });
         }
         return hits;
+    }
+
+    #buildShotDamageParticipant(state, winner, winnerActor, shot) {
+        const hits = state.rangedHits.filter((hit) => hit.shotNumber === shot.index);
+        const index = state.participants.filter((entry) => entry.key === "damage" || entry.key.startsWith("damage_")).length;
+        return { ...this.#buildTargetDamageParticipant(state, winner, winnerActor, shot.targetKey, hits, index), shotNumber: shot.index };
     }
 
     /** Ends a ranged attack and creates pending damage rolls for its hit targets. */
@@ -135,6 +164,7 @@ export class RangedRollStrategy extends BaseRollStrategy {
         if (state.rangedFireMode === "auto" && hits.length) {
             return this.#buildTargetDamageParticipants(state, winner, winnerActor, hits);
         }
+
         const hitCount = Math.max(1, hits.length);
         const impaleCount = hits.filter((h) => h.impale).length;
         const baseFormula = hits[0]?.formula || state.damageFormula || "1d6";
@@ -153,6 +183,18 @@ export class RangedRollStrategy extends BaseRollStrategy {
                 rollerUserId: winner.rollerUserId || state.initiatorUserId || ""
             }
         ];
+    }
+
+    /** Finishes a ranged series and applies completed consequences when automation is enabled. */
+    async finishAttack(state) {
+        const followUps = this.advanceToResolution(state);
+        const autoApply = Boolean(game.settings?.get(MODULE_ID, "autoApplyRollConsequences"));
+        if (autoApply && !followUps.length && state.hasPendingConsequences && !state.consequencesApplied) {
+            await this.applyConsequences(state);
+            state.consequencesApplied = true;
+            state.hasPendingConsequences = false;
+        }
+        return followUps;
     }
 
     #buildTargetDamageParticipants(state, winner, winnerActor, hits) {
@@ -181,26 +223,49 @@ export class RangedRollStrategy extends BaseRollStrategy {
     async #resolveDamageOutcome(state, damageParticipant) {
         const defaultTarget = state.participants?.find((p) => p.key === "defender");
         const defaultActor = SessionStore.resolveActor(defaultTarget);
-        const hitResults = Array.isArray(state.rangedHitResults) && state.rangedHitResults.length > 0
-            ? state.rangedHitResults
-            : [{ targetActorId: defaultActor?.id ?? "", rawDamage: Number(damageParticipant.total ?? 0), impale: false }];
+        const isCurrentBatch = Array.isArray(damageParticipant.rangedHitResults);
+        const hitResults = isCurrentBatch ? damageParticipant.rangedHitResults
+            : Array.isArray(state.rangedHitResults) && state.rangedHitResults.length > 0 ? state.rangedHitResults
+            : [{ targetActorId: defaultActor?.id ?? "", targetActorUuid: defaultActor?.uuid ?? "",
+                rawDamage: Number(damageParticipant.total ?? 0), impale: false }];
 
         const summary = RangedCombatRules.evaluateMultiHitDamage(hitResults, defaultActor);
-        state.rawDamage = summary.rawDamage;
-        state.armorApplied = summary.armorApplied;
-        state.finalDamage = summary.finalDamage;
-        state.majorWoundTriggered = summary.majorWoundTriggered;
-        state.rangedDamageByActor = summary.damageByActor;
-        state.hasPendingConsequences = (summary.finalDamage > 0 || this.#targetTookCover(state)) && !state.consequencesApplied;
+        state.rawDamage = (isCurrentBatch ? Number(state.rawDamage ?? 0) : 0) + summary.rawDamage;
+        state.armorApplied = (isCurrentBatch ? Number(state.armorApplied ?? 0) : 0) + summary.armorApplied;
+        state.finalDamage = (isCurrentBatch ? Number(state.finalDamage ?? 0) : 0) + summary.finalDamage;
+        state.majorWoundTriggered = Boolean(isCurrentBatch && state.majorWoundTriggered || summary.majorWoundTriggered);
+        state.rangedDamageByActor = isCurrentBatch
+            ? RangedDamageState.merge(state.rangedDamageByActor, summary.damageByActor) : summary.damageByActor;
+        state.pendingRangedDamageByActor = summary.damageByActor;
+        state.pendingDamageKey = damageParticipant.key;
+        state.rangedDamageDecisionStarted = true;
+        state.hasPendingConsequences = true;
+        state.consequencesApplied = false;
+    }
 
-        const allDamageRolled = state.participants.filter((p) => p.key === "damage" || p.key.startsWith("damage_"))
-            .every((p) => p.hasRolled);
-        const autoApply = allDamageRolled && Boolean(game.settings?.get(MODULE_ID, "autoApplyRollConsequences"));
-        if (state.hasPendingConsequences && autoApply) {
-            await this.applyConsequences(state);
-            state.consequencesApplied = true;
-            state.hasPendingConsequences = false;
+    /** Applies or discards one pending damage roll and resumes the ranged attack. */
+    async decideDamageConsequences(session, action) {
+        const state = { ...session, participants: session.participants.map((participant) => ({ ...participant })) };
+        if (!state.pendingDamageKey) state.pendingRangedDamageByActor = state.rangedDamageByActor;
+        state.rangedDamageDecisionStarted = true;
+        await this.#completeDamageDecision(state, action);
+        return state;
+    }
+
+    async #completeDamageDecision(state, action) {
+        if (action === "apply") await this.#applyDamageEntries(state.pendingRangedDamageByActor);
+        state.pendingDamageKey = "";
+        state.pendingRangedDamageByActor = null;
+        state.hasPendingConsequences = false;
+        if (state.rangedEndAfterDamage) {
+            const followUps = await this.finishAttack(state);
+            state.participants.push(...followUps);
+        } else if (state.combatPhase === "attack") {
+            state.participants.find((entry) => entry.key === "attacker").hasRolled = false;
         }
+        this.#flagPendingCoverConsequence(state);
+        if (state.combatPhase === "resolution" && !state.hasPendingConsequences) state.consequencesApplied = true;
+        state.phase = state.combatPhase === "attack" ? "rolling" : "awaitingResolution";
     }
 
     #determineHitWinner(state) {
@@ -214,10 +279,7 @@ export class RangedRollStrategy extends BaseRollStrategy {
 
     /** Applies recorded ranged damage and cover consequences to the affected actors. */
     async applyConsequences(state) {
-        for (const [actorId, info] of Object.entries(state.rangedDamageByActor ?? {})) {
-            const targetActor = SessionStore.resolveActor({ actorUuid: info.actorUuid, actorId: info.actorId || actorId });
-            await CombatConsequenceApplier.applyDamageToActor(targetActor, info?.damage, Boolean(info?.majorWound));
-        }
+        if (!state.rangedDamageDecisionStarted) await this.#applyDamageEntries(state.rangedDamageByActor);
 
         const targets = [...(state.rangedCoverTargets ?? [])];
         const defender = state.participants?.find((p) => p.key === "defender");
@@ -226,6 +288,22 @@ export class RangedRollStrategy extends BaseRollStrategy {
             const targetActor = SessionStore.resolveActor(target);
             if (targetActor) await CoC7DataMapper.setCondition(targetActor, "prone", true);
         }
+    }
+
+    async #applyDamageEntries(damageByActor) {
+        const targets = RangedDamageState.entries(damageByActor).map((entry) => this.#resolveDamageTarget(entry));
+        for (const { actor, info } of targets) {
+            await CombatConsequenceApplier.applyDamageToActor(actor, info.damage, Boolean(info.majorWound), info.fatalHit ?? null);
+        }
+    }
+
+    #resolveDamageTarget(entry) {
+        const actor = RangedDamageState.resolveActor(entry);
+        if (!actor) throw new Error(`Cannot apply ranged damage: target actor "${entry.actorUuid || entry.actorId}" is unavailable.`);
+        if (entry.info.damage == null || !Number.isFinite(Number(entry.info.damage))) {
+            throw new Error("Cannot apply ranged damage: the recorded damage is invalid.");
+        }
+        return { actor, info: entry.info };
     }
 
     #targetTookCover(state) {

@@ -2,13 +2,17 @@ import { SessionStore } from "../../core-bridge.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 import { RangedCombatRules } from "../ranged/ranged-combat-rules.mjs";
 import { RangedRollStrategy } from "../strategies/ranged-roll-strategy.mjs";
+import { CombatDamageDecision } from "../strategies/combat-damage-decision.mjs";
 
 /** Validates CoC7 roll submissions and applies phase-aware session updates. */
 export class CoC7SessionPatcher {
 
     /** Verifies that a submitted roll uses the modifier dice allowed by its session state. */
     validateSubmittedRoll(session, participant, rollData) {
-        if (session.rollType === "other" || participant.key === "damage" || participant.key.startsWith("damage_")) return true;
+        if (participant.key === "damage" || participant.key.startsWith("damage_")) {
+            return !CombatDamageDecision.pendingKey(session);
+        }
+        if (session.rollType === "other") return true;
         if (participant.key === "defender" && (session.rollType === "ranged" || session.defenderReaction === "none")) return true;
         let expected = Number(participant.modifierDice ?? 0);
         if (session.rollType === "combat" && participant.key === "attacker") {
@@ -18,19 +22,22 @@ export class CoC7SessionPatcher {
         }
         if (session.rollType === "ranged" && participant.key === "attacker") {
             expected = RangedCombatRules.computeModifierDice(session, participant);
+            if (CombatDamageDecision.pendingKey(session)) return false;
+            if (session.participants.some((entry) => entry.shotNumber && !entry.hasRolled)) return false;
             if (session.rangedFireMode === "auto" && (session.combatPhase !== "attack" || expected < -2)) return false;
         }
         return Number(rollData.modifierDice ?? 0) === Math.clamp(expected, -2, 2);
     }
 
-    /** Applies CoC7-specific resets and defender-reaction changes to session patches. */
+    /** Applies CoC7 phase resets, defender reactions, and ranged series actions to session patches. */
     transformSessionPatch(session, patch) {
         if (session.rollType === "ranged" && patch.stopAutoFire === true) return this.#stopAutoFire(session);
+        if (session.rollType === "ranged" && patch.finishRangedAttack === true) return this.#finishRangedAttack(session);
         if (session.rollType === "ranged" && patch.switchRangedTarget) {
             return this.#switchRangedTarget(session, patch.switchRangedTarget);
         }
         if (patch.resetCombatPhase || patch.resetSanityPhase) {
-            if (session.consequencesApplied) return session;
+            if (session.consequencesApplied || CombatDamageDecision.pendingKey(session)) return session;
             const clearResult = {
                 hasRolled: false, total: null, successLevel: "", isSuccess: false,
                 isPushed: false, luckDecided: false, pushDecided: false, luckSpent: 0, rollBreakdown: null
@@ -51,18 +58,27 @@ export class CoC7SessionPatcher {
 
     #stopAutoFire(session) {
         if (session.isResolved || session.combatPhase !== "attack" || session.rangedFireMode !== "auto" || !session.volleyCount) return session;
+        return this.#finishRangedAttack(session);
+    }
+
+    async #finishRangedAttack(session) {
+        if (session.isResolved || session.combatPhase !== "attack" || !session.rangedShotsFired) return session;
+        if (CombatDamageDecision.pendingKey(session)) return session;
+        if (session.participants.some((entry) => entry.shotNumber && !entry.hasRolled)) return session;
         const participants = session.participants.map((participant) =>
             participant.key === "attacker" ? { ...participant, hasRolled: true } : participant
         );
-        const state = { ...session, participants, autoFireEnded: true };
-        const followUps = new RangedRollStrategy().advanceToResolution(state);
+        const state = { ...session, participants, autoFireEnded: session.rangedFireMode === "auto" };
+        const followUps = await new RangedRollStrategy().finishAttack(state);
         state.participants.push(...followUps);
         state.phase = followUps.length ? "rolling" : "awaitingResolution";
         return state;
     }
 
     #switchRangedTarget(session, tokenId) {
-        if (session.isResolved || session.combatPhase !== "attack" || session.rangedFireMode !== "auto" || !session.volleyCount) return session;
+        if (session.isResolved || session.combatPhase !== "attack" || !["auto", "multiple"].includes(session.rangedFireMode) || !session.rangedShotsFired) return session;
+        if (CombatDamageDecision.pendingKey(session)) return session;
+        if (session.participants.some((entry) => entry.shotNumber && !entry.hasRolled)) return session;
         const tokens = canvas?.tokens?.placeables ?? [];
         const defender = session.participants.find((entry) => entry.key === "defender");
         const previous = tokens.find((token) => token.id === session.lastVolleyTargetTokenId)
@@ -70,7 +86,8 @@ export class CoC7SessionPatcher {
             ?? tokens.find((token) => token.actor?.id === defender?.actorId);
         const next = tokens.find((token) => token.id === tokenId);
         if (!previous || !next?.actor) throw new Error("Cannot switch targets without both scene tokens.");
-        const traverse = RangedCombatRules.measureTraverse(previous, next);
+        const traverse = session.rangedFireMode === "auto"
+            ? RangedCombatRules.measureTraverse(previous, next) : { distance: 0, penalty: 0 };
         if (!traverse) throw new Error("Cannot measure the target traverse distance.");
         const coverTargets = [...(session.rangedCoverTargets ?? [])];
         if (defender.tookCover && !coverTargets.some((entry) => entry.tokenId === session.rangedTargetTokenId)) {
@@ -103,6 +120,7 @@ export class CoC7SessionPatcher {
             rawDamage: null,
             armorApplied: 0,
             finalDamage: null,
+            damagePreview: null,
             majorWoundTriggered: false,
             hasPendingConsequences: false,
             winnerKey: "",

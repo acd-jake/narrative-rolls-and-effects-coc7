@@ -25,13 +25,21 @@ Install and enable both Narrative Rolls and Effects and this companion module. T
 
 ## Full-auto ranged attacks
 
-Select Full Auto in the ranged attack prompt. After each volley, fire again, switch
-to a scene token or a canvas target, or choose Cease Fire to roll damage for each
-hit target. A volley uses up to one tenth of the attack skill in rounds, with a
+Select Full Auto in the ranged attack prompt. After each volley and its damage
+decision, fire again, switch to a scene token or a canvas target, or choose Cease
+Fire. A volley uses up to one tenth of the attack skill in rounds, with a
 minimum of three. Each later volley and each three metres or yards traversed adds
 a penalty die. The prompt prevents firing when the combined modifier would exceed
 two penalty dice; choose a closer target or cease fire. The weapon's ammunition
 and malfunction state are updated immediately, unless the system ignores ammunition.
+
+After each combat damage roll, the Keeper can apply or discard its consequences.
+Ranged attacks wait for that decision before the next shot or volley. The preview
+is shown only to the Keeper, and discarding damage does not notify the attacker.
+When automatic consequence application is enabled, damage is applied immediately.
+Each client can choose automatic or manual ranged damage rolls; the Keeper can
+enforce either choice for the whole world. Major wounds may require a separate
+consciousness check, which the preview does not roll.
 
 ## Pushed-roll consequences
 

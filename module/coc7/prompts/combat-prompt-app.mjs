@@ -1,8 +1,12 @@
 import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy, DiceVisualizer } from "../../core-bridge.mjs";
 import { DamageRollSubmitter } from "./damage-roll-submitter.mjs";
+import { DamageDecisionHandler } from "./damage-decision-handler.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
+import { CombatConsequenceApplier } from "../strategies/combat-consequence-applier.mjs";
+import { CombatRollStrategy } from "../strategies/combat-roll-strategy.mjs";
+import { CombatDamageDecision } from "../strategies/combat-damage-decision.mjs";
 
 const COMBAT_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/combat-prompt.hbs";
 
@@ -18,6 +22,7 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
                 setDefenderReaction: CombatPromptApp.#onSetDefenderReaction,
                 rollOpponentReaction: CombatPromptApp.#onRollOpponentReaction,
                 executeDamageRoll: CombatPromptApp.#onExecuteDamageRoll,
+                decideDamage: CombatPromptApp.#onDecideDamage,
                 resetCombatPhase: CombatPromptApp.#onResetCombatPhase
             }
         };
@@ -36,13 +41,14 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
             if (participantKey) await UniversalRollOrchestrator.setParticipantModifier(this._messageId, participantKey, val);
         }
 
-        /** @override */
+        /** Prepares the melee prompt, including a non-mutating damage consequence preview. */
         async _prepareContext(options) {
             const context = await super._prepareContext(options);
             const sys = this.session;
             if (!sys) return context;
 
             const isGM = Boolean(game.user?.isGM);
+            const pendingDecision = Boolean(CombatDamageDecision.pendingKey(sys));
             const phase = sys.combatPhase || "initiator";
             const attacker = sys.participants?.find((p) => p.key === "attacker");
             const defender = sys.participants?.find((p) => p.key === "defender") ?? null;
@@ -72,6 +78,9 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
             const canViewDamage = damageEntry ? RollVisibilityPolicy.canViewParticipantRoll(damageEntry, sys) : false;
 
             const damageActor = this.#resolveActor(damageEntry);
+            const damageTarget = this.#resolveActor(CombatRollStrategy.getDamageTarget(sys));
+            const damagePreview = isGM && pendingDecision
+                ? this.#buildDamagePreview(sys, damageTarget) : null;
             const attackerDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, effectiveMod);
             const defenderDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, defenderModifier);
             const damageDice = canViewDamage
@@ -164,13 +173,22 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
                     phase === "resolution" &&
                     damageEntry &&
                     !damageEntry.hasRolled &&
+                    !pendingDecision &&
                     (isGM || damageActor?.isOwner) &&
                     !sys.isResolved
                 ),
                 hasCombatDamage: Boolean(canViewDamage && sys.finalDamage !== null && sys.finalDamage !== undefined),
                 finalDamage: sys.finalDamage ?? 0,
                 armorApplied: sys.armorApplied ?? 0,
-                majorWoundTriggered: Boolean(sys.majorWoundTriggered),
+                majorWoundTriggered: Boolean(isGM && sys.majorWoundTriggered),
+                pendingDamageDecision: pendingDecision,
+                canDecideDamage: Boolean(isGM && pendingDecision && !sys.isResolved),
+                canApplyConsequences: !pendingDecision && context.canApplyConsequences,
+                canResolve: !pendingDecision && context.canResolve,
+                damagePreviewLabel: damagePreview?.label ?? "",
+                damagePreviewTarget: damageTarget?.name ?? "",
+                showDamagePreviewHp: Boolean(damagePreview?.preview),
+                damagePreviewHp: damagePreview?.preview?.remainingHp,
                 gmApplyDamageLabel: game.i18n.format("ROE_COC7.Combat.GmApplyDamageBtn", {
                     damage: sys.finalDamage ?? 0
                 })
@@ -181,6 +199,7 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
         _hasPendingPlayerAction() {
             const sys = this.session;
             if (!sys || sys.isResolved) return false;
+            if (CombatDamageDecision.pendingKey(sys)) return false;
 
             return (sys.participants ?? []).some((participant) =>
                 !participant.hasRolled && this.#resolveActor(participant)?.isOwner
@@ -370,6 +389,17 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
         static async #onExecuteDamageRoll() {
             await DamageRollSubmitter.submit(this._messageId);
         }
+
+        static async #onDecideDamage(_event, trigger) {
+            await DamageDecisionHandler.submit(this._messageId, trigger.dataset.decision);
+        }
+
+        #buildDamagePreview(sys, target) {
+            if (!target) return { label: game.i18n.localize("ROE_COC7.DamagePreview.Unavailable") };
+            const preview = CombatConsequenceApplier.previewDamage(target, sys.finalDamage, sys.majorWoundTriggered);
+            return { preview, label: CombatConsequenceApplier.formatPreview(preview) };
+        }
+
         #resolveActor(participant) {
             if (!participant) return null;
             return SessionStore.resolveActor(participant);

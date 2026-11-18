@@ -3,8 +3,9 @@ import { PUSH_CONSEQUENCES_SETTING } from "./coc7-constants.mjs";
 
 export const COC7_MODULE_ID = "narrative-rolls-and-effects-coc7";
 
-/** Registers world-level preferences for displaying roll results. */
+/** Registers client and world preferences for CoC7 rolls. */
 export class CoC7Settings {
+    /** Registers the module settings and configuration menus. */
     static register() {
         game.settings.register(COC7_MODULE_ID, PUSH_CONSEQUENCES_SETTING, {
             scope: "world",
@@ -90,5 +91,34 @@ export class CoC7Settings {
             default: "narrative"
         });
 
+        game.settings.register(COC7_MODULE_ID, "automaticRangedDamage", {
+            name: "ROE_COC7.Settings.AutomaticRangedDamage.Name",
+            hint: "ROE_COC7.Settings.AutomaticRangedDamage.Hint",
+            scope: "client",
+            config: true,
+            type: Boolean,
+            default: false
+        });
+        game.settings.register(COC7_MODULE_ID, "rangedDamageRollPolicy", {
+            name: "ROE_COC7.Settings.RangedDamageRollPolicy.Name",
+            hint: "ROE_COC7.Settings.RangedDamageRollPolicy.Hint",
+            scope: "world",
+            config: true,
+            type: String,
+            choices: {
+                client: "ROE_COC7.Settings.RangedDamageRollPolicy.Client",
+                automatic: "ROE_COC7.Settings.RangedDamageRollPolicy.Automatic",
+                manual: "ROE_COC7.Settings.RangedDamageRollPolicy.Manual"
+            },
+            default: "client"
+        });
+    }
+
+    /** Returns whether the current client should automatically roll ranged damage. */
+    static shouldAutoRollRangedDamage() {
+        const policy = game.settings.get(COC7_MODULE_ID, "rangedDamageRollPolicy");
+        if (policy === "automatic") return true;
+        if (policy === "manual") return false;
+        return Boolean(game.settings.get(COC7_MODULE_ID, "automaticRangedDamage"));
     }
 }

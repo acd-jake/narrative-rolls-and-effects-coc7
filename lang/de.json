@@ -49,7 +49,27 @@
         "Hint": "Wählt, ob das Ergebnis einer Kampfprobe als atmosphärischer Szenentext oder als direkte Gegenüberstellung beider Kontrahenten angezeigt wird.",
         "Narrative": "Szenischer Ausgang & Regel-Chips",
         "Duel": "Duell-Gegenüberstellung mit Sieger-Siegel"
+      },
+      "AutomaticRangedDamage": {
+        "Name": "Fernkampfschaden automatisch würfeln",
+        "Hint": "Schaden nach eigenen Fernkampftreffern sofort würfeln. Die weltweite Vorgabe der Spielleitung kann diese Einstellung überschreiben."
+      },
+      "RangedDamageRollPolicy": {
+        "Name": "Vorgabe für Fernkampfschaden",
+        "Hint": "Legt fest, ob jeder Client selbst entscheidet oder ob für alle dieselbe Methode gilt.",
+        "Client": "Einstellung des jeweiligen Clients verwenden",
+        "Automatic": "Für alle automatisch",
+        "Manual": "Für alle manuell"
       }
+    },
+    "DamagePreview": {
+      "Dead": "Wäre kampfunfähig (tot)",
+      "Dying": "Wäre kampfunfähig (bewusstlos und sterbend)",
+      "Unconscious": "Wäre kampfunfähig (bewusstlos)",
+      "MajorWound": "Würde eine schwere Wunde erleiden; eine Bewusstseinsprobe kann erforderlich sein",
+      "Active": "Hätte weiterhin mehr als null Trefferpunkte",
+      "RemainingHP": "{hp} TP nach Anwenden des Schadens",
+      "Unavailable": "Schadensvorschau nicht verfügbar: Der Zielakteur wurde nicht gefunden."
     },
     "Roll": {
       "PushRoll": "Probe forcieren",
@@ -171,6 +191,8 @@
       "TraversePenaltyNote": "Schwenk-Malus ({distance} m): {penalty} Strafwürfel",
       "WeaponJammed": "Waffenstörung! Feuer unterbrochen.",
       "AutoPenaltyLimit": "Die nächste Salve überschreitet die Grenze von zwei Strafwürfeln. Feuer einstellen oder ein näheres Ziel wählen.",
+      "DamageRequired": "Vor dem nächsten Schuss den Schaden dieses Treffers würfeln.",
+      "AutomaticDamageFailed": "Der automatische Schadenswurf ist fehlgeschlagen. Bitte die Schaltfläche für den Schadenswurf verwenden.",
       "FireModes": {
         "single": "Einzelschuss",
         "multiple": "Mehrfachschüsse",
@@ -190,6 +212,8 @@
       "ResolvedNarrative": {
         "MultiHit": "{attacker} gibt {shots} Schüsse mit {weapon} ab und landet {hits} Treffer auf {defender}.",
         "MultiMiss": "{attacker} gibt {shots} Schüsse mit {weapon} auf {defender} ab, verfehlt aber komplett.",
+        "MultiTargetHit": "{attacker} gibt {shots} Schüsse mit {weapon} auf mehrere Ziele ab und erzielt {hits} Treffer.",
+        "MultiTargetMiss": "{attacker} gibt {shots} Schüsse mit {weapon} auf mehrere Ziele ab, verfehlt aber komplett.",
         "BurstHit": "{attacker} feuert einen Feuerstoß mit {weapon} ab und erzielt {hits} Treffer auf {defender}.",
         "BurstMiss": "Der Feuerstoß von {attacker} mit {weapon} verfehlt {defender}.",
         "AutoHit": "{attacker} feuert {shots} Salven Dauerfeuer mit {weapon} ab und erzielt {hits} Treffer.",
@@ -302,9 +326,14 @@
       "DamageRoll": "Schadenswurf",
       "ImpalingExtreme": "Durchschlag / Extrem",
       "RollDamageBtn": "Schaden würfeln",
+      "ApplyDamageDecisionBtn": "Schaden anwenden",
+      "DeclineDamageDecisionBtn": "Schaden verwerfen",
+      "AwaitingDamageDecision": "Warten auf die Spielleitung.",
+      "DamageDecisionUnavailable": "Das Kernmodul muss aktualisiert werden, bevor über Schaden entschieden werden kann.",
+      "DamageResult": "Schadensergebnis: {damage} TP",
       "OutcomeMissOrDodged": "Angriff verfehlt oder ausgewichen.",
       "UnknownTarget": "das Ziel",
-      "OutcomeDamageSummary": "{winner} trifft {target} und verursacht {damage} TP Schaden.",
+      "OutcomeDamageSummary": "{winner} trifft {target}; Schadensergebnis: {damage} TP.",
       "OutcomeHitPendingDamage": "{winner} trifft {target} – Schadenswurf ausstehend.",
       "OutcomeHitHiddenDamage": "{winner} trifft {target} (Schaden verdeckt).",
       "OutcomeManeuverSuccess": "{winner} führt erfolgreich das Manöver „{maneuver}“ gegen {target} aus.",

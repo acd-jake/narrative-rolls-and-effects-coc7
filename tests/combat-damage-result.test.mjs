@@ -83,6 +83,54 @@ assert.equal(CombatConsequenceApplier.previewDamage(previewTarget, 10, false, tr
 previewTarget.statuses.add("criticalWounds");
 assert.equal(CombatConsequenceApplier.previewDamage(previewTarget, 7, false, false).dying, true);
 
+// A nonfatal major wound at zero HP predicts and applies all three conditions.
+const woundTarget = {
+    system: { attribs: { hp: { value: 5, max: 10 } } },
+    statuses: new Set(),
+    async update(data) { this.system.attribs.hp.value = data["system.attribs.hp.value"]; },
+    async toggleStatusEffect(status) { this.statuses.add(status); }
+};
+globalThis.Hooks = { callAll() {} };
+const woundPreview = CombatConsequenceApplier.previewDamage(woundTarget, 5, true, false);
+assert.equal(woundPreview.damage, 5);
+assert.equal(woundPreview.remainingHp, 0);
+assert.equal(woundPreview.majorWound, true);
+assert.equal(woundPreview.unconscious, true);
+assert.equal(woundPreview.dying, true);
+assert.equal(CombatConsequenceApplier.formatPreview(woundPreview),
+    "ROE_COC7.DamagePreview.Dying; ROE_COC7.DamagePreview.MajorWoundStatus");
+assert.equal(woundTarget.system.attribs.hp.value, 5);
+assert.equal(woundTarget.statuses.size, 0);
+const consciousWound = CombatConsequenceApplier.previewDamage(previewTarget, 5, true, false);
+assert.equal(CombatConsequenceApplier.formatPreview(consciousWound), "ROE_COC7.DamagePreview.MajorWound");
+const fatalPreview = CombatConsequenceApplier.previewDamage(woundTarget, 10, true, true);
+assert.equal(CombatConsequenceApplier.formatPreview(fatalPreview), "ROE_COC7.DamagePreview.Dead");
+assert.equal(fatalPreview.majorWound, false);
+const absorbedPreview = CombatConsequenceApplier.previewDamage(woundTarget, 0, false, false);
+assert.equal(absorbedPreview.damage, 0);
+assert.equal(CombatConsequenceApplier.formatPreview(absorbedPreview), "ROE_COC7.DamagePreview.NoDamage");
+const alreadyAtZero = {
+    system: { attribs: { hp: { value: 0, max: 10 } } },
+    statuses: new Set()
+};
+const zeroDamagePreview = CombatConsequenceApplier.previewDamage(alreadyAtZero, 0, false, false);
+assert.equal(zeroDamagePreview.unconscious, false);
+assert.equal(zeroDamagePreview.dying, false);
+assert.equal(CombatConsequenceApplier.formatPreview(zeroDamagePreview), "ROE_COC7.DamagePreview.NoDamage");
+await CombatConsequenceApplier.applyDamageToActor(woundTarget, 5, true, false);
+assert.equal(woundTarget.system.attribs.hp.value, 0);
+assert.deepEqual([...woundTarget.statuses].sort(), ["criticalWounds", "dying", "unconscious"]);
+
+const existingWoundTarget = {
+    system: { attribs: { hp: { value: 4, max: 10 } } },
+    statuses: new Set(["criticalWounds"])
+};
+const existingWoundPreview = CombatConsequenceApplier.previewDamage(existingWoundTarget, 4, false, false);
+assert.equal(existingWoundPreview.majorWound, false);
+assert.equal(existingWoundPreview.hasMajorWound, true);
+assert.equal(CombatConsequenceApplier.formatPreview(existingWoundPreview),
+    "ROE_COC7.DamagePreview.Dying; ROE_COC7.DamagePreview.MajorWoundStatus");
+
 if (!Math.clamp) Math.clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 class TestCombatPrompt {
     constructor(session) { this.session = session; this._messageId = "message"; }
@@ -95,6 +143,7 @@ const Prompt = createCombatPromptApp({ extendPromptClass: (base) => base }, Test
 const combatPrompt = new Prompt(meleeState);
 const gmContext = await combatPrompt._prepareContext({});
 assert.equal(gmContext.damagePreviewHp, 2);
+assert.equal(gmContext.damagePreviewDamage, 5);
 assert.equal(gmContext.canDecideDamage, true);
 assert.equal(gmContext.canResolve, false);
 game.user.isGM = false;
@@ -102,6 +151,7 @@ previewTarget.isOwner = true;
 const playerContext = await combatPrompt._prepareContext({});
 assert.equal(playerContext.damagePreviewLabel, "");
 assert.equal(playerContext.damagePreviewHp, undefined);
+assert.equal(playerContext.damagePreviewDamage, undefined);
 assert.equal(playerContext.canDecideDamage, false);
 game.user.isGM = true;
 

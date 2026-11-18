@@ -105,8 +105,8 @@
     {{#if isPhaseAttack}}
     <div class="prompt-player-controls {{#if isAttackerDelegated}}gm-delegated-region{{/if}}">
         {{#each damagePreviews}}
-        <div class="pending-badge"><strong>{{name}}</strong>: {{status}}
-            {{#if showHp}}({{localize "ROE_COC7.DamagePreview.RemainingHP" hp=remainingHp}}){{/if}}
+        <div class="pending-badge"><strong>{{name}}</strong>:
+            {{#if showHp}}{{localize "ROE_COC7.DamagePreview.Damage" damage=damage}}; {{localize "ROE_COC7.DamagePreview.RemainingHP" hp=remainingHp}}; {{/if}}{{status}}
         </div>
         {{/each}}
         {{#if pendingDamageDecision}}
@@ -271,8 +271,8 @@
     {{/if}}
 
     {{#each damagePreviews}}
-    <div class="pending-badge"><strong>{{name}}</strong>: {{status}}
-        {{#if showHp}}({{localize "ROE_COC7.DamagePreview.RemainingHP" hp=remainingHp}}){{/if}}
+    <div class="pending-badge"><strong>{{name}}</strong>:
+        {{#if showHp}}{{localize "ROE_COC7.DamagePreview.Damage" damage=damage}}; {{localize "ROE_COC7.DamagePreview.RemainingHP" hp=remainingHp}}; {{/if}}{{status}}
     </div>
     {{/each}}
     {{#if pendingDamageDecision}}

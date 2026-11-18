@@ -67,7 +67,10 @@
       "Dying": "Wäre kampfunfähig (bewusstlos und sterbend)",
       "Unconscious": "Wäre kampfunfähig (bewusstlos)",
       "MajorWound": "Würde eine schwere Wunde erleiden; eine Bewusstseinsprobe kann erforderlich sein",
+      "MajorWoundStatus": "Schwere Wunde",
       "Active": "Hätte weiterhin mehr als null Trefferpunkte",
+      "NoDamage": "Kein Schaden; keine zusätzlichen Konsequenzen",
+      "Damage": "Schaden nach Rüstung: {damage} TP",
       "RemainingHP": "{hp} TP nach Anwenden des Schadens",
       "Unavailable": "Schadensvorschau nicht verfügbar: Der Zielakteur wurde nicht gefunden."
     },

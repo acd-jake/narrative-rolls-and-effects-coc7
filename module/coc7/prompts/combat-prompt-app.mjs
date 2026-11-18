@@ -188,6 +188,7 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
                 damagePreviewLabel: damagePreview?.label ?? "",
                 damagePreviewTarget: damageTarget?.name ?? "",
                 showDamagePreviewHp: Boolean(damagePreview?.preview),
+                damagePreviewDamage: damagePreview?.preview?.damage,
                 damagePreviewHp: damagePreview?.preview?.remainingHp,
                 gmApplyDamageLabel: game.i18n.format("ROE_COC7.Combat.GmApplyDamageBtn", {
                     damage: sys.finalDamage ?? 0

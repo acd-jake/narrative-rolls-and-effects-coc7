@@ -280,7 +280,7 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             const preview = CombatConsequenceApplier.previewDamage(actor, info.damage, info.majorWound, info.fatalHit ?? null);
             return {
                 name: hit?.targetName ?? "", status: CombatConsequenceApplier.formatPreview(preview),
-                showHp: Boolean(game.user.isGM || actor?.isOwner), remainingHp: preview.remainingHp
+                showHp: Boolean(game.user.isGM || actor?.isOwner), damage: preview.damage, remainingHp: preview.remainingHp
             };
         }
 

@@ -34,8 +34,9 @@ two penalty dice; choose a closer target or cease fire. The weapon's ammunition
 and malfunction state are updated immediately, unless the system ignores ammunition.
 
 After each combat damage roll, the Keeper can apply or discard its consequences.
-Ranged attacks wait for that decision before the next shot or volley. The preview
-is shown only to the Keeper, and discarding damage does not notify the attacker.
+Ranged attacks wait for that decision before the next shot or volley. The Keeper-only
+preview shows damage after armor, remaining hit points, and the resulting conditions;
+discarding damage does not notify the attacker.
 When automatic consequence application is enabled, damage is applied immediately.
 Each client can choose automatic or manual ranged damage rolls; the Keeper can
 enforce either choice for the whole world. Major wounds may require a separate

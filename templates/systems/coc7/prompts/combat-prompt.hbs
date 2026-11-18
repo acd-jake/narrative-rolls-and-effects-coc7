@@ -172,8 +172,8 @@
     {{/if}}
 
     {{#if damagePreviewLabel}}
-    <div class="pending-badge">{{damagePreviewTarget}}: {{damagePreviewLabel}}
-        {{#if showDamagePreviewHp}}({{localize "ROE_COC7.DamagePreview.RemainingHP" hp=damagePreviewHp}}){{/if}}
+    <div class="pending-badge">{{damagePreviewTarget}}:
+        {{#if showDamagePreviewHp}}{{localize "ROE_COC7.DamagePreview.Damage" damage=damagePreviewDamage}}; {{localize "ROE_COC7.DamagePreview.RemainingHP" hp=damagePreviewHp}}; {{/if}}{{damagePreviewLabel}}
     </div>
     {{/if}}
 

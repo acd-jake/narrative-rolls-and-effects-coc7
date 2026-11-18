@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Configurable resolved combat prompt layout setting (`combatResolvedLayout`) supporting both narrative scene summaries and side-by-side duel comparisons with separated mechanical consequences.
 
 ### Changed
+- Show the Keeper damage after armor and all resulting conditions in damage previews.
 - The Keeper decides each combat damage roll before further ranged fire; previews are Keeper-only.
 - Combat results now identify who receives the damage.
 - Resolved chat cards now show the same results as roll prompts.
@@ -36,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Placed a unified post-roll decline button below Luck and Push options with dynamic labels based on available choices.
 
 ### Fixed
+- Apply a major wound when a nonfatal hit also reduces the target to zero HP.
 - Prevent ranged damage previews from failing when Foundry expands saved actor UUID keys.
 - Prevented accumulated ranged hits from being treated as a single lethal hit.
 - Restored the display of resolved melee combat results.

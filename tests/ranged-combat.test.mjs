@@ -372,6 +372,8 @@ const afterDamageContext = await prompt._prepareContext({});
 assert.equal(afterDamageContext.canStopAutoFire, false);
 assert.equal(afterDamageContext.canDecideDamage, true);
 assert.equal(afterDamageContext.damagePreviews[0].status, "ROE_COC7.DamagePreview.Unconscious");
+assert.equal(afterDamageContext.damagePreviews[0].damage, 18);
+assert.equal(afterDamageContext.damagePreviews[0].remainingHp, 0);
 assert.equal(defenderActor.system.attribs.hp.value, 10);
 game.user.isGM = false;
 attackerActor.isOwner = true;
@@ -435,9 +437,17 @@ const discardedLegacy = await legacyAdapter.handleConsequenceDecision(compatibil
 assert.equal(discardedLegacy.rangedDamageDecisionStarted, true);
 assert.equal(discardedLegacy.hasPendingConsequences, false);
 assert.equal(worldTarget.system.attribs.hp.value, 10);
-assert.deepEqual(compatibilityContext.damagePreviews.map((entry) => [entry.name, entry.remainingHp]), [
-    ["World target", 6], ["Token target", 8]
+assert.deepEqual(compatibilityContext.damagePreviews.map((entry) => [entry.name, entry.damage, entry.remainingHp]), [
+    ["World target", 4, 6], ["Token target", 2, 8]
 ]);
+const absorbedState = {
+    ...compatibilityState,
+    rangedDamageByActor: { "Actor%2Ed1": { ...worldDamage, damage: 0 } }
+};
+const absorbedContext = await new Prompt(absorbedState)._prepareContext({});
+assert.equal(absorbedContext.damagePreviews[0].damage, 0);
+assert.equal(absorbedContext.damagePreviews[0].remainingHp, 10);
+assert.equal(absorbedContext.damagePreviews[0].status, "ROE_COC7.DamagePreview.NoDamage");
 assert.deepEqual(CoC7CombatResultPresenter.buildResolvedContext(compatibilityState).resolvedRangedDamage.map((entry) => [entry.name, entry.damage]), [
     ["World target", 4], ["Token target", 2]
 ]);

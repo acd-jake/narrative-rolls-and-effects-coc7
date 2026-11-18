@@ -67,7 +67,10 @@
       "Dying": "Would be incapacitated (unconscious and dying)",
       "Unconscious": "Would be incapacitated (unconscious)",
       "MajorWound": "Would suffer a major wound; a consciousness check may be required",
+      "MajorWoundStatus": "Major wound",
       "Active": "Would remain above zero hit points",
+      "NoDamage": "No damage; no additional consequences",
+      "Damage": "Damage after armor: {damage} HP",
       "RemainingHP": "{hp} HP after applying damage",
       "Unavailable": "Damage preview unavailable: the target actor cannot be found."
     },

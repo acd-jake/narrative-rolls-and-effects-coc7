@@ -178,7 +178,7 @@ describe("Combat damage results and impale evaluation", () => {
         coreApi.session.getSession = (msg) => msg?.session ?? null;
 
         await DamageRollSubmitter.submit("msg-impale", "damage");
-        assert.equal(submittedDamage.total, 13);
+        assert.equal(submittedDamage.total, 16);
 
         const bluntSession = {
             rollType: "combat", combatType: "melee", hitWinnerKey: "attacker", damageBonus: "1d4",

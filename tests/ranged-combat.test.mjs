@@ -521,6 +521,19 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.equal(successResult.resolvedActorName, "INVESTIGATOR");
         assert.equal(successResult.resolvedCombatNarrative, undefined);
         const resultAdapter = new CoC7Adapter();
+        const autoStatusSession = {
+            rollType: "ranged",
+            isResolved: true,
+            title: "Tommy Gun",
+            outcomeHeadline: "Miss",
+            rangedWeaponName: "Tommy Gun",
+            rangedMalfunctionCleared: true,
+            rangedMalfunctionCheck: { total: 4, targetValue: 60 },
+            participants: [
+                { key: "attacker", actorName: "Harvey", hasRolled: true, isSuccess: false },
+                { key: "defender", actorName: "Cultist", hasRolled: false }
+            ]
+        };
         assert.equal((await resultAdapter.prepareResolvedChatContext(autoStatusSession)).resolvedCombatStatus, "ROE_COC7.Ranged.MalfunctionCleared: 4/60");
         assert.equal((await resultAdapter.preparePromptContext(null, autoStatusSession, {})).resolvedCombatStatus, "ROE_COC7.Ranged.MalfunctionCleared: 4/60");
 

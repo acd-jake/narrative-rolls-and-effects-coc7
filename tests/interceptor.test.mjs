@@ -42,6 +42,7 @@ describe("CoC7Interceptor and automatic CON/INT checks", () => {
         const actorsByUuid = new Map();
         globalThis.fromUuidSync = (uuid) => actorsByUuid.get(uuid) ?? null;
         globalThis.fromUuid = async (uuid) => actorsByUuid.get(uuid) ?? null;
+        globalThis.canvas = { tokens: { controlled: [] } };
 
         globalThis.game = {
             user: { id: "user-gm", isGM: true, targets: { first: () => null } },

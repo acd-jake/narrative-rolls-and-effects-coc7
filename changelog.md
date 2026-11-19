@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-19
+
 ### Added
 - Choose to aim for a round before the target reacts, gaining a bonus die on the next ranged attack.
 - Damage consequence previews and immediate ranged damage rolls with client preferences and a Keeper override.

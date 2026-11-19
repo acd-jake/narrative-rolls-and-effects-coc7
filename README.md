@@ -22,6 +22,9 @@ Install and enable both Narrative Rolls and Effects and this companion module. T
 - Roll modifiers, Luck decisions, pushed rolls, and optional consequence automation
 - Call of Cthulhu bonus and penalty dice in roll prompts and roll inspection
 - Difficulty selection during modifier preparation for eligible checks
+- Aiming and full-auto ranged combat with Keeper-controlled damage consequences
+- Keeper-managed consequences for pushed rolls, including insanity-aware defaults and player-facing foreshadowing
+- Automatic prompts for eligible major-wound Constitution checks, Sanity checks, and bouts of madness
 
 ## Aiming
 
@@ -70,6 +73,10 @@ The core also manages the modifier-preparation prompt shell, while this module s
 ## Compatibility
 
 This module requires Foundry VTT v14 or later, the Call of Cthulhu 7th Edition system (`CoC7`), and the Narrative Rolls and Effects core module. It registers its adapter through the core `nre.registerAdapters` hook and is only active in a CoC7 world.
+
+## Changelog
+
+See [changelog.md](changelog.md) for release history.
 
 ## License
 

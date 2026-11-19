@@ -180,6 +180,8 @@
       "ClearMalfunctionBtn": "Ladehemmung beheben",
       "MalfunctionCleared": "Ladehemmung behoben ({roll} vs. {target}%)!",
       "MalfunctionClearFailed": "Beheben fehlgeschlagen ({roll} vs. {target}%).",
+      "MalfunctionClearActionSpent": "Der Versuch verbraucht die Aktion dieser Runde.",
+      "MalfunctionClearUnavailable": "Angreifer oder Waffe zum Beheben der Ladehemmung nicht gefunden.",
       "RepairSkillMech": "Mechanische Reparaturen",
       "SwitchTargetBtn": "Ziel wechseln",
       "TargetSwitched": "Zielwechsel auf {target}",

@@ -117,7 +117,8 @@ export function createRangedPromptApp(core, BasicPromptApp) {
                 isOutOfAmmo: profile.tracksAmmo && profile.ammo === 0,
                 isJammed,
                 canReload: phase === "attack" && !pendingDamage && !pendingDecision && !sys.isResolved && canActAttacker && !isAuto && profile.tracksAmmo && profile.ammo !== profile.ammoMax && remainingCapacity > 0,
-                canClearMalfunction: phase === "attack" && !pendingDamage && !pendingDecision && !sys.isResolved && canActAttacker && isJammed,
+                canClearMalfunction: phase === "attack" && !pendingDamage && !pendingDecision && !sys.isResolved
+                    && canActAttacker && isJammed && remainingCapacity > 0,
                 canSwitchTarget: phase === "attack" && !pendingDamage && !pendingDecision && !sys.isResolved && canActAttacker && (isAuto || fireMode === "multiple") && hasStartedFiring && !isJammed,
                 canStopAutoFire: phase === "attack" && !pendingDamage && !pendingDecision && !sys.isResolved && canActAttacker && isAuto && hasStartedFiring,
                 canFinishSeries: phase === "attack" && !pendingDamage && !pendingDecision && !sys.isResolved && canActAttacker && !isAuto && hasStartedFiring,
@@ -335,24 +336,40 @@ export function createRangedPromptApp(core, BasicPromptApp) {
         static async #onClearMalfunction() {
             const sys = this.#getLiveSession();
             if (!sys || sys.isResolved || CombatDamageDecision.pendingKey(sys) || sys.combatPhase !== "attack") return;
+            if (sys.participants?.some((p) => (p.key === "damage" || p.key.startsWith("damage_")) && !p.hasRolled)) return;
             const attacker = sys.participants?.find((p) => p.key === "attacker");
             const attActor = SessionStore.resolveActor(attacker);
             const weapon = this.#resolveWeapon(attActor, sys);
-            if (!attActor || !weapon) return;
+            if (!attActor || !weapon) {
+                ui.notifications?.warn(game.i18n.localize("ROE_COC7.Ranged.MalfunctionClearUnavailable"));
+                return;
+            }
+            const profile = RangedWeaponService.getWeaponCombatProfile(weapon, Number(attacker?.targetValue ?? 0));
+            if ((!sys.rangedMalfunction && !profile.isJammed) || RangedCombatRules.getRemainingRoundCapacity(sys, profile) <= 0) return;
 
             const mechSkill = attActor.items?.find?.((i) => i.type === "skill" && i.name.toLowerCase() === game.i18n.localize("ROE_COC7.Ranged.RepairSkillMech").toLowerCase());
             const targetVal = mechSkill ? Number(mechSkill.system?.value ?? 25) : Number(attacker?.targetValue ?? 25);
             const roll = await new Roll("1d100").evaluate();
             const total = roll.total === 0 ? 100 : roll.total;
             const fixed = (CoC7CheckResolver.LEVEL_RANK[CoC7CheckResolver.evaluateResult(total, targetVal)] ?? 0) >= 2;
+            const rollMode = RollVisibilityPolicy.getCurrentRollMode();
 
             if (fixed) await RangedWeaponService.setWeaponMalfunction(weapon, false);
             const nextProfile = RangedWeaponService.getWeaponCombatProfile(weapon, Number(attacker?.targetValue ?? 0));
             await UniversalRollOrchestrator.updateSessionPatch(this._messageId, {
                 rangedMalfunction: !fixed,
-                rangedShotsFired: Number(sys.rangedShotsFired ?? 0) + 1,
-                weaponProfile: { ...nextProfile, isJammed: !fixed }
+                rangedMalfunctionClearResult: { total, targetValue: targetVal, fixed, rollMode, rollerUserId: game.user.id },
+                weaponProfile: { ...nextProfile, isJammed: !fixed },
+                combatPhase: "resolution",
+                phase: "resolved",
+                isResolved: true
             });
+            const resultMessage = game.i18n.format(
+                `ROE_COC7.Ranged.${fixed ? "MalfunctionCleared" : "MalfunctionClearFailed"}`,
+                { roll: total, target: targetVal }
+            );
+            if (fixed) ui.notifications?.info(resultMessage);
+            else ui.notifications?.warn(resultMessage);
         }
 
         static async #onSwitchRangedTarget() {

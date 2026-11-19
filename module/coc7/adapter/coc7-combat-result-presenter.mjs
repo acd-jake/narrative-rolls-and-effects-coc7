@@ -56,6 +56,21 @@ export class CoC7CombatResultPresenter {
         const base = this.#buildSharedBase(session);
         const { attacker, defender, canViewAtt } = base;
         const names = this.#buildNames(session, attacker, defender);
+        const clearResult = session.rangedMalfunctionClearResult;
+        if (clearResult) {
+            const canView = Boolean(attacker && RollVisibilityPolicy.canViewParticipantRoll({
+                ...attacker, rollMode: clearResult.rollMode, rollerUserId: clearResult.rollerUserId
+            }, session));
+            const resultKey = clearResult.fixed ? "MalfunctionCleared" : "MalfunctionClearFailed";
+            return {
+                ...base.fields,
+                resolvedActorName: (attacker?.actorName ?? "").toUpperCase(),
+                resolvedMalfunctionClear: true,
+                resolvedMalfunctionClearText: canView
+                    ? game.i18n.format(`ROE_COC7.Ranged.${resultKey}`, { roll: clearResult.total, target: clearResult.targetValue })
+                    : game.i18n.localize("ROE.RollSession.HiddenRoll")
+            };
+        }
         const allShots = Array.isArray(session.rangedShots) ? session.rangedShots : [];
         const firingShots = allShots.filter((s) => !s.isTargetSwitch);
         const hitCount = Array.isArray(session.rangedHits)

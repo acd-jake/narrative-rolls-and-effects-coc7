@@ -1,4 +1,8 @@
 <div class="resolved-single-result">
+    {{#if resolvedMalfunctionClear}}
+    <div class="resolved-combat-narrative">{{resolvedMalfunctionClearText}}</div>
+    <div class="resolved-summary-line">{{localize "ROE_COC7.Ranged.MalfunctionClearActionSpent"}}</div>
+    {{else}}
     {{#if resolvedHasRangedShots}}
     <details class="resolved-shots-details">
         <summary class="resolved-combat-narrative is-inspectable" title="{{localize 'ROE_COC7.Ranged.ToggleShotsHint'}}">
@@ -37,4 +41,5 @@
     </div>
 
     {{> roeCocResolvedCombatConsequences}}
+    {{/if}}
 </div>

@@ -142,8 +142,8 @@ export class CoC7SessionFactory {
 
         return {
             rollType: "ranged",
-            prepareModifiers,
-            combatPhase: "reaction",
+            prepareModifiers: Boolean(prepareModifiers && !profile.isJammed),
+            combatPhase: profile.isJammed ? "attack" : "reaction",
             combatType: "ranged",
             title: weaponLabel,
             weaponName: weaponLabel,

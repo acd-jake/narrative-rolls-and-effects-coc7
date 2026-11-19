@@ -96,6 +96,17 @@ const session = CoC7SessionFactory.createRanged({
     rangeTier: "long"
 });
 assert.equal(session.difficulty, "hard");
+const jammedPreparedSession = CoC7SessionFactory.createRanged({
+    attacker: attackerActor,
+    target: defenderActor,
+    weapon: revolver,
+    attackSkillLabel: "Handguns",
+    attackTargetValue: 60,
+    prepareModifiers: true,
+    weaponProfile: { ...RangedWeaponService.getWeaponCombatProfile(revolver, 60), isJammed: true }
+});
+assert.equal(jammedPreparedSession.prepareModifiers, false);
+assert.equal(jammedPreparedSession.combatPhase, "attack");
 
 const attPart = session.participants[0];
 assert.equal(RangedCombatRules.computeModifierDice(session, attPart, { fireMode: "multiple", shotIndex: 0 }), 0);
@@ -182,9 +193,10 @@ coreApi.orchestrator = {
     submitParticipantRoll: submitDamage
 };
 globalThis.foundry = { dice: { terms: { Die: class {} } } };
+let nextRollTotal = 4;
 globalThis.Roll = class {
     constructor(formula) { this.formula = formula; this.terms = []; }
-    async evaluate(options = {}) { this.total = options.maximize ? 6 : 4; return this; }
+    async evaluate(options = {}) { this.total = options.maximize ? 6 : nextRollTotal; return this; }
 };
 assert.equal(patcher.validateSubmittedRoll(autoState, shooter, { modifierDice: 0 }), true);
 Object.assign(shooter, { hasRolled: true, total: 40, successLevel: "regular", rollBreakdown: { modifierDice: 0 } });
@@ -387,6 +399,95 @@ const queuedDamage = { key: "damage_1", hasRolled: false, actorId: "a1" };
 const queuedState = { ...autoState, combatPhase: "resolution", participants: [...autoState.participants, queuedDamage] };
 assert.equal(patcher.validateSubmittedRoll(queuedState, queuedDamage, { modifierDice: 0 }), false);
 assert.equal((await new Prompt(queuedState)._prepareContext({})).canRollDamage, false);
+
+const malfunctionNotifications = [];
+const previousFormat = game.i18n.format;
+const previousUserId = game.user.id;
+game.i18n.format = (key, values) => key.startsWith("ROE_COC7.Ranged.MalfunctionClear")
+    ? `${key}: ${values.roll}/${values.target}` : key;
+globalThis.ui = { notifications: {
+    info: (message) => malfunctionNotifications.push(["info", message]),
+    warn: (message) => malfunctionNotifications.push(["warn", message])
+} };
+const autoStateBeforeMalfunctionTests = autoState;
+autoState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,
+    attackSkillLabel: "Firearms", attackTargetValue: 60
+});
+autoState.combatPhase = "attack";
+autoState.rangedMalfunction = true;
+autoWeapon.jammed = true;
+const malfunctionPrompt = new Prompt(autoState);
+await Prompt.DEFAULT_OPTIONS.actions.clearMalfunction.call(malfunctionPrompt);
+assert.equal(autoState.rangedMalfunction, false);
+assert.equal(autoState.isResolved, true);
+assert.equal(autoState.phase, "resolved");
+assert.equal(autoState.combatPhase, "resolution");
+assert.equal(autoState.rangedShotsFired, 0);
+assert.deepEqual(autoState.rangedMalfunctionClearResult, {
+    total: 4, targetValue: 60, fixed: true, rollMode: "publicroll", rollerUserId: game.user.id
+});
+assert.equal(autoWeapon.jammed, false);
+assert.deepEqual(malfunctionNotifications.pop(), ["info", "ROE_COC7.Ranged.MalfunctionCleared: 4/60"]);
+const successResult = CoC7CombatResultPresenter.buildResolvedContext(autoState);
+assert.equal(successResult.resolvedMalfunctionClear, true);
+assert.equal(successResult.resolvedMalfunctionClearText, "ROE_COC7.Ranged.MalfunctionCleared: 4/60");
+assert.equal(successResult.resolvedActorName, "INVESTIGATOR");
+assert.equal(successResult.resolvedCombatNarrative, undefined);
+const resultAdapter = new CoC7Adapter();
+assert.equal(resultAdapter.prepareResolvedChatContext(autoState).resolvedMalfunctionClearText, successResult.resolvedMalfunctionClearText);
+assert.equal(resultAdapter.preparePromptContext(null, autoState, {}).resolvedMalfunctionClearText, successResult.resolvedMalfunctionClearText);
+
+autoState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,
+    attackSkillLabel: "Firearms", attackTargetValue: 60
+});
+autoState.combatPhase = "attack";
+autoState.rangedMalfunction = true;
+autoWeapon.jammed = true;
+nextRollTotal = 80;
+game.user.isGM = false;
+game.user.id = "player";
+await Prompt.DEFAULT_OPTIONS.actions.clearMalfunction.call(new Prompt(autoState));
+assert.equal(autoState.rangedMalfunction, true);
+assert.equal(autoState.isResolved, true);
+assert.equal(autoState.rangedShotsFired, 0);
+assert.equal(autoState.rangedMalfunctionClearResult.fixed, false);
+assert.equal(autoState.rangedMalfunctionClearResult.rollerUserId, "player");
+assert.equal(autoWeapon.jammed, true);
+assert.deepEqual(malfunctionNotifications.pop(), ["warn", "ROE_COC7.Ranged.MalfunctionClearFailed: 80/60"]);
+const failureResult = CoC7CombatResultPresenter.buildResolvedContext(autoState);
+assert.equal(failureResult.resolvedMalfunctionClearText, "ROE_COC7.Ranged.MalfunctionClearFailed: 80/60");
+assert.equal(resultAdapter.prepareResolvedChatContext(autoState).resolvedMalfunctionClearText, failureResult.resolvedMalfunctionClearText);
+assert.equal(resultAdapter.preparePromptContext(null, autoState, {}).resolvedMalfunctionClearText, failureResult.resolvedMalfunctionClearText);
+coreApi.visibility.canViewParticipantRoll = () => false;
+assert.equal(CoC7CombatResultPresenter.buildResolvedContext(autoState).resolvedMalfunctionClearText, "ROE.RollSession.HiddenRoll");
+coreApi.visibility.canViewParticipantRoll = () => true;
+game.user.isGM = true;
+const failedClearContext = await new Prompt(autoState)._prepareContext({});
+assert.equal(failedClearContext.canClearMalfunction, false);
+assert.equal(failedClearContext.canFireNext, false);
+await Prompt.DEFAULT_OPTIONS.actions.clearMalfunction.call(new Prompt(autoState));
+assert.equal(autoState.rangedShotsFired, 0);
+assert.equal(malfunctionNotifications.length, 0);
+
+autoState = { ...autoState, isResolved: false, combatPhase: "attack" };
+autoState.participants.push({ key: "damage_1", hasRolled: false });
+await Prompt.DEFAULT_OPTIONS.actions.clearMalfunction.call(new Prompt(autoState));
+assert.equal(autoState.isResolved, false);
+assert.equal(malfunctionNotifications.length, 0);
+autoState.participants.pop();
+autoState.participants[0].actorId = "missing-attacker";
+await Prompt.DEFAULT_OPTIONS.actions.clearMalfunction.call(new Prompt(autoState));
+assert.deepEqual(malfunctionNotifications.pop(), ["warn", "ROE_COC7.Ranged.MalfunctionClearUnavailable"]);
+autoState.participants[0].actorId = attackerActor.id;
+autoState.weaponId = "missing-weapon";
+await Prompt.DEFAULT_OPTIONS.actions.clearMalfunction.call(new Prompt(autoState));
+assert.deepEqual(malfunctionNotifications.pop(), ["warn", "ROE_COC7.Ranged.MalfunctionClearUnavailable"]);
+nextRollTotal = 4;
+game.i18n.format = previousFormat;
+game.user.id = previousUserId;
+autoState = autoStateBeforeMalfunctionTests;
 
 // Foundry expands old UUID map keys; read them and prefer the newer escaped entry.
 function makeDamageTarget(uuid) {

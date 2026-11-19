@@ -1,4 +1,8 @@
 <div class="resolved-single-result">
+    {{#if resolvedMalfunctionClear}}
+    <div class="resolved-combat-narrative">{{resolvedMalfunctionClearText}}</div>
+    <div class="resolved-summary-line">{{localize "ROE_COC7.Ranged.MalfunctionClearActionSpent"}}</div>
+    {{else}}
     <div class="resolved-duel-grid {{#unless resolvedHasDefender}}is-single{{/unless}}">
         <div class="resolved-duel-card {{#if resolvedAttackerWon}}is-winner{{/if}}" {{#if resolvedCanViewAttacker}}data-inspect-key="attacker"{{/if}}>
             {{#if resolvedAttackerWon}}<i class="fa-solid fa-trophy resolved-duel-crown"></i>{{/if}}
@@ -46,4 +50,5 @@
     {{/if}}
 
     {{> roeCocResolvedCombatConsequences}}
+    {{/if}}
 </div>

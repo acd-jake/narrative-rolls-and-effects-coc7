@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Configurable resolved combat prompt layout setting (`combatResolvedLayout`) supporting both narrative scene summaries and side-by-side duel comparisons with separated mechanical consequences.
 
 ### Changed
+- Resolve malfunction-clearing attempts immediately and show their outcome in the prompt and chat card.
 - Show the Keeper damage after armor and all resulting conditions in damage previews.
 - The Keeper decides each combat damage roll before further ranged fire; previews are Keeper-only.
 - Combat results now identify who receives the damage.

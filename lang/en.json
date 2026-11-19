@@ -180,6 +180,8 @@
       "ClearMalfunctionBtn": "Clear Malfunction",
       "MalfunctionCleared": "Malfunction cleared ({roll} vs. {target}%)!",
       "MalfunctionClearFailed": "Failed to clear jam ({roll} vs. {target}%).",
+      "MalfunctionClearActionSpent": "The attempt uses the action for this round.",
+      "MalfunctionClearUnavailable": "Could not find the attacker or their weapon to clear the malfunction.",
       "RepairSkillMech": "Mechanical Repair",
       "SwitchTargetBtn": "Switch Target",
       "TargetSwitched": "Switched target to {target}",

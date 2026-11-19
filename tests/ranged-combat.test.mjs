@@ -520,20 +520,10 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.equal(successResult.resolvedMalfunctionClearText, "ROE_COC7.Ranged.MalfunctionCleared: 4/60");
         assert.equal(successResult.resolvedActorName, "INVESTIGATOR");
         assert.equal(successResult.resolvedCombatNarrative, undefined);
+
         const resultAdapter = new CoC7Adapter();
-        const autoStatusSession = {
-            rollType: "ranged",
-            isResolved: true,
-            title: "Tommy Gun",
-            outcomeHeadline: "Miss",
-            resolvedCombatStatus: "ROE_COC7.Ranged.MalfunctionCleared: 4/60",
-            participants: [
-                { key: "attacker", actorName: "Harvey", hasRolled: true, isSuccess: false },
-                { key: "defender", actorName: "Cultist", hasRolled: false }
-            ]
-        };
-        assert.equal((await resultAdapter.prepareResolvedChatContext(autoStatusSession)).resolvedCombatStatus, "ROE_COC7.Ranged.MalfunctionCleared: 4/60");
-        assert.equal((await resultAdapter.preparePromptContext(null, autoStatusSession, {})).resolvedCombatStatus, "ROE_COC7.Ranged.MalfunctionCleared: 4/60");
+        assert.equal((await resultAdapter.prepareResolvedChatContext(autoState)).resolvedMalfunctionClearText, successResult.resolvedMalfunctionClearText);
+        assert.equal((await resultAdapter.preparePromptContext(null, autoState, {})).resolvedMalfunctionClearText, successResult.resolvedMalfunctionClearText);
 
         autoState = CoC7SessionFactory.createRanged({
             attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,
@@ -555,8 +545,8 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.deepEqual(malfunctionNotifications.pop(), ["warn", "ROE_COC7.Ranged.MalfunctionClearFailed: 80/60"]);
         const failureResult = CoC7CombatResultPresenter.buildResolvedContext(autoState);
         assert.equal(failureResult.resolvedMalfunctionClearText, "ROE_COC7.Ranged.MalfunctionClearFailed: 80/60");
-        assert.equal(resultAdapter.prepareResolvedChatContext(autoState).resolvedMalfunctionClearText, failureResult.resolvedMalfunctionClearText);
-        assert.equal(resultAdapter.preparePromptContext(null, autoState, {}).resolvedMalfunctionClearText, failureResult.resolvedMalfunctionClearText);
+        assert.equal((await resultAdapter.prepareResolvedChatContext(autoState)).resolvedMalfunctionClearText, failureResult.resolvedMalfunctionClearText);
+        assert.equal((await resultAdapter.preparePromptContext(null, autoState, {})).resolvedMalfunctionClearText, failureResult.resolvedMalfunctionClearText);
         coreApi.visibility.canViewParticipantRoll = () => false;
         assert.equal(CoC7CombatResultPresenter.buildResolvedContext(autoState).resolvedMalfunctionClearText, "ROE.RollSession.HiddenRoll");
         coreApi.visibility.canViewParticipantRoll = () => true;

@@ -37,18 +37,32 @@
     position: absolute;
     top: 5px;
     right: 6px;
-    width: 20px;
-    height: 20px;
+    z-index: 5;
+    width: 24px;
+    height: 24px;
     padding: 0;
-    background: transparent;
-    border: none;
-    color: var(--roe-text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--roe-bg-inset);
+    border: 1px solid var(--roe-gold-dim);
+    border-radius: 3px;
+    color: var(--roe-gold-bright);
     cursor: pointer;
-    font-size: 0.78rem;
+    font-size: 0.85rem;
+    line-height: 1;
+    pointer-events: auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.75);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .prompt-close-btn i {
+    pointer-events: none;
 }
 
 .roe-overlay[data-nre-system="CoC7"] .prompt-close-btn:hover {
-    color: var(--roe-gold-bright);
+    background: #2b2416;
+    border-color: var(--roe-gold);
+    color: #ffffff;
 }
 
 .roe-overlay[data-nre-system="CoC7"] .prompt-header {

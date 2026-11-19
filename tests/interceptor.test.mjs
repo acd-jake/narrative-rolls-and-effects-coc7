@@ -2,10 +2,21 @@ import assert from "assert";
 import { setCoreApi } from "../module/core-bridge.mjs";
 import { CoC7Interceptor } from "../module/coc7/coc7-interceptor.mjs";
 import { COC7_MODULE_ID } from "../module/coc7/coc7-settings.mjs";
+import { SkillRollStrategy } from "../module/coc7/strategies/skill-roll-strategy.mjs";
 
 const startedRolls = [];
 const fallbackCalls = [];
+const registeredHooks = new Map();
 let interceptEnabled = true;
+let autoApplyConsequences = false;
+
+globalThis.Hooks = {
+    on: (name, fn) => {
+        if (!registeredHooks.has(name)) registeredHooks.set(name, []);
+        registeredHooks.get(name).push(fn);
+    },
+    callAll: () => {}
+};
 
 globalThis.document = {
     body: {
@@ -14,16 +25,24 @@ globalThis.document = {
     }
 };
 
+const actorsById = new Map();
+const actorsByUuid = new Map();
+globalThis.fromUuidSync = (uuid) => actorsByUuid.get(uuid) ?? null;
+
 globalThis.game = {
     user: { isGM: true, targets: { first: () => null } },
     modules: new Map(),
     settings: {
         settings: new Map([[`${COC7_MODULE_ID}.interceptSystemRolls`, {}]]),
-        get: (_mod, key) => (key === "interceptSystemRolls" ? interceptEnabled : false)
+        get: (mod, key) => {
+            if (mod === COC7_MODULE_ID && key === "interceptSystemRolls") return interceptEnabled;
+            if (key === "autoApplyRollConsequences") return autoApplyConsequences;
+            return false;
+        }
     },
     i18n: {
         localize: (key) => key,
-        format: (key) => key
+        format: (key, data) => `${key}:${data?.name ?? ""}`
     }
 };
 
@@ -33,6 +52,9 @@ setCoreApi({
             startedRolls.push({ type, payload });
             return { type, payload };
         }
+    },
+    session: {
+        resolveActor: (participant) => actorsById.get(participant?.actorId) ?? null
     }
 });
 
@@ -90,13 +112,21 @@ const meleeWeapon = {
 
 const actor = new MockActor();
 actor.id = "a1";
+actor.uuid = "Actor.a1";
 actor.name = "Jessie Williams";
 actor.items = [skillItem, meleeWeapon];
 actor.items.get = (id) => actor.items.find((i) => i.id === id) ?? null;
+actor.statuses = new Set();
+actor.toggleStatusEffect = async (status, { active }) => {
+    if (active) actor.statuses.add(status);
+    else actor.statuses.delete(status);
+};
 actor.system = {
-    characteristics: { dex: { value: 65 } },
+    characteristics: { dex: { value: 65 }, con: { value: 80 } },
     attribs: { lck: { value: 55 }, san: { value: 60 } }
 };
+actorsById.set(actor.id, actor);
+actorsByUuid.set(actor.uuid, actor);
 
 const sheet = new CoC7ModelsActorCharacterSheetV3(actor);
 
@@ -136,11 +166,75 @@ await actor.weaponRoll(meleeWeapon);
 assert.equal(startedRolls[5].type, "combat");
 assert.equal(fallbackCalls.length, 0);
 
-// 4. Fallback to native CoC7 handlers when setting is disabled
+// 4. Intercept automatic CoC7ConCheck chat messages
+const preCreateHooks = registeredHooks.get("preCreateChatMessage") ?? [];
+assert.equal(preCreateHooks.length, 1);
+const firePreCreate = (data) => preCreateHooks[0]({}, data);
+
+// Unrelated chat messages pass through untouched
+assert.equal(firePreCreate({ content: "Hello" }), undefined);
+
+// Major wound CON check is suppressed in chat and routed to NRE prompt
+const conResult = firePreCreate({
+    blind: true,
+    flags: { CoC7: { load: { as: "CoC7ConCheck", actorUuid: "Actor.a1", stayAlive: false } } }
+});
+assert.equal(conResult, false);
+assert.equal(startedRolls.length, 7);
+assert.equal(startedRolls[6].type, "skill");
+assert.equal(startedRolls[6].payload.targetValue, 80);
+assert.equal(startedRolls[6].payload.canPush, false);
+assert.equal(startedRolls[6].payload.isConCheck, true);
+assert.equal(startedRolls[6].payload.stayAlive, false);
+assert.equal(startedRolls[6].payload.rollMode, "blindroll");
+
+// Dying stayAlive CON check sets stayAlive: true
+const dyingResult = firePreCreate({
+    flags: { CoC7: { load: { as: "CoC7ConCheck", actorUuid: "Actor.a1", stayAlive: true } } }
+});
+assert.equal(dyingResult, false);
+assert.equal(startedRolls.length, 8);
+assert.equal(startedRolls[7].payload.stayAlive, true);
+
+// 5. Verify SkillRollStrategy applies unconscious / dead on failed CON check
+const strategy = new SkillRollStrategy();
+const failedParticipant = { key: "p0", actorId: "a1", actorName: "Jessie Williams", hasRolled: true, isSuccess: false };
+
+// Manual consequence mode flags pending consequence first, then applies unconscious
+autoApplyConsequences = false;
+const manualConState = {
+    rollType: "skill",
+    isConCheck: true,
+    stayAlive: false,
+    participants: [failedParticipant]
+};
+await strategy.onRollApplied(failedParticipant, manualConState);
+assert.equal(manualConState.hasPendingConsequences, true);
+assert.equal(actor.statuses.has("unconscious"), false);
+await strategy.applyConsequences(manualConState);
+assert.equal(manualConState.consequenceApplied, true);
+assert.equal(manualConState.hasPendingConsequences, false);
+assert.equal(actor.statuses.has("unconscious"), true);
+assert.ok(strategy.evaluateResolution(manualConState).outcomeHeadline.includes("ROE_COC7.RollSession.ConCheckUnconscious:Jessie Williams"));
+
+// Auto-apply mode immediately sets dead when stayAlive is true
+autoApplyConsequences = true;
+const autoDyingState = {
+    rollType: "skill",
+    isConCheck: true,
+    stayAlive: true,
+    participants: [failedParticipant]
+};
+await strategy.onRollApplied(failedParticipant, autoDyingState);
+assert.equal(autoDyingState.consequenceApplied, true);
+assert.equal(actor.statuses.has("dead"), true);
+assert.ok(strategy.evaluateResolution(autoDyingState).outcomeHeadline.includes("ROE_COC7.RollSession.ConCheckDead:Jessie Williams"));
+
+// 6. Fallback to native CoC7 handlers when setting is disabled
 interceptEnabled = false;
 await sheet._onRollSkillTest(mockEvent({ itemId: "sk1" }));
 await actor.weaponRoll(meleeWeapon);
-assert.equal(startedRolls.length, 6);
+assert.equal(startedRolls.length, 8);
 assert.equal(fallbackCalls.length, 2);
 
 console.log("CoC7Interceptor checks passed.");

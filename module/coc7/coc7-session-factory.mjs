@@ -17,18 +17,20 @@ export class CoC7SessionFactory {
         };
     }
 
-    /** Creates a skill or characteristic check with its push and difficulty options. */
-    static createSkillCheck({ actor, item = null, label, targetValue, difficulty = "regular", canChangeDifficulty = true, canPush = item?.system?.properties?.push !== false, prepareModifiers = false }) {
-        return {
-            rollType: "skill",
-            prepareModifiers,
-            title: label,
-            difficulty,
-            canChangeDifficulty,
-            canPush,
-            participants: [SessionStore.buildParticipant("p0", actor, label, targetValue, item?.id ?? "")]
-        };
-    }
+  /** Creates a skill or characteristic check with its push and difficulty options. */
+  static createSkillCheck({ actor, item = null, label, targetValue, difficulty = "regular", canChangeDifficulty = true, canPush = item?.system?.properties?.push !== false, isConCheck = false, stayAlive = false, prepareModifiers = false }) {
+      return {
+          rollType: "skill",
+          prepareModifiers,
+          title: label,
+          difficulty,
+          canChangeDifficulty,
+          canPush,
+          isConCheck: Boolean(isConCheck),
+          stayAlive: Boolean(stayAlive),
+          participants: [SessionStore.buildParticipant("p0", actor, label, targetValue, item?.id ?? "")]
+      };
+  }
 
     /** Creates a Sanity session, using current Sanity as the check target. */
     static createSanityCheck({ actor, label, lossSuccess = "0", lossFailure = "1d6", prepareModifiers = false }) {

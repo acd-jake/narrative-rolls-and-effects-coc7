@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Displayed the opponent's success level in prompts and chat cards regardless of roll visibility mode, while keeping rolled numbers and dice-breakdown inspection restricted.
 - Allowed players to view and inspect their own roll outcome and details immediately while waiting for opponents or Keeper resolution.
 - Placed a unified post-roll decline button below Luck and Push options with dynamic labels based on available choices.
+- Intercept automatic CoC7 Constitution checks triggered by major wounds or dying (`CoC7ConCheck`) into roll prompts and apply the resulting unconscious or dead condition on failure.
 
 ### Fixed
 - Apply a major wound when a nonfatal hit also reduces the target to zero HP.

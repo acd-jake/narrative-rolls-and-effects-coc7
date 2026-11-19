@@ -133,7 +133,8 @@ export class CoC7Adapter {
             rangedReloadedInRound: cfg.rangedReloadedInRound ?? false,
             rangedMalfunction: cfg.rangedMalfunction ?? false,
             weaponProfile: cfg.weaponProfile ?? null,
-
+            isConCheck: cfg.isConCheck ?? false,
+            stayAlive: cfg.stayAlive ?? false
         };
     }
 

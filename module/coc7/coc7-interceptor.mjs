@@ -27,12 +27,17 @@ const CHARACTERISTIC_ALIASES = Object.freeze({
 /** Monkey-patches CoC7 system roll entry points and routes checks into NRE sessions. */
 export class CoC7Interceptor {
     static #patched = false;
+    static #chatHookRegistered = false;
 
     static register() {
         this.#patchSystemMethods();
         if (!document.body.dataset.roeGlobalCapture) {
             document.body.dataset.roeGlobalCapture = "true";
             document.body.addEventListener("click", (event) => this.#onGlobalEnricherClick(event), { capture: true });
+        }
+        if (!this.#chatHookRegistered) {
+            this.#chatHookRegistered = true;
+            Hooks.on("preCreateChatMessage", (message, data) => this.#onPreCreateChatMessage(message, data));
         }
     }
 
@@ -277,6 +282,35 @@ export class CoC7Interceptor {
             prepareModifiers
         });
     }
+
+    static #onPreCreateChatMessage(message, data) {
+        if (!CoC7Settings.isSystemInterceptionEnabled()) return;
+        const load = data?.flags?.CoC7?.load ?? message?.flags?.CoC7?.load;
+        if (load?.as !== "CoC7ConCheck" || !load.actorUuid) return;
+
+        const doc = fromUuidSync(load.actorUuid);
+        const actor = doc?.actor ?? doc;
+        if (!actor) return;
+
+        const stayAlive = Boolean(load.stayAlive);
+        const threshold = Number(actor.system?.characteristics?.con?.value ?? load.dicePool?.threshold ?? 50);
+        const conLabel = game.i18n.localize("ROE_COC7.Characteristics.CON.Label");
+        const label = stayAlive ? `${conLabel} (${game.i18n.localize("ROE_COC7.Conditions.Dead")})` : conLabel;
+
+        UniversalRollOrchestrator.startSystemRoll("skill", {
+            actor,
+            label,
+            targetValue: threshold,
+            difficulty: "regular",
+            canChangeDifficulty: false,
+            canPush: false,
+            isConCheck: true,
+            stayAlive,
+            rollMode: data?.blind ? "blindroll" : undefined
+        });
+        return false;
+    }
+
     static async #resolveActorRef(ref) {
         if (!ref) return null;
         if (typeof ref === "string") {

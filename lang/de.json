@@ -144,7 +144,9 @@
         "rangedReaction": "Du legst an – gleich zeigt sich, ob dein Ziel noch rechtzeitig reagiert...",
         "rangedAttack": "Du hast deine Entscheidung getroffen – der Schuss steht unmittelbar bevor...",
         "ranged": "Der Schuss hallt nach – gleich zeigt sich, ob er sein Ziel gefunden hat..."
-      }
+      },
+      "ConCheckUnconscious": "{name} verliert das Bewusstsein.",
+      "ConCheckDead": "{name} erliegt den Verletzungen."
     },
     "RollRequest": {
       "CheckTargetLabel": "Fertigkeit / Eigenschaft / Glück",

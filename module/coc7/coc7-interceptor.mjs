@@ -1,6 +1,6 @@
-import { UniversalRollOrchestrator } from "../core-bridge.mjs";
-import { ActorTargetSelectorApp } from "../core-bridge.mjs";
+import { UniversalRollOrchestrator, ActorTargetSelectorApp } from "../core-bridge.mjs";
 import { CoC7DataMapper } from "./coc7-data-mapper.mjs";
+import { COC7_MODULE_ID, CoC7Settings } from "./coc7-settings.mjs";
 
 const ENRICHER_SELECTOR = [
     "a.coc7-link",
@@ -24,84 +24,316 @@ const CHARACTERISTIC_ALIASES = Object.freeze({
     edu: "edu", education: "edu", bildung: "edu", bi: "edu", know: "edu", wissen: "edu"
 });
 
-/** Routes CoC7 sheet and enriched-text clicks into the shared roll-session workflow. */
+/** Monkey-patches CoC7 system roll entry points and routes checks into NRE sessions. */
 export class CoC7Interceptor {
+    static #patched = false;
+
     static register() {
-        if (document.body.dataset.roeGlobalCapture) return;
-        document.body.dataset.roeGlobalCapture = "true";
-        // Capture clicks before the system's handlers can start a competing roll.
-        document.body.addEventListener("click", (event) => this.#handleDocumentClick(event), { capture: true });
+        this.#patchSystemMethods();
+        if (!document.body.dataset.roeGlobalCapture) {
+            document.body.dataset.roeGlobalCapture = "true";
+            document.body.addEventListener("click", (event) => this.#onGlobalEnricherClick(event), { capture: true });
+        }
     }
 
-    static #handleDocumentClick(event) {
-        if (event.button !== 0) return;
-        this.#onGlobalSheetClick(event);
-        this.#onGlobalEnricherClick(event);
+    static #patchedPrototypes = new WeakSet();
+
+    static #patchSystemMethods() {
+        if (this.#patched) return;
+        const actorProto = CONFIG.Actor?.documentClass?.prototype;
+        if (!actorProto) return;
+        this.#patched = true;
+
+        const patchedHooks = [];
+
+        // 1. Alle registrierten Actor-Sheets (V2, V3, Summarized, NPC, Creature, Vehicle) und deren Basisklassen patchen
+        const allSheetClasses = Object.values(CONFIG.Actor?.sheetClasses ?? {})
+            .flatMap((group) => Object.values(group))
+            .map((entry) => entry.cls)
+            .filter(Boolean);
+
+        const prototypesToPatch = new Set();
+        for (const cls of allSheetClasses) {
+            for (let current = cls; current && current !== Object; current = Object.getPrototypeOf(current)) {
+                if (current.prototype) prototypesToPatch.add(current.prototype);
+            }
+        }
+
+        for (const proto of prototypesToPatch) {
+            if (this.#patchedPrototypes.has(proto)) continue;
+            this.#patchedPrototypes.add(proto);
+            const className = proto.constructor?.name || "SheetProto";
+
+            if (typeof proto._onWeaponRoll === "function") {
+                patchedHooks.push(`${className}._onWeaponRoll`);
+                this.#wrapMethod(proto, "_onWeaponRoll", "", async function (wrapped, event, ...args) {
+                    if (!CoC7Settings.isSystemInterceptionEnabled()) return wrapped.call(this, event, ...args);
+                    const trigger = event?.currentTarget ?? event?.target;
+                    const itemEl = trigger?.closest?.("[data-item-id], [data-weapon-id]");
+                    const itemId = itemEl?.dataset?.itemId ?? itemEl?.dataset?.weaponId;
+                    const weaponName = (trigger?.dataset?.nameTooltip || trigger?.textContent || "").trim().toLowerCase();
+                    const weapon = itemId
+                        ? this.actor?.items?.get(itemId)
+                        : this.actor?.items?.find((i) => i.type === "weapon" && i.name.toLowerCase() === weaponName);
+                    if (!weapon) return wrapped.call(this, event, ...args);
+                    return CoC7Interceptor.#dispatchWeaponAttack(this.actor, weapon, Boolean(game.user.isGM && event?.shiftKey));
+                });
+            }
+
+            if (typeof proto._onRollSkillTest === "function") {
+                patchedHooks.push(`${className}._onRollSkillTest`);
+                this.#wrapMethod(proto, "_onRollSkillTest", "", async function (wrapped, event, ...args) {
+                    if (!CoC7Settings.isSystemInterceptionEnabled()) return wrapped.call(this, event, ...args);
+                    const trigger = event?.currentTarget ?? event?.target;
+                    const itemEl = trigger?.closest?.("[data-item-id], [data-skill-id]");
+                    const itemId = itemEl?.dataset?.itemId ?? itemEl?.dataset?.skillId;
+                    const skillName = (trigger?.dataset?.nameTooltip || trigger?.textContent || "").trim();
+                    const skillItem = itemId ? this.actor?.items?.get(itemId) : CoC7DataMapper.findActorSkill(this.actor, { name: skillName });
+                    if (!skillItem && !skillName) return wrapped.call(this, event, ...args);
+                    return CoC7Interceptor.#handleNormalizedTrigger({
+                        type: "SKILL",
+                        actor: this.actor,
+                        item: skillItem,
+                        skillName,
+                        isShiftKey: Boolean(event?.shiftKey)
+                    });
+                });
+            }
+
+            for (const methodName of ["_onRollCharacteristicTest", "_onRollCharacteriticTest"]) {
+                if (typeof proto[methodName] === "function") {
+                    patchedHooks.push(`${className}.${methodName}`);
+                    this.#wrapMethod(proto, methodName, "", async function (wrapped, event, ...args) {
+                        if (!CoC7Settings.isSystemInterceptionEnabled()) return wrapped.call(this, event, ...args);
+                        const trigger = event?.currentTarget ?? event?.target;
+                        const charEl = trigger?.closest?.("[data-characteristic], [data-key]");
+                        const charKey = charEl?.dataset?.characteristic ?? charEl?.dataset?.key;
+                        if (!charKey) return wrapped.call(this, event, ...args);
+                        return CoC7Interceptor.#handleNormalizedTrigger({
+                            type: "CHARACTERISTIC",
+                            actor: this.actor,
+                            characteristic: charKey,
+                            isShiftKey: Boolean(event?.shiftKey)
+                        });
+                    });
+                }
+            }
+
+            if (typeof proto._onRollAttribTest === "function") {
+                patchedHooks.push(`${className}._onRollAttribTest`);
+                this.#wrapMethod(proto, "_onRollAttribTest", "", async function (wrapped, event, ...args) {
+                    if (!CoC7Settings.isSystemInterceptionEnabled()) return wrapped.call(this, event, ...args);
+                    const trigger = event?.currentTarget ?? event?.target;
+                    const attrEl = trigger?.closest?.("[data-attrib], [data-attribute], [data-key]");
+                    const attrKey = attrEl?.dataset?.attrib ?? attrEl?.dataset?.attribute ?? attrEl?.dataset?.key;
+                    if (!attrKey || !["lck", "luck", "san"].includes(attrKey.toLowerCase())) {
+                        return wrapped.call(this, event, ...args);
+                    }
+                    return CoC7Interceptor.#handleNormalizedTrigger({
+                        type: "ATTRIBUTE",
+                        actor: this.actor,
+                        attribute: attrKey,
+                        isShiftKey: Boolean(event?.shiftKey)
+                    });
+                });
+            }
+
+            if (typeof proto._onSanCheck === "function") {
+                patchedHooks.push(`${className}._onSanCheck`);
+                this.#wrapMethod(proto, "_onSanCheck", "", async function (wrapped, event, ...args) {
+                    if (!CoC7Settings.isSystemInterceptionEnabled()) return wrapped.call(this, event, ...args);
+                    return CoC7Interceptor.#handleNormalizedTrigger({
+                        type: "SAN_CHECK",
+                        actor: this.actor,
+                        sanMin: this.actor?.system?.special?.sanLoss?.checkPassed ?? "0",
+                        sanMax: this.actor?.system?.special?.sanLoss?.checkFailled ?? "1d6",
+                        isShiftKey: Boolean(event?.shiftKey)
+                    });
+                });
+            }
+        }
+
+        // 2. Actor-Methoden für Makros & direkte API-Aufrufe
+        if (typeof actorProto.weaponRoll === "function") {
+            patchedHooks.push("Actor.weaponRoll");
+            this.#wrapMethod(actorProto, "weaponRoll", "CONFIG.Actor.documentClass.prototype.weaponRoll", async function (wrapped, weapon, attackerUuid, ...args) {
+                if (!CoC7Settings.isSystemInterceptionEnabled() || weapon?.flags?.[COC7_MODULE_ID]?.bypassNre) {
+                    return wrapped.call(this, weapon, attackerUuid, ...args);
+                }
+                const resolved = attackerUuid ? await fromUuid(attackerUuid) : this;
+                const actor = resolved?.actor ?? resolved ?? this;
+                if (!actor || !weapon) return wrapped.call(this, weapon, attackerUuid, ...args);
+                return CoC7Interceptor.#dispatchWeaponAttack(actor, weapon, Boolean(game.user.isGM && globalThis.event?.shiftKey));
+            });
+        }
+
+        console.debug(`${COC7_MODULE_ID} | Patched CoC7 roll entry points:`, patchedHooks);
     }
 
-    static async #onGlobalSheetClick(event) {
-        const sheetEl = event.target.closest("form.coc7.sheet, .application.coc7, [id*='CoC7ModelsActor']");
-        if (!sheetEl) return;
-
-        const actor = this.#resolveSheetActor(sheetEl);
-        if (!actor) return;
-
-        if (event.target.closest(".item-control, [data-action='edit'], [data-action='delete'], [data-action='tab'], .tabs, input, select")) {
+    static #wrapMethod(target, methodName, libWrapperTarget, handler) {
+        if (libWrapperTarget && game.modules?.get("lib-wrapper")?.active && typeof globalThis.libWrapper?.register === "function") {
+            globalThis.libWrapper.register(COC7_MODULE_ID, libWrapperTarget, handler, "MIXED");
             return;
         }
+        const original = target[methodName];
+        target[methodName] = function (...args) {
+            return handler.call(this, original, ...args);
+        };
+    }
 
-        const trigger = event.target.closest(
-            ".rollable, [data-characteristic], [data-attribute], [data-attrib], [data-skill-id], [data-weapon-id], .weapon-name, .skill-name, .characteristic-label, .attribute-label"
-        );
-        if (!trigger) return;
 
-        // Shift-click lets a GM open the modifier-preparation phase from a sheet.
-        const prepareModifiers = Boolean(game.user.isGM && event.shiftKey);
-        const item = this.#resolveClickedItem(actor, trigger);
+    static async #handleNormalizedTrigger(options) {
+        const prepareModifiers = Boolean(game.user.isGM && (options.isShiftKey || globalThis.event?.shiftKey));
+        const difficulty = this.#normalizeDifficulty(options.difficulty);
+        const rollMode = options.isBlind ? "blindroll" : undefined;
 
-        if (item?.type === "weapon") {
-            this.#haltEvent(event);
-            return this.#dispatchWeaponAttack(actor, item, prepareModifiers);
-        }
-
-        if (item?.type === "skill" || trigger.classList.contains("skill-name")) {
-            this.#haltEvent(event);
-            return this.#dispatchSheetSkill(actor, item, trigger, prepareModifiers);
-        }
-
-        const charEl = trigger.closest("[data-characteristic], [data-key]");
-        const charKey = (charEl?.dataset.characteristic ?? charEl?.dataset.key)?.toLowerCase();
-        if (charKey && actor.system?.characteristics?.[charKey]) {
-            this.#haltEvent(event);
-            return this.#dispatchCharacteristic(actor, charKey, "regular", prepareModifiers);
-        }
-
-        const attrEl = trigger.closest("[data-attribute], [data-attrib], [data-key]");
-        const attrKey = (attrEl?.dataset.attribute ?? attrEl?.dataset.attrib ?? attrEl?.dataset.key)?.toLowerCase();
-        if (attrKey === "san") {
-            this.#haltEvent(event);
-            return UniversalRollOrchestrator.startSystemRoll("sanity", {
+        if (options.type === "COMBINED" || Array.isArray(options.checks)) {
+            const actor = await this.#resolveActorRef(options.actor ?? options.actorUuid);
+            if (!actor || !Array.isArray(options.checks) || options.checks.length < 2) return undefined;
+            const checks = options.checks.slice(0, 2).map((chk) => this.#mapNormalizedCheck(actor, chk));
+            return UniversalRollOrchestrator.startSystemRoll("combined", {
                 actor,
-                label: game.i18n.localize("ROE_COC7.Resources.Sanity"),
+                checks,
+                combinedMode: options.combinedMode === "or" ? "or" : "and",
+                difficulty,
+                rollMode,
                 prepareModifiers
             });
         }
-        if (attrKey === "lck" || attrKey === "luck") {
-            this.#haltEvent(event);
-            return this.#dispatchLuckCheck(actor, prepareModifiers);
+
+        if (options.type === "OPPOSED" || Array.isArray(options.contestants)) {
+            if (!Array.isArray(options.contestants) || options.contestants.length < 2) return undefined;
+            const contestants = [];
+            for (const entry of options.contestants) {
+                const cActor = await this.#resolveActorRef(entry.actor ?? entry.actorUuid);
+                if (!cActor) return undefined;
+                const mapped = this.#mapNormalizedCheck(cActor, entry);
+                contestants.push({ actor: cActor, ...mapped });
+            }
+            return UniversalRollOrchestrator.startSystemRoll("opposed", {
+                title: options.title || `${contestants[0].label} vs. ${contestants[1].label}`,
+                contestants,
+                rollMode,
+                prepareModifiers
+            });
         }
+
+        const actor = await this.#resolveActorRef(options.actor ?? options.actorUuid);
+        if (!actor) return undefined;
+
+        const key = String(options.key ?? options.attribute ?? options.characteristic ?? "").toLowerCase();
+        const type = String(options.type ?? options.rollType ?? "").toUpperCase();
+
+        if (type === "SAN_CHECK" || (type === "ATTRIBUTE" && key === "san") || key === "san") {
+            return UniversalRollOrchestrator.startSystemRoll("sanity", {
+                actor,
+                label: options.sanReason || options.label || game.i18n.localize("ROE_COC7.Resources.Sanity"),
+                lossSuccess: options.sanMin ?? options.lossSuccess ?? "0",
+                lossFailure: options.sanMax ?? options.lossFailure ?? "1d6",
+                rollMode,
+                prepareModifiers
+            });
+        }
+
+        if ((type === "ATTRIBUTE" && (key === "lck" || key === "luck")) || key === "lck" || key === "luck") {
+            return this.#dispatchLuckCheck(actor, prepareModifiers, rollMode);
+        }
+
+        const charKey = CHARACTERISTIC_ALIASES[key];
+        if ((type === "CHARACTERISTIC" || charKey) && actor.system?.characteristics?.[charKey]) {
+            return this.#dispatchCharacteristic(actor, charKey, difficulty, prepareModifiers, rollMode);
+        }
+
+        const skillItem =
+            (options.item?.type === "skill" ? options.item : null) ??
+            CoC7DataMapper.findActorSkill(actor, { id: options.itemId ?? options.id, name: options.skillName ?? options.name ?? options.key });
+
+        if (skillItem) {
+            return UniversalRollOrchestrator.startSystemRoll("skill", {
+                actor,
+                item: skillItem,
+                label: CoC7DataMapper.getSkillLabel(skillItem),
+                targetValue: CoC7DataMapper.getSkillValue(skillItem),
+                difficulty,
+                canPush: skillItem.system?.properties?.push !== false,
+                rollMode,
+                prepareModifiers
+            });
+        }
+
+        return undefined;
+    }
+
+    static async #handleSanCardCreate(actorUuid, sanData) {
+        const actor = await this.#resolveActorRef(actorUuid);
+        if (!actor) return undefined;
+        const prepareModifiers = Boolean(game.user.isGM && (sanData.isShiftKey || globalThis.event?.shiftKey));
+        return UniversalRollOrchestrator.startSystemRoll("sanity", {
+            actor,
+            label: sanData.sanReason || game.i18n.localize("ROE_COC7.Resources.Sanity"),
+            lossSuccess: sanData.sanMin ?? "0",
+            lossFailure: sanData.sanMax ?? "1d6",
+            rollMode: sanData.isBlind ? "blindroll" : undefined,
+            prepareModifiers
+        });
+    }
+    static async #resolveActorRef(ref) {
+        if (!ref) return null;
+        if (typeof ref === "string") {
+            const doc = await fromUuid(ref);
+            return doc?.actor ?? doc ?? game.actors?.get(ref) ?? null;
+        }
+        return ref.actor ?? ref;
+    }
+
+    static #mapNormalizedCheck(actor, entry) {
+        const key = String(entry.key ?? entry.characteristic ?? entry.attribute ?? "").toLowerCase();
+        if (key === "lck" || key === "luck") {
+            return {
+                isLuck: true,
+                label: game.i18n.localize("ROE_COC7.Resources.Luck"),
+                targetValue: Number(actor.system?.attribs?.lck?.value ?? 50),
+                canPush: false
+            };
+        }
+        const charKey = CHARACTERISTIC_ALIASES[key];
+        if (charKey && actor.system?.characteristics?.[charKey]) {
+            return {
+                label: game.i18n.localize(`ROE_COC7.Characteristics.${charKey.toUpperCase()}.Label`),
+                targetValue: Number(actor.system.characteristics[charKey].value ?? 50),
+                canPush: true
+            };
+        }
+        const skillItem =
+            (entry.item?.type === "skill" ? entry.item : null) ??
+            CoC7DataMapper.findActorSkill(actor, { id: entry.itemId ?? entry.id, name: entry.skillName ?? entry.name ?? entry.key });
+        if (skillItem) {
+            return {
+                itemId: skillItem.id,
+                label: CoC7DataMapper.getSkillLabel(skillItem),
+                targetValue: CoC7DataMapper.getSkillValue(skillItem),
+                canPush: skillItem.system?.properties?.push !== false
+            };
+        }
+        return {
+            label: entry.label || entry.name || game.i18n.localize("ROE_COC7.RollSession.Types.basic"),
+            targetValue: Number(entry.targetValue ?? entry.value ?? 50),
+            canPush: entry.canPush !== false
+        };
     }
 
     static async #onGlobalEnricherClick(event) {
+        if (event.button !== 0 || !CoC7Settings.isSystemInterceptionEnabled()) return;
         const link = event.target.closest(ENRICHER_SELECTOR);
         if (!link || link.closest(".roe-overlay")) return;
 
-        this.#haltEvent(event);
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
 
         const parsed = this.#parseEnricherLink(link);
         const prepareModifiers = Boolean(game.user.isGM && event.shiftKey);
         const promptTitle = parsed.rawName || game.i18n.localize("ROE_COC7.RollSession.Types.basic");
-        // Prefer selected tokens; otherwise use the player's character or ask the GM.
         const actors = await this.#resolveTargetActors(promptTitle);
 
         for (const actor of actors) {
@@ -113,38 +345,27 @@ export class CoC7Interceptor {
         const dataset = link.dataset;
         const rawType = (dataset.type ?? dataset.coc7Type ?? "").toLowerCase();
         const rawName = (
-            dataset.name ??
-            dataset.skill ??
-            dataset.characteristic ??
-            dataset.attribute ??
-            link.textContent ??
-            ""
+            dataset.name ?? dataset.skill ?? dataset.characteristic ?? dataset.attribute ?? link.textContent ?? ""
         ).replace(/\s*\(.*?\)\s*$/, "").trim();
 
         const isSanity =
-            rawType === "sanloss" ||
-            rawType === "sanity" ||
-            dataset.sanMax !== undefined ||
-            dataset.sanMin !== undefined ||
+            rawType === "sanloss" || rawType === "sanity" ||
+            dataset.sanMax !== undefined || dataset.sanMin !== undefined ||
             /^(san|sanity|stabilität)$/i.test(rawName);
 
         return { dataset, rawName, isSanity };
     }
 
     static async #resolveTargetActors(promptTitle) {
-        const controlledActors = (canvas?.tokens?.controlled ?? [])
-            .map((token) => token.actor)
-            .filter(Boolean);
+        const controlledActors = (canvas?.tokens?.controlled ?? []).map((t) => t.actor).filter(Boolean);
         if (controlledActors.length > 0) {
             return Array.from(new Map(controlledActors.map((a) => [a.id, a])).values());
         }
-
         if (!game.user.isGM) {
             if (game.user.character) return [game.user.character];
             ui.notifications.warn(game.i18n.localize("ROE.Warnings.NoActiveCharacter"));
             return [];
         }
-
         return ActorTargetSelectorApp.prompt({ title: promptTitle });
     }
 
@@ -158,12 +379,8 @@ export class CoC7Interceptor {
                 prepareModifiers
             });
         }
-
         const difficulty = this.#normalizeDifficulty(dataset.difficulty);
-
-        if (/^(lck|luck|glück)$/i.test(rawName)) {
-            return this.#dispatchLuckCheck(actor, prepareModifiers);
-        }
+        if (/^(lck|luck|glück)$/i.test(rawName)) return this.#dispatchLuckCheck(actor, prepareModifiers);
 
         const charKey = CHARACTERISTIC_ALIASES[rawName.toLowerCase()];
         if (charKey && actor.system?.characteristics?.[charKey]) {
@@ -207,31 +424,19 @@ export class CoC7Interceptor {
             : UniversalRollOrchestrator.startSystemRoll("combat", { ...attackData, prepareModifiers });
     }
 
-    static #dispatchSheetSkill(actor, item, trigger, prepareModifiers) {
-        const label = item ? CoC7DataMapper.getSkillLabel(item) : (trigger.dataset.nameTooltip || trigger.textContent.trim());
-        const targetValue = item ? CoC7DataMapper.getSkillValue(item) : Number(trigger.dataset.valueTooltip ?? 0);
-        return UniversalRollOrchestrator.startSystemRoll("skill", {
-            actor,
-            item: item ?? null,
-            label,
-            targetValue,
-            canPush: item ? item.system?.properties?.push !== false : true,
-            prepareModifiers
-        });
-    }
-
-    static #dispatchCharacteristic(actor, charKey, difficulty, prepareModifiers) {
+    static #dispatchCharacteristic(actor, charKey, difficulty, prepareModifiers, rollMode = undefined) {
         return UniversalRollOrchestrator.startSystemRoll("skill", {
             actor,
             label: game.i18n.localize(`ROE_COC7.Characteristics.${charKey.toUpperCase()}.Label`),
             targetValue: Number(actor.system.characteristics[charKey].value ?? 50),
             difficulty,
             canPush: true,
+            rollMode,
             prepareModifiers
         });
     }
 
-    static #dispatchLuckCheck(actor, prepareModifiers) {
+    static #dispatchLuckCheck(actor, prepareModifiers, rollMode = undefined) {
         return UniversalRollOrchestrator.startSystemRoll("skill", {
             actor,
             label: game.i18n.localize("ROE_COC7.Resources.Luck"),
@@ -239,58 +444,15 @@ export class CoC7Interceptor {
             difficulty: "regular",
             canChangeDifficulty: false,
             canPush: false,
+            rollMode,
             prepareModifiers
         });
     }
 
-    static #resolveSheetActor(sheetEl) {
-        const idMatch = sheetEl.id?.match(/-(Actor-[A-Za-z0-9]+|Scene-[A-Za-z0-9]+-Token-[A-Za-z0-9]+-Actor-[A-Za-z0-9]+)$/);
-        if (idMatch?.[1]) {
-            const doc = fromUuidSync(idMatch[1].replace(/-/g, "."));
-            if (doc) return doc.actor ?? doc;
-        }
-
-        if (foundry.applications?.instances) {
-            for (const app of foundry.applications.instances.values()) {
-                if (app.element === sheetEl || app.element?.contains(sheetEl)) {
-                    return app.document ?? app.actor ?? null;
-                }
-            }
-        }
-        return null;
-    }
-
-    static #resolveClickedItem(actor, trigger) {
-        const itemEl = trigger.closest("[data-item-id], [data-skill-id], [data-weapon-id], [data-uuid]");
-        const itemId = itemEl?.dataset.itemId ?? itemEl?.dataset.skillId ?? itemEl?.dataset.weaponId;
-        if (itemId) {
-            const byId = actor.items.get(itemId);
-            if (byId) return byId;
-        }
-        if (itemEl?.dataset.uuid) {
-            const doc = fromUuidSync(itemEl.dataset.uuid);
-            if (doc?.parent === actor) return doc;
-        }
-
-        const tooltipName = (trigger.dataset.nameTooltip || trigger.textContent || "").trim().toLowerCase();
-        if (!tooltipName) return null;
-        if (trigger.classList.contains("skill-name")) {
-            return actor.items.find((i) => i.type === "skill" && i.name.toLowerCase() === tooltipName) ?? null;
-        }
-        if (trigger.classList.contains("weapon-name")) {
-            return actor.items.find((i) => i.type === "weapon" && i.name.toLowerCase() === tooltipName) ?? null;
-        }
-        return actor.items.find((i) => (i.type === "skill" || i.type === "weapon") && i.name.toLowerCase() === tooltipName) ?? null;
-    }
     static #normalizeDifficulty(raw) {
         const val = String(raw ?? "").toLowerCase();
         if (val === "hard" || val === "1/2" || val === "schwierig") return "hard";
         if (val === "extreme" || val === "1/5" || val === "extrem") return "extreme";
         return "regular";
-    }
-    static #haltEvent(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
     }
 }

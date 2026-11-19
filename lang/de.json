@@ -26,6 +26,10 @@
       "EnrichmentError": "Die Vorschau des Konsequenztexts konnte nicht aktualisiert werden."
     },
     "Settings": {
+      "InterceptSystemRolls": {
+        "Name": "CoC7-Systemwürfe in NRE umleiten",
+        "Hint": "Leitet alle Fertigkeits-, Eigenschafts-, Glücks-, Stabilitäts-, kombinierten, vergleichenden und Waffenproben des CoC7-Systems in die NRE-Prompts um. Deaktivieren, um die Standard-CoC7-Würfelkarten zu verwenden."
+      },
       "ResultDisplayMode": {
         "Name": "Anzeige von Würfelergebnissen",
         "Hint": "Legt fest, ob im Prompt und auf der Chatkarte Zahlenwerte, der Erfolgsgrad oder beides angezeigt werden.",

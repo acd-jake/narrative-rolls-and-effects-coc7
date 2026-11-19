@@ -7,6 +7,16 @@ export const COC7_MODULE_ID = "narrative-rolls-and-effects-coc7";
 export class CoC7Settings {
     /** Registers the module settings and configuration menus. */
     static register() {
+
+        game.settings.register(COC7_MODULE_ID, "interceptSystemRolls", {
+            name: "ROE_COC7.Settings.InterceptSystemRolls.Name",
+            hint: "ROE_COC7.Settings.InterceptSystemRolls.Hint",
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true
+        });
+
         game.settings.register(COC7_MODULE_ID, PUSH_CONSEQUENCES_SETTING, {
             scope: "world",
             config: false,
@@ -121,4 +131,11 @@ export class CoC7Settings {
         if (policy === "manual") return false;
         return Boolean(game.settings.get(COC7_MODULE_ID, "automaticRangedDamage"));
     }
+
+    /** Returns whether CoC7 system roll functions should be intercepted into NRE sessions. */
+    static isSystemInterceptionEnabled() {
+        if (!game.settings?.settings?.has?.(`${COC7_MODULE_ID}.interceptSystemRolls`)) return true;
+        return Boolean(game.settings.get(COC7_MODULE_ID, "interceptSystemRolls"));
+    }
+
 }

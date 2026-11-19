@@ -26,6 +26,10 @@
       "EnrichmentError": "The consequence text preview could not be updated."
     },
     "Settings": {
+      "InterceptSystemRolls": {
+        "Name": "Intercept CoC7 System Rolls",
+        "Hint": "Routes all CoC7 skill, characteristic, Luck, Sanity, combined, opposed, and weapon checks into NRE prompts. Disable to fall back to standard CoC7 roll dialogs and chat cards."
+      },
       "ResultDisplayMode": {
         "Name": "Roll Result Display Mode",
         "Hint": "Determines whether prompts and chat cards show numeric values, success levels, or both.",

@@ -1,6 +1,7 @@
 import { CoC7Adapter } from "./coc7/coc7-adapter.mjs";
 import { setCoreApi } from "./core-bridge.mjs";
 import { COC7_MODULE_ID, CoC7Settings } from "./coc7/coc7-settings.mjs";
+import { CoC7Interceptor } from "./coc7/coc7-interceptor.mjs";
 
 // Register settings when Foundry starts.
 Hooks.once("init", () => CoC7Settings.register());
@@ -29,4 +30,8 @@ Hooks.once("nre.registerAdapters", async (core) => {
         roeResultSanity: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/result-sanity.hbs`,
         roeResultCombat: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/result-combat.hbs`
     });
+});
+
+Hooks.once("ready", () => {
+    CoC7Interceptor.register();
 });

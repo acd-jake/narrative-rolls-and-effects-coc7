@@ -241,7 +241,7 @@ describe("CoC7Interceptor and automatic CON/INT checks", () => {
         assert.equal(boutIntState.consequenceApplied, true);
         assert.equal(boutIntState.tempInsanityHours, 4);
         assert.equal(boutIntState.boutDurationRounds, 4);
-        assert.equal(actor.statuses.has("temporaryInsanity"), true);
+        assert.equal(actor.statuses.has("tempoInsane"), true);
         assert.ok(strategy.evaluateResolution(boutIntState).outcomeHeadline.includes("ROE_COC7.Sanity.TemporaryInsanitySummary:4"));
 
         interceptEnabled = false;

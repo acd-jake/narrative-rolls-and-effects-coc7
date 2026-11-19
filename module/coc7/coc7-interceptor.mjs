@@ -44,6 +44,18 @@ export class CoC7Interceptor {
 
     static #patchedPrototypes = new WeakSet();
 
+    static #isHandlingRoll = false;
+
+    static #runGuarded(callback) {
+        if (this.#isHandlingRoll) return undefined;
+        this.#isHandlingRoll = true;
+        try {
+            return callback();
+        } finally {
+            setTimeout(() => { this.#isHandlingRoll = false; }, 0);
+        }
+    }
+
     static #patchSystemMethods() {
         if (this.#patched) return;
         const actorProto = CONFIG.Actor?.documentClass?.prototype;
@@ -52,7 +64,7 @@ export class CoC7Interceptor {
 
         const patchedHooks = [];
 
-        // 1. Alle registrierten Actor-Sheets (V2, V3, Summarized, NPC, Creature, Vehicle) und deren Basisklassen patchen
+        // 1. Alle registrierten Actor-Sheets und deren Basisklassen einmalig auf eigenen Methoden patchen
         const allSheetClasses = Object.values(CONFIG.Actor?.sheetClasses ?? {})
             .flatMap((group) => Object.values(group))
             .map((entry) => entry.cls)
@@ -70,7 +82,7 @@ export class CoC7Interceptor {
             this.#patchedPrototypes.add(proto);
             const className = proto.constructor?.name || "SheetProto";
 
-            if (typeof proto._onWeaponRoll === "function") {
+            if (Object.hasOwn(proto, "_onWeaponRoll") && typeof proto._onWeaponRoll === "function") {
                 patchedHooks.push(`${className}._onWeaponRoll`);
                 this.#wrapMethod(proto, "_onWeaponRoll", "", async function (wrapped, event, ...args) {
                     if (!CoC7Settings.isSystemInterceptionEnabled()) return wrapped.call(this, event, ...args);
@@ -82,11 +94,13 @@ export class CoC7Interceptor {
                         ? this.actor?.items?.get(itemId)
                         : this.actor?.items?.find((i) => i.type === "weapon" && i.name.toLowerCase() === weaponName);
                     if (!weapon) return wrapped.call(this, event, ...args);
-                    return CoC7Interceptor.#dispatchWeaponAttack(this.actor, weapon, Boolean(game.user.isGM && event?.shiftKey));
+                    return CoC7Interceptor.#runGuarded(() =>
+                        CoC7Interceptor.#dispatchWeaponAttack(this.actor, weapon, Boolean(game.user.isGM && event?.shiftKey))
+                    );
                 });
             }
 
-            if (typeof proto._onRollSkillTest === "function") {
+            if (Object.hasOwn(proto, "_onRollSkillTest") && typeof proto._onRollSkillTest === "function") {
                 patchedHooks.push(`${className}._onRollSkillTest`);
                 this.#wrapMethod(proto, "_onRollSkillTest", "", async function (wrapped, event, ...args) {
                     if (!CoC7Settings.isSystemInterceptionEnabled()) return wrapped.call(this, event, ...args);
@@ -96,18 +110,20 @@ export class CoC7Interceptor {
                     const skillName = (trigger?.dataset?.nameTooltip || trigger?.textContent || "").trim();
                     const skillItem = itemId ? this.actor?.items?.get(itemId) : CoC7DataMapper.findActorSkill(this.actor, { name: skillName });
                     if (!skillItem && !skillName) return wrapped.call(this, event, ...args);
-                    return CoC7Interceptor.#handleNormalizedTrigger({
-                        type: "SKILL",
-                        actor: this.actor,
-                        item: skillItem,
-                        skillName,
-                        isShiftKey: Boolean(event?.shiftKey)
-                    });
+                    return CoC7Interceptor.#runGuarded(() =>
+                        CoC7Interceptor.#handleNormalizedTrigger({
+                            type: "SKILL",
+                            actor: this.actor,
+                            item: skillItem,
+                            skillName,
+                            isShiftKey: Boolean(event?.shiftKey)
+                        })
+                    );
                 });
             }
 
             for (const methodName of ["_onRollCharacteristicTest", "_onRollCharacteriticTest"]) {
-                if (typeof proto[methodName] === "function") {
+                if (Object.hasOwn(proto, methodName) && typeof proto[methodName] === "function") {
                     patchedHooks.push(`${className}.${methodName}`);
                     this.#wrapMethod(proto, methodName, "", async function (wrapped, event, ...args) {
                         if (!CoC7Settings.isSystemInterceptionEnabled()) return wrapped.call(this, event, ...args);
@@ -115,17 +131,19 @@ export class CoC7Interceptor {
                         const charEl = trigger?.closest?.("[data-characteristic], [data-key]");
                         const charKey = charEl?.dataset?.characteristic ?? charEl?.dataset?.key;
                         if (!charKey) return wrapped.call(this, event, ...args);
-                        return CoC7Interceptor.#handleNormalizedTrigger({
-                            type: "CHARACTERISTIC",
-                            actor: this.actor,
-                            characteristic: charKey,
-                            isShiftKey: Boolean(event?.shiftKey)
-                        });
+                        return CoC7Interceptor.#runGuarded(() =>
+                            CoC7Interceptor.#handleNormalizedTrigger({
+                                type: "CHARACTERISTIC",
+                                actor: this.actor,
+                                characteristic: charKey,
+                                isShiftKey: Boolean(event?.shiftKey)
+                            })
+                        );
                     });
                 }
             }
 
-            if (typeof proto._onRollAttribTest === "function") {
+            if (Object.hasOwn(proto, "_onRollAttribTest") && typeof proto._onRollAttribTest === "function") {
                 patchedHooks.push(`${className}._onRollAttribTest`);
                 this.#wrapMethod(proto, "_onRollAttribTest", "", async function (wrapped, event, ...args) {
                     if (!CoC7Settings.isSystemInterceptionEnabled()) return wrapped.call(this, event, ...args);
@@ -135,32 +153,36 @@ export class CoC7Interceptor {
                     if (!attrKey || !["lck", "luck", "san"].includes(attrKey.toLowerCase())) {
                         return wrapped.call(this, event, ...args);
                     }
-                    return CoC7Interceptor.#handleNormalizedTrigger({
-                        type: "ATTRIBUTE",
-                        actor: this.actor,
-                        attribute: attrKey,
-                        isShiftKey: Boolean(event?.shiftKey)
-                    });
+                    return CoC7Interceptor.#runGuarded(() =>
+                        CoC7Interceptor.#handleNormalizedTrigger({
+                            type: "ATTRIBUTE",
+                            actor: this.actor,
+                            attribute: attrKey,
+                            isShiftKey: Boolean(event?.shiftKey)
+                        })
+                    );
                 });
             }
 
-            if (typeof proto._onSanCheck === "function") {
+            if (Object.hasOwn(proto, "_onSanCheck") && typeof proto._onSanCheck === "function") {
                 patchedHooks.push(`${className}._onSanCheck`);
                 this.#wrapMethod(proto, "_onSanCheck", "", async function (wrapped, event, ...args) {
                     if (!CoC7Settings.isSystemInterceptionEnabled()) return wrapped.call(this, event, ...args);
-                    return CoC7Interceptor.#handleNormalizedTrigger({
-                        type: "SAN_CHECK",
-                        actor: this.actor,
-                        sanMin: this.actor?.system?.special?.sanLoss?.checkPassed ?? "0",
-                        sanMax: this.actor?.system?.special?.sanLoss?.checkFailled ?? "1d6",
-                        isShiftKey: Boolean(event?.shiftKey)
-                    });
+                    return CoC7Interceptor.#runGuarded(() =>
+                        CoC7Interceptor.#handleNormalizedTrigger({
+                            type: "SAN_CHECK",
+                            actor: this.actor,
+                            sanMin: this.actor?.system?.special?.sanLoss?.checkPassed ?? "0",
+                            sanMax: this.actor?.system?.special?.sanLoss?.checkFailled ?? "1d6",
+                            isShiftKey: Boolean(event?.shiftKey)
+                        })
+                    );
                 });
             }
         }
 
         // 2. Actor-Methoden für Makros & direkte API-Aufrufe
-        if (typeof actorProto.weaponRoll === "function") {
+        if (Object.hasOwn(actorProto, "weaponRoll") && typeof actorProto.weaponRoll === "function") {
             patchedHooks.push("Actor.weaponRoll");
             this.#wrapMethod(actorProto, "weaponRoll", "CONFIG.Actor.documentClass.prototype.weaponRoll", async function (wrapped, weapon, attackerUuid, ...args) {
                 if (!CoC7Settings.isSystemInterceptionEnabled() || weapon?.flags?.[COC7_MODULE_ID]?.bypassNre) {
@@ -169,7 +191,9 @@ export class CoC7Interceptor {
                 const resolved = attackerUuid ? await fromUuid(attackerUuid) : this;
                 const actor = resolved?.actor ?? resolved ?? this;
                 if (!actor || !weapon) return wrapped.call(this, weapon, attackerUuid, ...args);
-                return CoC7Interceptor.#dispatchWeaponAttack(actor, weapon, Boolean(game.user.isGM && globalThis.event?.shiftKey));
+                return CoC7Interceptor.#runGuarded(() =>
+                    CoC7Interceptor.#dispatchWeaponAttack(actor, weapon, Boolean(game.user.isGM && globalThis.event?.shiftKey))
+                );
             });
         }
 

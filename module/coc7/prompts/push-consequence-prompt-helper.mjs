@@ -1,4 +1,4 @@
-import { PushConsequenceSelectorApp } from "./push-consequence-selector-app.mjs";
+import { openPushConsequenceSelector } from "./push-consequence-selector-app.mjs";
 
 /** Opens the Keeper consequence selector window and auto-opens the player push confirmation when ready. */
 export class PushConsequencePromptHelper {
@@ -20,7 +20,7 @@ export class PushConsequencePromptHelper {
         if (game.user?.isGM && sys.pushConsequenceRequest) {
             if (!this.#openedSelectorMessages.has(messageId)) {
                 this.#openedSelectorMessages.add(messageId);
-                PushConsequenceSelectorApp.openForSession(messageId);
+                openPushConsequenceSelector(messageId);
             }
             return;
         }

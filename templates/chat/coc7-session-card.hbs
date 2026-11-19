@@ -1,5 +1,4 @@
-<div
-    class="roe-overlay roe-chat-card combat-protocol-card {{#if isSanity}}sanity-protocol-card{{/if}} {{#if isResolved}}is-resolved{{/if}}"
+<div class="roe-overlay roe-chat-card combat-protocol-card {{#if isSanity}}sanity-protocol-card{{/if}} {{#if isResolved}}is-resolved{{/if}}"
     data-nre-system="CoC7">
     {{#if isResolved}}
     <span>{{localize "ROE.RollSession.LoadingResult"}}</span>
@@ -14,7 +13,8 @@
     {{#if resultBadges.length}}
     <div class="result-badge-row">
         {{#each resultBadges}}
-        <span class="result-chip is-compact {{cls}}">{{#if icon}}<i class="fa-solid {{icon}}"></i> {{/if}}{{label}}</span>
+        <span class="result-chip is-compact {{cls}}">{{#if icon}}<i class="fa-solid {{icon}}"></i>
+            {{/if}}{{label}}</span>
         {{/each}}
     </div>
     {{/if}}
@@ -84,7 +84,8 @@
                 <div class="combined-check-row" data-participant-key="{{key}}">
                     <span><i class="fa-solid fa-burst"></i> {{label}}</span>
                     {{#if hasRolled}}
-                    <span class="roll-badge">{{#if isPublicRoll}}{{total}} ({{diceFormula}}){{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}</span>
+                    <span class="roll-badge">{{#if isPublicRoll}}{{total}} ({{diceFormula}}){{else}}{{localize
+                        "ROE.RollSession.HiddenRoll"}}{{/if}}</span>
                     {{else}}
                     <span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>
                     {{/if}}
@@ -173,7 +174,8 @@
                     </span>
                 </header>
                 <div class="section-body">
-                    <div class="prompt-outcome-badge {{#if sanityInsanityBadge}}is-shattered{{/if}}">{{sanitySummaryText}}</div>
+                    <div class="prompt-outcome-badge {{#if sanityInsanityBadge}}is-shattered{{/if}}">
+                        {{sanitySummaryText}}</div>
                 </div>
             </section>
             {{/if}}
@@ -197,6 +199,18 @@
                 </div>
             </section>
             {{/each}}
+
+            {{#if showGmPushForeshadowing}}
+            <details class="resolved-shots-details push-consequence-drawer">
+                <summary class="prompt-phase-summary is-inspectable">
+                    <span><i class="fa-solid fa-eye-slash"></i> {{localize
+                        "ROE_COC7.Roll.PushForeshadowingHeader"}}{{#if pushConsequenceTitle}}:
+                        <strong>{{pushConsequenceTitle}}</strong>{{/if}}</span>
+                    <i class="fa-solid fa-chevron-down resolved-shots-chevron"></i>
+                </summary>
+                <div class="prompt-sub-box push-foreshadowing-text">{{{pushForeshadowingHtml}}}</div>
+            </details>
+            {{/if}}
 
             {{#if hasResult}}
             <section class="combat-section result-section">

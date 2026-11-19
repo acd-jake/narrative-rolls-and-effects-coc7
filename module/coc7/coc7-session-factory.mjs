@@ -336,7 +336,10 @@ export class CoC7SessionFactory {
             showCombatResolution: allRolled && Boolean(data.outcomeHeadline || hasSanityResult || hasCombatDamage)
                 || data.rollType === "ranged" && data.combatPhase === "resolution",
             showCombatOpponentPhase,
-            defenderReactionLabel: isCombat ? game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${reactionKey}`) : ""
+            defenderReactionLabel: isCombat ? game.i18n.localize(`ROE_COC7.Combat.DefenseTabs.${reactionKey}`) : "",
+            showGmPushForeshadowing: Boolean(!data.isResolved && data.pushConsequence?.foreshadowing),
+            pushConsequenceTitle: data.pushConsequence?.title ?? "",
+            pushForeshadowingHtml: !data.isResolved ? (data.pushConsequence?.foreshadowing ?? "") : "",
         };
     }
 }

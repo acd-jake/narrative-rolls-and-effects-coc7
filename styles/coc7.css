@@ -756,6 +756,7 @@
     padding: 0.3rem 0.4rem;
     font-size: 0.8rem;
 }
+
 .roe-overlay[data-nre-system="CoC7"].roe-chat-card {
     background: linear-gradient(180deg, #121418 0%, var(--roe-bg-deep) 100%);
     border: 2px solid var(--roe-gold);
@@ -1168,6 +1169,7 @@
     font-size: 0.72rem;
     color: var(--roe-text-muted);
 }
+
 .roe-coc7-push-editor .window-content {
     overflow-y: auto;
 }
@@ -1176,13 +1178,13 @@
 .roe-coc7-push-editor .push-editor-entries,
 .roe-coc7-push-editor .push-editor-card,
 .roe-coc7-push-editor .push-editor-field,
-.roe-coc7-push-editor .push-editor-heading > label:not(.push-editor-checkbox) {
+.roe-coc7-push-editor .push-editor-heading>label:not(.push-editor-checkbox) {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
 }
 
-.roe-coc7-push-editor .push-editor-content > p {
+.roe-coc7-push-editor .push-editor-content>p {
     margin: 0 0 0.25rem;
     color: var(--color-text-secondary);
 }
@@ -1221,7 +1223,7 @@
     gap: 0.5rem 1rem;
 }
 
-.roe-coc7-push-editor .push-editor-heading > label:first-child {
+.roe-coc7-push-editor .push-editor-heading>label:first-child {
     flex: 1 1 14rem;
     min-width: 0;
 }
@@ -1248,7 +1250,7 @@
     min-width: 0;
 }
 
-.roe-coc7-push-editor .push-editor-field > span {
+.roe-coc7-push-editor .push-editor-field>span {
     font-weight: bold;
     font-size: 0.9em;
 }
@@ -1352,7 +1354,7 @@
     gap: 0.3rem;
 }
 
-.roe-overlay[data-nre-system="CoC7"] .resolved-shots-details > summary {
+.roe-overlay[data-nre-system="CoC7"] .resolved-shots-details>summary {
     list-style: none;
     display: flex;
     align-items: center;
@@ -1361,10 +1363,129 @@
     text-decoration: none;
 }
 
-.roe-overlay[data-nre-system="CoC7"] .resolved-shots-details > summary::-webkit-details-marker {
+.roe-overlay[data-nre-system="CoC7"] .resolved-shots-details>summary::-webkit-details-marker {
     display: none;
 }
 
 .roe-overlay[data-nre-system="CoC7"] .resolved-shots-details[open] .resolved-shots-chevron {
     transform: rotate(180deg);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-selector {
+    gap: 0.35rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-selector textarea {
+    width: 100%;
+    background: var(--roe-bg-inset);
+    border: 1px solid var(--roe-border-dark);
+    color: var(--roe-text-main);
+    padding: 0.25rem 0.35rem;
+    font-size: 0.75rem;
+    resize: vertical;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-drawer {
+    width: 100%;
+    margin-top: 0.25rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-drawer>summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-drawer>summary::-webkit-details-marker {
+    display: none;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-drawer[open] .resolved-shots-chevron {
+    transform: rotate(180deg);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-narration-text {
+    font-style: italic;
+    color: var(--roe-text-main);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-narration-text,
+.roe-overlay[data-nre-system="CoC7"] .push-foreshadowing-text,
+.push-foreshadowing-text {
+    font-style: italic;
+    color: var(--roe-text-main);
+}
+
+.roe-overlay[data-nre-system="CoC7"].push-consequence-dialog .window-content {
+    background: var(--roe-bg-deep);
+    padding: 0.75rem;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 52vh;
+    overflow-y: auto;
+    padding-right: 0.2rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-card {
+    background: var(--roe-bg-panel);
+    border: 1px solid var(--roe-border-dark);
+    padding: 0.45rem 0.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-card:hover {
+    border-color: var(--roe-gold-dim);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-card.is-selected {
+    border-color: var(--roe-gold);
+    border-left: 3px solid var(--roe-gold);
+    background: rgba(197, 160, 89, 0.12);
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--roe-gold-bright);
+    font-size: 0.82rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-card-desc {
+    font-size: 0.75rem;
+    color: var(--roe-text-muted);
+    padding-left: 1.25rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-card-desc p {
+    margin: 0;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-custom-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.3rem;
+}
+
+.roe-overlay[data-nre-system="CoC7"] .push-consequence-custom-fields textarea {
+    width: 100%;
+    background: var(--roe-bg-inset);
+    border: 1px solid var(--roe-border-dark);
+    color: var(--roe-text-main);
+    padding: 0.3rem 0.4rem;
+    font-size: 0.78rem;
+    resize: vertical;
 }

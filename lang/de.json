@@ -64,6 +64,14 @@
         "Client": "Einstellung des jeweiligen Clients verwenden",
         "Automatic": "Für alle automatisch",
         "Manual": "Für alle manuell"
+      },
+      "ShowPushForeshadowingToPlayers": {
+        "Name": "Foreshadowing bei forcierten Proben Spielern anzeigen",
+        "Hint": "Wenn aktiviert, wählt die Spielleitung zuerst eine Konsequenz aus, bevor dem Spieler der Hinweis zu forcierten Proben inklusive Foreshadowing angezeigt wird."
+      },
+      "ShowPushNarrationToPlayers": {
+        "Name": "Vorlesetext misslungener forcierter Proben Spielern anzeigen",
+        "Hint": "Zeigt Spielern nach Auflösung einer misslungenen forcierten Probe den Vorlesetext ausklappbar im Prompt und auf der Chatkarte an."
       }
     },
     "DamagePreview": {
@@ -88,7 +96,18 @@
       "PushFailureDescription": "Lege die schwerwiegenden Folgen dieser misslungenen Probe fest.",
       "PushFailureHidden": "Für eine verdeckte Probe ist eine Entscheidung erforderlich.",
       "PushFailureContinue": "Weiter",
-      "PushFailureAcknowledge": "Folgen festgelegt"
+      "PushFailureAcknowledge": "Folgen festgelegt",
+      "PushConsequenceSelectTitle": "Konsequenz für forcierte Probe wählen",
+      "PushConsequenceInsaneToggle": "Ermittler leidet an einer Geistesstörung",
+      "PushConsequencePresetLabel": "Konsequenz",
+      "PushConsequenceNoneOption": "Keine Konsequenz festlegen",
+      "PushConsequenceCustomOption": "Eigene Konsequenz eingeben...",
+      "PushConsequenceCustomTitlePlaceholder": "Titel der Konsequenz",
+      "PushConsequenceConfirmBtn": "Konsequenz bestätigen",
+      "PushWaitingForKeeperStakes": "Die Spielleitung legt die drohenden Konsequenzen für den forcierten Wurf fest...",
+      "PushForeshadowingHeader": "Drohende Konsequenzen",
+      "PushNarrationHeader": "Vorlesetext",
+      "PushDescriptionHeader": "Regelwirkung & Beschreibung"
     },
     "RollSession": {
       "LauncherBtn": "Kombinierte / Vergleichende Probe",

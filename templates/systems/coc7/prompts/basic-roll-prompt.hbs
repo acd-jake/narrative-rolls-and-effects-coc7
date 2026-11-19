@@ -68,7 +68,6 @@
     </button>
 </div>
 {{/if}}
-
 {{#if canPush}}
 {{> roeDiceDisplay dice=rollDice modifierTooltip=modifierDisplay}}
 <button type="button" class="prompt-action-btn push {{#if isDelegatedToPlayer}}gm-delegated{{/if}}"
@@ -88,6 +87,7 @@
 {{#*inline "promptResults"}}
 {{> (lookup . "resultPartial")}}
 {{> roePushFailurePhase}}
+{{> roePushConsequencePanel}}
 
 {{#if showPlayerWaitingHint}}
 <div class="prompt-phase-summary">

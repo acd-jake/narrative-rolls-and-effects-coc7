@@ -23,6 +23,7 @@ export class CoC7Settings {
             type: Object,
             default: {}
         });
+
         game.settings.registerMenu(COC7_MODULE_ID, "pushConsequenceEditor", {
             name: "ROE_COC7.PushEditor.Title",
             label: "ROE_COC7.PushEditor.Open",
@@ -31,6 +32,25 @@ export class CoC7Settings {
             type: createPushConsequenceEditor(),
             restricted: true
         });
+
+        game.settings.register(COC7_MODULE_ID, "showPushForeshadowingToPlayers", {
+            name: "ROE_COC7.Settings.ShowPushForeshadowingToPlayers.Name",
+            hint: "ROE_COC7.Settings.ShowPushForeshadowingToPlayers.Hint",
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true
+        });
+
+        game.settings.register(COC7_MODULE_ID, "showPushNarrationToPlayers", {
+            name: "ROE_COC7.Settings.ShowPushNarrationToPlayers.Name",
+            hint: "ROE_COC7.Settings.ShowPushNarrationToPlayers.Hint",
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true
+        });
+
         game.settings.register(COC7_MODULE_ID, "resultDisplayMode", {
             name: "ROE_COC7.Settings.ResultDisplayMode.Name",
             hint: "ROE_COC7.Settings.ResultDisplayMode.Hint",

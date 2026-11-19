@@ -64,7 +64,6 @@
 </div>
 {{/unless}}
 {{/if}}
-
 {{#if canPushCombined}}
 <div class="prompt-footer">
     {{> roeDiceDisplay dice=rollDice modifierTooltip=modifierDisplay}}
@@ -95,6 +94,7 @@
 <div class="prompt-outcome-banner">{{outcomeHeadline}}</div>
 {{/if}}
 {{> roePushFailurePhase}}
+{{> roePushConsequencePanel}}
 
 {{#if canResolve}}
 <footer class="prompt-footer gm-resolve-footer">

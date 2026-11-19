@@ -1,6 +1,7 @@
 import { SessionStore, UniversalRollOrchestrator, RollVisibilityPolicy, DiceVisualizer } from "../../core-bridge.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
+import { PushConsequencePromptHelper } from "./push-consequence-prompt-helper.mjs";
 
 const OPPOSED_ROLL_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/opposed-roll-prompt.hbs";
 
@@ -91,6 +92,42 @@ export function createOpposedRollPromptApp(core) {
                 title: sys?.title ?? "",
                 participants
             };
+        }
+
+        _onRender(context, options) {
+            super._onRender(context, options);
+            PushConsequencePromptHelper.onRender(this);
+        }
+
+        #bindPushConsequenceSelector() {
+            const box = this.element?.querySelector(".push-consequence-selector");
+            if (!box || box.dataset.bound) return;
+            box.dataset.bound = "true";
+
+            const syncRequest = async () => {
+                const request = this.session?.pushConsequenceRequest;
+                if (!request) return;
+                const isInsane = Boolean(box.querySelector("[name='pushConsequenceInsane']")?.checked);
+                const selectedMode = box.querySelector("[name='pushConsequenceSelect']")?.value ?? "0";
+                await UniversalRollOrchestrator.updateSessionPatch(this._messageId, {
+                    pushConsequenceRequest: {
+                        ...request,
+                        isInsane,
+                        selectedMode,
+                        customTitle: box.querySelector("[name='customConsequenceTitle']")?.value ?? "",
+                        customDescription: box.querySelector("[name='customConsequenceDescription']")?.value ?? "",
+                        customNarration: box.querySelector("[name='customConsequenceNarration']")?.value ?? "",
+                        customForeshadowing: box.querySelector("[name='customConsequenceForeshadowing']")?.value ?? ""
+                    }
+                });
+            };
+
+            box.querySelector("[name='pushConsequenceInsane']")?.addEventListener("change", () => {
+                const select = box.querySelector("[name='pushConsequenceSelect']");
+                if (select && select.value !== "__custom__" && select.value !== "__none__") select.value = "0";
+                syncRequest();
+            });
+            box.querySelector("[name='pushConsequenceSelect']")?.addEventListener("change", syncRequest);
         }
 
         static async #onSetContestantModifier(event, target) {

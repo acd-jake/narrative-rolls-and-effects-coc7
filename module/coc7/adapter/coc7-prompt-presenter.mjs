@@ -3,6 +3,7 @@ import { COC7_MODULE_ID } from "../coc7-settings.mjs";
 import { CoC7ResultFormatter } from "../coc7-result-formatter.mjs";
 import { CoC7SessionFactory } from "../coc7-session-factory.mjs";
 import { CoC7CombatResultPresenter } from "./coc7-combat-result-presenter.mjs";
+import { CoC7PushConsequenceService } from "./coc7-push-consequence-service.mjs";
 
 const PREPARATION_DIFFICULTIES = ["regular", "hard", "extreme"];
 const DIFFICULTY_PREPARATION_ROLL_TYPES = new Set(["basic", "skill", "combined"]);
@@ -59,11 +60,25 @@ export class CoC7PromptPresenter {
             selected: current === tier
         }));
     }
-    /** Adds push-failure visibility and resolved-result fields to a prompt context. */
-    preparePromptContext(prompt, session, context) {
+    /** Adds push-failure visibility, push consequence controls, and resolved-result fields to a prompt context. */
+    async preparePromptContext(prompt, session, context) {
         const pushedParticipants = (session?.participants ?? []).filter((participant) => participant.isPushed);
+        const showForeshadowingToPlayers = Boolean(game.settings?.get?.(COC7_MODULE_ID, "showPushForeshadowingToPlayers"));
+        const waitingForKeeperStakes = Boolean(
+            !game.user?.isGM &&
+            session?.pushConsequenceRequest &&
+            showForeshadowingToPlayers &&
+            !session?.pushConsequenceReady &&
+            !session?.isResolved
+        );
+        const selectionCtx = await CoC7PushConsequenceService.buildKeeperSelectionContext(session);
+        const displayCtx = await CoC7PushConsequenceService.buildDisplayContext(session);
+
         const base = {
             ...context,
+            ...selectionCtx,
+            ...displayCtx,
+            waitingForKeeperStakes,
             showPushFailureWarning: Boolean(game.user.isGM && session?.pushFailurePending),
             canViewPushFailure: pushedParticipants.length > 0 && pushedParticipants.every((participant) =>
                 RollVisibilityPolicy.canViewParticipantRoll(participant, session)
@@ -83,7 +98,7 @@ export class CoC7PromptPresenter {
     }
 
     /** Builds the same visibility-aware resolved context for a chat card as for a prompt. */
-    prepareResolvedChatContext(session) {
+    async prepareResolvedChatContext(session) {
         const allVisible = (session.participants ?? []).every((participant) =>
             RollVisibilityPolicy.canViewParticipantRoll(participant, session)
         );

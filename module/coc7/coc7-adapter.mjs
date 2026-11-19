@@ -16,6 +16,7 @@ import { CoC7SessionPatcher } from "./adapter/coc7-session-patcher.mjs";
 import { CoC7PromptPresenter } from "./adapter/coc7-prompt-presenter.mjs";
 import { CoC7DicePresenter } from "./adapter/coc7-dice-presenter.mjs";
 import { CombatDamageDecision } from "./strategies/combat-damage-decision.mjs";
+import { PushConsequenceSelectorApp } from "./prompts/push-consequence-selector-app.mjs";
 
 /** Connects CoC7 roll creation, prompts, consequences, and Foundry sheet interactions to the core API. */
 export class CoC7Adapter {
@@ -91,6 +92,9 @@ export class CoC7Adapter {
             isBoutIntCheck: cfg.isBoutIntCheck ?? false,
             combinedMode: cfg.combinedMode ?? "and",
             pushFailurePending: false,
+            pushConsequenceRequest: null,
+            pushConsequence: null,
+            pushConsequenceReady: false,
             sanityLossSuccess: cfg.sanityLossSuccess ?? "0",
             sanityLossFailure: cfg.sanityLossFailure ?? "1d6",
             sanityLost: null,
@@ -187,6 +191,13 @@ export class CoC7Adapter {
         if (actionName === "togglePreparedTactical" || actionName === "setPreparedDifficulty" || actionName === "setPreparedRangeTier") {
             return this.#promptPresenter.handlePreparationAction(prompt, actionName, target);
         }
+        if (actionName === "confirmPushConsequence") {
+            return this.#postRollHandler.confirmPushConsequence(prompt);
+        }
+        if (actionName === "openPushConsequenceSelector") {
+            return PushConsequenceSelectorApp.openForSession(prompt._messageId);
+        }
+
         return undefined;
     }
 

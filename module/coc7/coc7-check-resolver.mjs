@@ -1,3 +1,5 @@
+import { SessionStore } from "../core-bridge.mjs";
+
 /** Implements percentile check resolution, roll construction, and pushed-roll validation. */
 export class CoC7CheckResolver {
     static LEVEL_RANK = Object.freeze({
@@ -62,6 +64,8 @@ export class CoC7CheckResolver {
         const participants = state.participants ?? [];
         const participant = participants.find((e) => e.key === participantKey);
         if (!participant?.hasRolled || participant.isPushed || participant.pushDecided || participant.canPush === false || participant.successLevel === "fumble") return false;
+        const actor = SessionStore.resolveActor(participant);
+        if (actor && actor.type !== "character") return false;
 
         if (state.rollType === "opposed") {
             if (participants.length < 2 || participants.some((e) => !e.hasRolled)) return false;

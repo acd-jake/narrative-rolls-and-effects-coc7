@@ -64,6 +64,14 @@
         "Client": "Use each client's preference",
         "Automatic": "Automatic for everyone",
         "Manual": "Manual for everyone"
+      },
+      "ShowPushForeshadowingToPlayers": {
+        "Name": "Show Pushed-Roll Foreshadowing to Players",
+        "Hint": "When enabled, the Keeper chooses a consequence first before the player sees the push confirmation notice with its foreshadowing."
+      },
+      "ShowPushNarrationToPlayers": {
+        "Name": "Show Failed Push Narration to Players",
+        "Hint": "Displays the collapsible read-aloud narration to players in resolved prompts and chat cards when a pushed roll fails."
       }
     },
     "DamagePreview": {
@@ -88,7 +96,18 @@
       "PushFailureDescription": "Decide the serious consequences of this failed roll.",
       "PushFailureHidden": "A private roll requires a decision.",
       "PushFailureContinue": "Continue",
-      "PushFailureAcknowledge": "Consequences decided"
+      "PushFailureAcknowledge": "Consequences decided",
+      "PushConsequenceSelectTitle": "Select Pushed-Roll Consequence",
+      "PushConsequenceInsaneToggle": "Investigator is suffering from insanity",
+      "PushConsequencePresetLabel": "Consequence",
+      "PushConsequenceNoneOption": "No consequence",
+      "PushConsequenceCustomOption": "Enter custom consequence...",
+      "PushConsequenceCustomTitlePlaceholder": "Consequence title",
+      "PushConsequenceConfirmBtn": "Confirm Consequence",
+      "PushWaitingForKeeperStakes": "The Keeper is determining the stakes for the pushed roll...",
+      "PushForeshadowingHeader": "Impending Consequences",
+      "PushNarrationHeader": "Read-Aloud Text",
+      "PushDescriptionHeader": "Rules Effect & Description"
     },
     "RollSession": {
       "LauncherBtn": "Combined / Opposed Roll",

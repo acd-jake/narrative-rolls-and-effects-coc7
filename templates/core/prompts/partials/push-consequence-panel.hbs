@@ -1,0 +1,40 @@
+{{#if showPushConsequenceSelector}}
+<button type="button" class="prompt-action-btn primary compact" data-action="openPushConsequenceSelector">
+    <i class="fa-solid fa-skull"></i> {{localize "ROE_COC7.Roll.PushConsequenceSelectTitle"}}
+</button>
+{{/if}}
+
+{{#if waitingForKeeperStakes}}
+<div class="prompt-phase-summary">
+    <i class="fa-solid fa-hourglass-half"></i> {{localize "ROE_COC7.Roll.PushWaitingForKeeperStakes"}}
+</div>
+{{/if}}
+
+{{#if showGmPushForeshadowing}}
+<details class="resolved-shots-details push-consequence-drawer">
+    <summary class="prompt-phase-summary is-inspectable">
+        <span><i class="fa-solid fa-eye-slash"></i> {{localize "ROE_COC7.Roll.PushForeshadowingHeader"}}{{#if pushConsequenceTitle}}: <strong>{{pushConsequenceTitle}}</strong>{{/if}}</span>
+        <i class="fa-solid fa-chevron-down resolved-shots-chevron"></i>
+    </summary>
+    <div class="prompt-sub-box push-foreshadowing-text">{{{pushForeshadowingHtml}}}</div>
+</details>
+{{/if}}
+
+{{#if showPushOutcomeDetails}}
+<details class="resolved-shots-details push-consequence-drawer">
+    <summary class="prompt-phase-summary is-pushed-failure is-inspectable">
+        <span><i class="fa-solid fa-book-skull"></i> {{localize "ROE_COC7.Roll.PushFailureResult"}}{{#if pushConsequenceTitle}}: <strong>{{pushConsequenceTitle}}</strong>{{/if}}</span>
+        <i class="fa-solid fa-chevron-down resolved-shots-chevron"></i>
+    </summary>
+    <div class="prompt-sub-box">
+        {{#if showPushNarration}}
+        <div class="section-header">{{localize "ROE_COC7.Roll.PushNarrationHeader"}}</div>
+        <div class="push-narration-text">{{{pushNarrationHtml}}}</div>
+        {{/if}}
+        {{#if showPushDescription}}
+        <div class="section-header">{{localize "ROE_COC7.Roll.PushDescriptionHeader"}}</div>
+        <div class="push-description-text">{{{pushDescriptionHtml}}}</div>
+        {{/if}}
+    </div>
+</details>
+{{/if}}

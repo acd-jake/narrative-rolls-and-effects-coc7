@@ -1,0 +1,58 @@
+<section class="roe-gm-request-form push-consequence-dialog-body">
+    {{#if hasRequest}}
+    <div class="combined-check-row">
+        <strong>{{actorName}}</strong>
+        <span class="combat-mode-tag">{{skillLabel}}</span>
+    </div>
+
+    <label class="push-editor-checkbox">
+        <input type="checkbox" name="pushConsequenceInsane" {{#if isInsane}}checked{{/if}} />
+        <span>{{localize "ROE_COC7.Roll.PushConsequenceInsaneToggle"}}</span>
+    </label>
+
+    <div class="push-consequence-cards">
+        {{#each presets}}
+        <div class="push-consequence-card {{#if selected}}is-selected{{/if}}" data-action="selectOption"
+            data-mode="{{value}}">
+            <div class="push-consequence-card-header">
+                <i class="fa-regular {{#if selected}}fa-circle-dot{{else}}fa-circle{{/if}}"></i>
+                <strong>{{title}}</strong>
+            </div>
+            <div class="push-consequence-card-desc">{{{descriptionHtml}}}</div>
+        </div>
+        {{/each}}
+
+        <div class="push-consequence-card {{#if isCustomSelected}}is-selected{{/if}}" data-action="selectOption"
+            data-mode="__custom__">
+            <div class="push-consequence-card-header">
+                <i class="fa-regular {{#if isCustomSelected}}fa-circle-dot{{else}}fa-circle{{/if}}"></i>
+                <strong>{{localize "ROE_COC7.Roll.PushConsequenceCustomOption"}}</strong>
+            </div>
+            {{#if isCustomSelected}}
+            <div class="push-consequence-custom-fields">
+                <input type="text" name="customConsequenceTitle" value="{{customTitle}}"
+                    placeholder="{{localize 'ROE_COC7.Roll.PushConsequenceCustomTitlePlaceholder'}}" />
+                <textarea name="customConsequenceDescription" rows="2"
+                    placeholder="{{localize 'ROE_COC7.PushEditor.Description'}}">{{customDescription}}</textarea>
+                <textarea name="customConsequenceNarration" rows="2"
+                    placeholder="{{localize 'ROE_COC7.PushEditor.Narration'}}">{{customNarration}}</textarea>
+                <textarea name="customConsequenceForeshadowing" rows="2"
+                    placeholder="{{localize 'ROE_COC7.PushEditor.Foreshadowing'}}">{{customForeshadowing}}</textarea>
+            </div>
+            {{/if}}
+        </div>
+
+        <div class="push-consequence-card {{#if isNoneSelected}}is-selected{{/if}}" data-action="selectOption"
+            data-mode="__none__">
+            <div class="push-consequence-card-header">
+                <i class="fa-regular {{#if isNoneSelected}}fa-circle-dot{{else}}fa-circle{{/if}}"></i>
+                <strong>{{localize "ROE_COC7.Roll.PushConsequenceNoneOption"}}</strong>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="prompt-action-btn primary" data-action="confirmSelection">
+        <i class="fa-solid fa-check"></i> {{localize "ROE_COC7.Roll.PushConsequenceConfirmBtn"}}
+    </button>
+    {{/if}}
+</section>

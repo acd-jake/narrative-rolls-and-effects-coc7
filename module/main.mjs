@@ -25,6 +25,7 @@ Hooks.once("nre.registerAdapters", async (core) => {
         roeCocResolvedCombatConsequences: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/resolved-combat-consequences.hbs`,
         roeCocResolvedCombatBody: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/resolved-combat-body.hbs`,
         roePushFailurePhase: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/push-failure-phase.hbs`,
+        roePushConsequencePanel: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/push-consequence-panel.hbs`,
         roeSkillDifficultyControls: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/skill-difficulty-controls.hbs`,
         roeSanityLossControls: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/sanity-loss-controls.hbs`,
         roeResultSanity: `modules/${COC7_MODULE_ID}/templates/core/prompts/partials/result-sanity.hbs`,

@@ -526,8 +526,7 @@ describe("Ranged combat rules and full-auto volleys", () => {
             isResolved: true,
             title: "Tommy Gun",
             outcomeHeadline: "Miss",
-            rangedWeaponName: "Tommy Gun",
-            rangedStatusText: "ROE_COC7.Ranged.MalfunctionCleared: 4/60",
+            resolvedCombatStatus: "ROE_COC7.Ranged.MalfunctionCleared: 4/60",
             participants: [
                 { key: "attacker", actorName: "Harvey", hasRolled: true, isSuccess: false },
                 { key: "defender", actorName: "Cultist", hasRolled: false }

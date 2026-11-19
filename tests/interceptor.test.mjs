@@ -181,6 +181,7 @@ describe("CoC7Interceptor and automatic CON/INT checks", () => {
         assert.equal(dyingResult, false);
         assert.equal(startedRolls.length, 8);
         assert.equal(startedRolls[7].payload.stayAlive, true);
+
         const sanCardResult = firePreCreate({
             flags: { CoC7: { load: { as: "CoC7SanCheckCard", actorUuid: "Actor.a1", sanReason: "Deep One", sanMin: "1", sanMax: "1d6" } } }
         });

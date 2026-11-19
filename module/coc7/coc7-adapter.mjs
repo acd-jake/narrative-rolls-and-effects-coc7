@@ -16,7 +16,7 @@ import { CoC7SessionPatcher } from "./adapter/coc7-session-patcher.mjs";
 import { CoC7PromptPresenter } from "./adapter/coc7-prompt-presenter.mjs";
 import { CoC7DicePresenter } from "./adapter/coc7-dice-presenter.mjs";
 import { CombatDamageDecision } from "./strategies/combat-damage-decision.mjs";
-import { openPushConsequenceSelector } from "../prompts/push-consequence-selector-app.mjs";
+import { openPushConsequenceSelector } from "./prompts/push-consequence-selector-app.mjs";
 
 /** Connects CoC7 roll creation, prompts, consequences, and Foundry sheet interactions to the core API. */
 export class CoC7Adapter {

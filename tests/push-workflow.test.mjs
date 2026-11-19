@@ -159,6 +159,7 @@ describe("Pushed-roll consequence workflow", () => {
         patches.length = 0;
         await PushConsequenceSelectorApp.DEFAULT_OPTIONS.actions.confirmSelection.call(selectorApp);
         assert.equal(patches[0].patch.pushConsequenceReady, true);
+
         const readySession = {
             ...pcSession,
             pushConsequenceReady: true,

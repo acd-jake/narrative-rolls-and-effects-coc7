@@ -18,7 +18,7 @@ describe("CoC7Interceptor and automatic CON/INT checks", () => {
                 if (!registeredHooks.has(name)) registeredHooks.set(name, []);
                 registeredHooks.get(name).push(fn);
             },
-            callAll: () => {}
+            callAll: () => { }
         };
 
         globalThis.Roll = class MockRoll {
@@ -34,7 +34,7 @@ describe("CoC7Interceptor and automatic CON/INT checks", () => {
         globalThis.document = {
             body: {
                 dataset: {},
-                addEventListener: () => {}
+                addEventListener: () => { }
             }
         };
 
@@ -82,7 +82,7 @@ describe("CoC7Interceptor and automatic CON/INT checks", () => {
             async _onWeaponRoll(event) { fallbackCalls.push(["weaponSheet", event]); }
         }
 
-        class CoC7ModelsActorCharacterSheetV3 extends CoC7ModelsActorGlobalSheet {}
+        class CoC7ModelsActorCharacterSheetV3 extends CoC7ModelsActorGlobalSheet { }
 
         class MockActor {
             async weaponRoll(weapon) { fallbackCalls.push(["actorWeaponRoll", weapon]); }
@@ -187,7 +187,7 @@ describe("CoC7Interceptor and automatic CON/INT checks", () => {
             flags: { CoC7: { load: { as: "CoC7SanCheckCard", actorUuid: "Actor.a1", sanReason: "Deep One", sanMin: "1", sanMax: "1d6" } } }
         });
         assert.equal(sanCardResult, false);
-        await Promise.resolve();
+        await new Promise((r) => setTimeout(r, 0));
         assert.equal(startedRolls.length, 9);
         assert.equal(startedRolls[8].type, "sanity");
         assert.equal(startedRolls[8].payload.label, "Deep One");

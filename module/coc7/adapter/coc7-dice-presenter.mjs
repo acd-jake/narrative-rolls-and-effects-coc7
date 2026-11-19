@@ -87,7 +87,9 @@ export class CoC7DicePresenter {
                 multiple: false
             });
         }
-        return [...dice, ...modifierVisuals];
+        const unitsIndex = dice.findIndex((die) => die.label === "ROE.Dice.D10Units");
+        if (unitsIndex === -1) return [...dice, ...modifierVisuals];
+        return [...dice.slice(0, unitsIndex), ...modifierVisuals, ...dice.slice(unitsIndex)];
     }
     // Effects engine integration points
 

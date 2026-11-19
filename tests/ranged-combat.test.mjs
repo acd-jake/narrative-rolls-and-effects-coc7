@@ -96,6 +96,7 @@ const session = CoC7SessionFactory.createRanged({
     rangeTier: "long"
 });
 assert.equal(session.difficulty, "hard");
+assert.equal(new CoC7Adapter().buildPreparationTactics({ ...session, isPreparingModifiers: true }).some((tactic) => tactic.key === "aiming"), false);
 const jammedPreparedSession = CoC7SessionFactory.createRanged({
     attacker: attackerActor,
     target: defenderActor,
@@ -349,7 +350,8 @@ coreApi.diceVisualizer = { getDiceVisuals: () => [] };
 async function submitPromptRoll(_id, key, data) {
     const participant = autoState.participants.find((entry) => entry.key === key);
     assert.equal(patcher.validateSubmittedRoll(autoState, participant, data), true);
-    Object.assign(participant, data, { hasRolled: true });
+    const modifierDice = participant.modifierDice ?? 0;
+    Object.assign(participant, data, { modifierDice, hasRolled: true });
     const followUps = await strategy.onRollApplied(participant, autoState);
     autoState.participants.push(...followUps);
 }
@@ -362,6 +364,82 @@ coreApi.orchestrator.submitConsequenceDecision = async (_id, decision) => {
         autoState = await strategy.decideDamageConsequences(autoState, decision.action);
     }
 };
+
+// Aiming precedes cover, consumes the current round, and affects only the next shot.
+const actorFlags = new Map();
+attackerActor.isOwner = true;
+attackerActor.getFlag = (_scope, key) => actorFlags.get(key);
+attackerActor.setFlag = async (_scope, key, value) => { actorFlags.set(key, value); };
+attackerActor.unsetFlag = async (_scope, key) => { actorFlags.delete(key); };
+const aimWarnings = [];
+globalThis.ui = { notifications: { warn: (message) => aimWarnings.push(message) } };
+game.combat = { id: "combat", started: true, round: 7 };
+autoState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,
+    attackSkillLabel: "Firearms", attackTargetValue: 60
+});
+assert.equal(autoState.combatPhase, "aimChoice");
+let aimPrompt = new Prompt(autoState);
+const ammoBeforeAiming = autoWeapon.system.ammo;
+assert.equal((await aimPrompt._prepareContext({})).canChooseRangedAim, true);
+await Prompt.DEFAULT_OPTIONS.actions.chooseCover.call(aimPrompt, null, { dataset: { cover: "true" } });
+assert.equal(autoState.participants[1].hasRolled, false);
+await Prompt.DEFAULT_OPTIONS.actions.chooseRangedAim.call(aimPrompt, null, { dataset: { aim: "start" } });
+assert.equal(autoState.combatPhase, "aiming");
+assert.equal(autoWeapon.system.ammo, ammoBeforeAiming);
+assert.equal(RangedCombatRules.hasSpentRoundAiming(attackerActor), true);
+const competingAttack = { ...autoState, combatPhase: "attack" };
+assert.equal(patcher.validateSubmittedRoll(competingAttack, competingAttack.participants[0], { modifierDice: 0 }), false);
+const competingChoice = { ...autoState, combatPhase: "aimChoice" };
+assert.equal((await patcher.transformSessionPatch(competingChoice, { rangedAimAction: "fire" })).combatPhase, "aimChoice");
+assert.equal(patcher.validateSubmittedRoll(autoState, autoState.participants[1], { modifierDice: 0 }), false);
+await Prompt.DEFAULT_OPTIONS.actions.finishRangedAim.call(aimPrompt);
+assert.equal(autoState.combatPhase, "aiming");
+assert.deepEqual(aimWarnings.pop(), "ROE_COC7.Ranged.AimStillWaiting");
+game.combat.round = 8;
+await Prompt.DEFAULT_OPTIONS.actions.finishRangedAim.call(aimPrompt);
+assert.equal(autoState.combatPhase, "reaction");
+assert.equal(autoState.tacticalFlags.aiming, true);
+assert.equal(RangedCombatRules.hasSpentRoundAiming(attackerActor), false);
+await Prompt.DEFAULT_OPTIONS.actions.chooseCover.call(aimPrompt, null, { dataset: { cover: "false" } });
+assert.equal(autoState.combatPhase, "attack");
+assert.equal(RangedCombatRules.computeModifierDice(autoState, autoState.participants[0], { fireMode: "multiple", shotIndex: 0 }), 1);
+assert.equal(RangedCombatRules.computeModifierDice(autoState, autoState.participants[0], { fireMode: "multiple", shotIndex: 1 }), -1);
+autoWeapon.system.ammo = 12;
+await Prompt.DEFAULT_OPTIONS.actions.setFireMode.call(aimPrompt, null, { dataset: { mode: "multiple" } });
+await Prompt.DEFAULT_OPTIONS.actions.executeRoll.call(aimPrompt);
+assert.equal(autoState.rangedShots.length, 1);
+assert.equal(autoState.rangedShots[0].modifierDice, 1);
+assert.equal(RangedCombatRules.computeModifierDice(autoState, autoState.participants[0], { fireMode: "multiple" }), -1);
+assert.equal(RangedCombatRules.computeModifierDice(autoState, autoState.participants[0], { fireMode: "auto", shotIndex: 1, volleyIndex: 1 }), -1);
+
+game.combat = null;
+autoState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,
+    attackSkillLabel: "Firearms", attackTargetValue: 60, tacticalFlags: { aiming: true }
+});
+aimPrompt = new Prompt(autoState);
+await Prompt.DEFAULT_OPTIONS.actions.chooseRangedAim.call(aimPrompt, null, { dataset: { aim: "start" } });
+assert.equal(autoState.combatPhase, "aiming");
+assert.equal(RangedCombatRules.hasSpentRoundAiming(attackerActor), true);
+game.user.isGM = false;
+assert.equal((await new Prompt(autoState)._prepareContext({})).canFinishRangedAim, false);
+await Prompt.DEFAULT_OPTIONS.actions.finishRangedAim.call(aimPrompt);
+assert.equal(autoState.combatPhase, "aiming");
+game.user.isGM = true;
+await Prompt.DEFAULT_OPTIONS.actions.finishRangedAim.call(aimPrompt);
+assert.equal(autoState.combatPhase, "reaction");
+assert.equal(autoState.tacticalFlags.aiming, true);
+assert.equal(RangedCombatRules.hasSpentRoundAiming(attackerActor), false);
+
+autoState = CoC7SessionFactory.createRanged({
+    attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,
+    attackSkillLabel: "Firearms", attackTargetValue: 60
+});
+await Prompt.DEFAULT_OPTIONS.actions.chooseRangedAim.call(new Prompt(autoState), null, { dataset: { aim: "fire" } });
+assert.equal(autoState.combatPhase, "reaction");
+assert.equal(autoState.tacticalFlags.aiming, false);
+
 autoWeapon.system.ammo = 12;
 autoState = CoC7SessionFactory.createRanged({
     attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,

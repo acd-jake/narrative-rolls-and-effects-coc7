@@ -37,7 +37,6 @@ export class CoC7PromptPresenter {
         if (session.rollType === "ranged") {
             const labels = {
                 pointBlank: "PointBlank",
-                aiming: "Aiming",
                 cover: "Cover",
                 fastTarget: "FastTarget",
                 inMelee: "InMelee",
@@ -358,7 +357,7 @@ export class CoC7PromptPresenter {
         const session = prompt.session;
         const key = target.dataset.flag;
         const allowed = session?.rollType === "ranged"
-            ? ["pointBlank", "aiming", "cover", "fastTarget", "inMelee", "proneTarget", "smallTarget", "largeTarget"]
+            ? ["pointBlank", "cover", "fastTarget", "inMelee", "proneTarget", "smallTarget", "largeTarget"]
             : ["outnumbered", "surprised", "proneTarget"];
         if (!game.user.isGM || !session?.isPreparingModifiers || !allowed.includes(key)) return;
         const tacticalFlags = { ...session.tacticalFlags, [key]: !session.tacticalFlags?.[key] };

@@ -10,8 +10,8 @@ import { CoC7Settings } from "../coc7-settings.mjs";
 import { CombatConsequenceApplier } from "../strategies/combat-consequence-applier.mjs";
 import { CombatDamageDecision } from "../strategies/combat-damage-decision.mjs";
 
-const PHASE_ORDER = ["reaction", "attack", "resolution"];
-const PENDING_PARTICIPANT_BY_PHASE = { reaction: "defender", attack: "attacker", resolution: "damage" };
+const PHASE_ORDER = ["aimChoice", "aiming", "reaction", "attack", "resolution"];
+const PENDING_PARTICIPANT_BY_PHASE = { aimChoice: "attacker", aiming: "attacker", reaction: "defender", attack: "attacker", resolution: "damage" };
 const RANGED_PROMPT_TEMPLATE = "modules/narrative-rolls-and-effects-coc7/templates/systems/coc7/prompts/ranged-prompt.hbs";
 
 /** Ranged attack prompt supporting single shots, multiple shots, bursts, full-auto volleys, ammo, and malfunctions. */
@@ -22,6 +22,8 @@ export function createRangedPromptApp(core, BasicPromptApp) {
         static DEFAULT_OPTIONS = {
             actions: {
                 executeRoll: RangedPromptApp.#onRollAttack,
+                chooseRangedAim: RangedPromptApp.#onChooseRangedAim,
+                finishRangedAim: RangedPromptApp.#onFinishRangedAim,
                 chooseCover: RangedPromptApp.#onChooseCover,
                 setFireMode: RangedPromptApp.#onSetFireMode,
                 reloadWeapon: RangedPromptApp.#onReloadWeapon,
@@ -79,6 +81,7 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             const hasStartedFiring = shotsFired > 0;
             const isAuto = fireMode === "auto";
             const targetOptions = this.#buildTargetOptions(sys);
+            const aimingStatus = phase === "aiming" ? RangedCombatRules.getAimingStatus(sys.rangedAiming) : "";
 
             const fireModeOptions = profile.fireModes.map((mode) => ({
                 id: mode,
@@ -94,6 +97,13 @@ export function createRangedPromptApp(core, BasicPromptApp) {
                 : [];
             return {
                 ...context,
+                showPlayerWaitingHint: ["aimChoice", "aiming"].includes(phase) ? false : context.showPlayerWaitingHint,
+                isPhaseAimChoice: phase === "aimChoice",
+                isPhaseAiming: phase === "aiming",
+                canChooseRangedAim: phase === "aimChoice" && canActAttacker && !sys.isResolved,
+                canFinishRangedAim: phase === "aiming" && !sys.isResolved
+                    && (aimingStatus === "manual" ? isGM : canActAttacker),
+                aimingNeedsGM: aimingStatus === "manual",
                 isPhaseReaction: phase === "reaction",
                 isPhaseAttack: phase === "attack",
                 isPhaseResolution: phase === "resolution",
@@ -303,12 +313,43 @@ export function createRangedPromptApp(core, BasicPromptApp) {
         static async #onChooseCover(event, trigger) {
             const sys = this.#getLiveSession();
             const target = sys?.participants?.find((p) => p.key === "defender");
-            if (!target || target.hasRolled || sys.isResolved) return;
+            if (!target || target.hasRolled || sys.isResolved || sys.combatPhase !== "reaction") return;
             const tookCover = trigger.dataset.cover === "true";
             await UniversalRollOrchestrator.submitParticipantRoll(this._messageId, "defender", {
                 total: null, successLevel: "none", isSuccess: tookCover, tookCover, modifierDice: 0,
                 rollMode: RollVisibilityPolicy.getCurrentRollMode(), rollerUserId: game.user.id
             });
+        }
+
+        static async #onChooseRangedAim(event, trigger) {
+            const sys = this.#getLiveSession();
+            if (!sys || sys.isResolved || sys.isPreparingModifiers || sys.combatPhase !== "aimChoice") return;
+            const attacker = sys.participants?.find((p) => p.key === "attacker");
+            const actor = SessionStore.resolveActor(attacker);
+            if (!actor || !(game.user.isGM || actor.isOwner)) return;
+            if (RangedCombatRules.hasSpentRoundAiming(actor)) {
+                ui.notifications?.warn(game.i18n.localize("ROE_COC7.Ranged.AimActionAlreadySpent"));
+                return;
+            }
+            const action = trigger.dataset.aim;
+            if (action === "start" || action === "fire") {
+                await UniversalRollOrchestrator.updateSessionPatch(this._messageId, {
+                    rangedAimAction: action, rangedAimMessageId: this._messageId
+                });
+            }
+        }
+
+        static async #onFinishRangedAim() {
+            const sys = this.#getLiveSession();
+            if (!sys || sys.isResolved || sys.combatPhase !== "aiming") return;
+            const actor = SessionStore.resolveActor(sys.participants?.find((p) => p.key === "attacker"));
+            const status = RangedCombatRules.getAimingStatus(sys.rangedAiming);
+            if (!(game.user.isGM || actor?.isOwner) || status === "manual" && !game.user.isGM) return;
+            if (status === "waiting") {
+                ui.notifications?.warn(game.i18n.localize("ROE_COC7.Ranged.AimStillWaiting"));
+                return;
+            }
+            await UniversalRollOrchestrator.updateSessionPatch(this._messageId, { rangedAimAction: "finish" });
         }
         static async #onSetFireMode(event, trigger) {
             const sys = this.#getLiveSession();
@@ -398,7 +439,12 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             const attacker = sys?.participants?.find((p) => p.key === "attacker");
             if (!attacker || attacker.hasRolled || sys.isResolved || CombatDamageDecision.pendingKey(sys) || sys.combatPhase !== "attack") return;
 
-            const weapon = this.#resolveWeapon(SessionStore.resolveActor(attacker), sys);
+            const actor = SessionStore.resolveActor(attacker);
+            if (RangedCombatRules.hasSpentRoundAiming(actor)) {
+                ui.notifications?.warn(game.i18n.localize("ROE_COC7.Ranged.AimActionAlreadySpent"));
+                return;
+            }
+            const weapon = this.#resolveWeapon(actor, sys);
             const targetValue = Number(attacker.targetValue);
             const profile = RangedWeaponService.getWeaponCombatProfile(weapon, targetValue);
             if (sys.rangedMalfunction || profile.isJammed) return;

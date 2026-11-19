@@ -1,9 +1,37 @@
 import { CoC7CheckResolver } from "../coc7-check-resolver.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 import { RangedDamageState } from "./ranged-damage-state.mjs";
+import { COC7_MODULE_ID } from "../coc7-settings.mjs";
 
 /** Stateless Call of Cthulhu 7e ranged combat rule calculations. */
 export class RangedCombatRules {
+    /** Returns the started combat used to measure a round, if one is active. */
+    static getActiveCombat() {
+        const combat = game.combat;
+        return combat?.started && Number(combat.round) > 0 ? combat : null;
+    }
+
+    /** Returns whether the actor has already spent this round aiming. */
+    static hasSpentRoundAiming(actor) {
+        const spent = actor?.getFlag?.(COC7_MODULE_ID, "aimingAction");
+        if (!spent) return false;
+        if (!spent.combatId) return !spent.messageId || Boolean(game.messages?.get(spent.messageId));
+        const combat = this.getActiveCombat();
+        if (!combat && this.getAimingStatus(spent) === "manual") {
+            return !spent.messageId || Boolean(game.messages?.get(spent.messageId));
+        }
+        return Boolean(combat && combat.id === spent.combatId && Number(combat.round) <= spent.round);
+    }
+
+    /** Reports whether an aiming session is waiting, ready, or needs GM confirmation. */
+    static getAimingStatus(aiming) {
+        if (!aiming?.combatId) return "manual";
+        const combat = game.combats?.get?.(aiming.combatId)
+            ?? (game.combat?.id === aiming.combatId ? game.combat : null);
+        if (!combat?.started || Number(combat.round) <= 0) return "manual";
+        return Number(combat.round) > aiming.round ? "ready" : "waiting";
+    }
+
     /** Computes effective CoC 7e ranged modifier dice from tactical flags, cover, and fire mode. */
     static computeModifierDice(session, attacker, { fireMode = null, shotIndex = null, volleyIndex = null } = {}) {
         const flags = session.tacticalFlags ?? {};
@@ -14,7 +42,7 @@ export class RangedCombatRules {
 
         let mod = Number(attacker?.modifierDice ?? 0);
         if (flags.pointBlank) mod += 1;
-        if (flags.aiming) mod += 1;
+        if (flags.aiming && shotNo === 0) mod += 1;
         if (flags.largeTarget) mod += 1;
         if (flags.cover) mod -= 1;
         if (flags.fastTarget) mod -= 1;

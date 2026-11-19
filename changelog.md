@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Choose to aim for a round before the target reacts, gaining a bonus die on the next ranged attack.
 - Damage consequence previews and immediate ranged damage rolls with client preferences and a Keeper override.
 - Full-auto ranged volleys with target traverse penalties, ammunition tracking, and cease fire.
 - Standalone Call of Cthulhu 7th Edition companion module for Narrative Rolls and Effects.

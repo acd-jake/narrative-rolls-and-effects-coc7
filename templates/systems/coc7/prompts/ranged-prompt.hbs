@@ -27,6 +27,26 @@
 <div class="prompt-phase-summary">{{phaseSummaryText}}</div>
 {{/if}}
 
+{{#if isPhaseAimChoice}}
+<section class="combat-phase-section is-active">
+    <header class="combat-phase-header"><span class="phase-title">{{localize "ROE_COC7.Ranged.AimChoiceTitle"}}</span></header>
+    <div class="prompt-phase-summary">{{localize "ROE_COC7.Ranged.AimChoiceHint"}}</div>
+    {{#if canChooseRangedAim}}
+    <div class="prompt-player-controls">
+        <button type="button" class="prompt-action-btn primary" data-action="chooseRangedAim" data-aim="start">{{localize "ROE_COC7.Ranged.AimButton"}}</button>
+        <button type="button" class="prompt-action-btn secondary" data-action="chooseRangedAim" data-aim="fire">{{localize "ROE_COC7.Ranged.FireWithoutAimButton"}}</button>
+    </div>
+    {{/if}}
+</section>
+{{else if isPhaseAiming}}
+<section class="combat-phase-section is-active">
+    <header class="combat-phase-header"><span class="phase-title">{{localize "ROE_COC7.Ranged.AimChoiceTitle"}}</span></header>
+    <div class="prompt-phase-summary">{{#if aimingNeedsGM}}{{localize "ROE_COC7.Ranged.AimWaitGM"}}{{else}}{{localize "ROE_COC7.Ranged.AimWaitRound"}}{{/if}}</div>
+    {{#if canFinishRangedAim}}
+    <button type="button" class="prompt-action-btn primary" data-action="finishRangedAim">{{localize "ROE_COC7.Ranged.AimContinueButton"}}</button>
+    {{/if}}
+</section>
+{{else}}
 <section class="combat-phase-section {{#if isPhaseReaction}}is-active{{else}}is-completed{{/if}} {{#if isPhaseReaction}}{{#unless canActAsTarget}}is-compact-hidden{{/unless}}{{else}}{{#unless isTargetOwner}}is-compact-hidden{{/unless}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
@@ -227,6 +247,7 @@
     {{/if}}
 </section>
 {{/unless}}
+{{/if}}
 {{/inline}}
 {{#*inline "promptResults"}}
 {{#if isPhaseResolution}}

@@ -143,7 +143,7 @@ export class CoC7SessionFactory {
         return {
             rollType: "ranged",
             prepareModifiers: Boolean(prepareModifiers && !profile.isJammed),
-            combatPhase: profile.isJammed ? "attack" : "reaction",
+            combatPhase: profile.isJammed ? "attack" : "aimChoice",
             combatType: "ranged",
             title: weaponLabel,
             weaponName: weaponLabel,
@@ -156,15 +156,17 @@ export class CoC7SessionFactory {
             defenderReaction: "none",
             rangedRangeTier: rangeTier,
             rangedDistance: distance,
-            tacticalFlags: tacticalFlags ?? {
-                pointBlank: false,
-                aiming: false,
-                cover: false,
-                fastTarget: false,
-                inMelee: false,
-                proneTarget: false,
-                smallTarget: false,
-                largeTarget: false
+            tacticalFlags: {
+                ...(tacticalFlags ?? {
+                    pointBlank: false,
+                    cover: false,
+                    fastTarget: false,
+                    inMelee: false,
+                    proneTarget: false,
+                    smallTarget: false,
+                    largeTarget: false
+                }),
+                aiming: false
             },
             rangedFireMode: "single",
             isAutoFire: Boolean(profile.hasAuto),

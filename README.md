@@ -23,6 +23,14 @@ Install and enable both Narrative Rolls and Effects and this companion module. T
 - Call of Cthulhu bonus and penalty dice in roll prompts and roll inspection
 - Difficulty selection during modifier preparation for eligible checks
 
+## Aiming
+
+Before the target decides whether to take cover, the attacker can fire without
+aiming or spend a round aiming. The prompt waits until the next combat round;
+without an active combat tracker, the Keeper confirms when the round has passed.
+The first subsequent shot or volley gains one bonus die. Other actions outside
+this module are not blocked automatically.
+
 ## Full-auto ranged attacks
 
 Select Full Auto in the ranged attack prompt. After each volley and its damage

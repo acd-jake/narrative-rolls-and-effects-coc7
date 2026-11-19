@@ -3,6 +3,7 @@ import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 import { RangedCombatRules } from "../ranged/ranged-combat-rules.mjs";
 import { RangedRollStrategy } from "../strategies/ranged-roll-strategy.mjs";
 import { CombatDamageDecision } from "../strategies/combat-damage-decision.mjs";
+import { COC7_MODULE_ID } from "../coc7-settings.mjs";
 
 /** Validates CoC7 roll submissions and applies phase-aware session updates. */
 export class CoC7SessionPatcher {
@@ -13,7 +14,8 @@ export class CoC7SessionPatcher {
             return !CombatDamageDecision.pendingKey(session);
         }
         if (session.rollType === "other") return true;
-        if (participant.key === "defender" && (session.rollType === "ranged" || session.defenderReaction === "none")) return true;
+        if (participant.key === "defender" && session.rollType === "ranged") return session.combatPhase === "reaction";
+        if (participant.key === "defender" && session.defenderReaction === "none") return true;
         let expected = Number(participant.modifierDice ?? 0);
         if (session.rollType === "combat" && participant.key === "attacker") {
             const flags = session.tacticalFlags ?? {};
@@ -21,6 +23,7 @@ export class CoC7SessionPatcher {
                 Number(Boolean(flags.pointBlank)) + Number(Boolean(flags.proneTarget)) - Number(Boolean(flags.cover));
         }
         if (session.rollType === "ranged" && participant.key === "attacker") {
+            if (session.combatPhase !== "attack" || RangedCombatRules.hasSpentRoundAiming(SessionStore.resolveActor(participant))) return false;
             expected = RangedCombatRules.computeModifierDice(session, participant);
             if (CombatDamageDecision.pendingKey(session)) return false;
             if (session.participants.some((entry) => entry.shotNumber && !entry.hasRolled)) return false;
@@ -31,6 +34,7 @@ export class CoC7SessionPatcher {
 
     /** Applies CoC7 phase resets, defender reactions, and ranged series actions to session patches. */
     transformSessionPatch(session, patch) {
+        if (session.rollType === "ranged" && patch.rangedAimAction) return this.#handleAiming(session, patch.rangedAimAction, patch.rangedAimMessageId);
         if (session.rollType === "ranged" && patch.stopAutoFire === true) return this.#stopAutoFire(session);
         if (session.rollType === "ranged" && patch.finishRangedAttack === true) return this.#finishRangedAttack(session);
         if (session.rollType === "ranged" && patch.switchRangedTarget) {
@@ -54,6 +58,31 @@ export class CoC7SessionPatcher {
             return this.#transformDefenderPatch(session, patch);
         }
         return { ...session, ...patch };
+    }
+
+    async #handleAiming(session, action, messageId) {
+        if (session.isResolved || session.isPreparingModifiers) return session;
+        const attacker = session.participants?.find((entry) => entry.key === "attacker");
+        const actor = SessionStore.resolveActor(attacker);
+        if (!actor) throw new Error("Cannot change aiming state without the attacker.");
+        if (action === "fire" && session.combatPhase === "aimChoice") {
+            if (RangedCombatRules.hasSpentRoundAiming(actor)) return session;
+            return { ...session, combatPhase: "reaction" };
+        }
+        if (action === "start" && session.combatPhase === "aimChoice") {
+            if (RangedCombatRules.hasSpentRoundAiming(actor)) return session;
+            const combat = RangedCombatRules.getActiveCombat();
+            const aiming = { combatId: combat?.id ?? "", round: Number(combat?.round ?? 0), messageId };
+            await actor.setFlag(COC7_MODULE_ID, "aimingAction", aiming);
+            return { ...session, combatPhase: "aiming", rangedAiming: aiming };
+        }
+        if (action === "finish" && session.combatPhase === "aiming") {
+            if (!session.rangedAiming) throw new Error("Cannot finish aiming without the starting round.");
+            if (RangedCombatRules.getAimingStatus(session.rangedAiming) === "waiting") return session;
+            await actor.unsetFlag(COC7_MODULE_ID, "aimingAction");
+            return { ...session, combatPhase: "reaction", tacticalFlags: { ...session.tacticalFlags, aiming: true } };
+        }
+        return session;
     }
 
     #stopAutoFire(session) {

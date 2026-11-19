@@ -19,6 +19,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Pushed-roll support for opposed checks alongside characteristic, skill, and combined checks according to Call of Cthulhu 7e rules.
 - Added atmospheric waiting hints per CoC7 check type while the Keeper resolves the roll session.
 - Configurable resolved combat prompt layout setting (`combatResolvedLayout`) supporting both narrative scene summaries and side-by-side duel comparisons with separated mechanical consequences.
+- Intercept automatic CoC7 Constitution checks triggered by major wounds or dying (`CoC7ConCheck`) into roll prompts and apply the resulting unconscious or dead condition on failure.
+- Intercept system Sanity check cards (`CoC7SanCheckCard`) into NRE Sanity prompts.
+- Trigger a non-pushable Intelligence bout check prompt and apply temporary insanity upon success when an investigator loses 5 or more Sanity directly on the sheet.
+- Provide German and English default pushed-roll consequences (both sane and insane) across all standard pushable CoC7 skills and specializations.
 
 ### Changed
 - Resolve malfunction-clearing attempts immediately and show their outcome in the prompt and chat card.

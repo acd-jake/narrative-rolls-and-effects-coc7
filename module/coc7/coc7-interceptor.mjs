@@ -38,6 +38,7 @@ export class CoC7Interceptor {
         if (!this.#chatHookRegistered) {
             this.#chatHookRegistered = true;
             Hooks.on("preCreateChatMessage", (message, data) => this.#onPreCreateChatMessage(message, data));
+            Hooks.on("preUpdateActor", (actor, changed, options, userId) => this.#onPreUpdateActor(actor, changed, options, userId));
         }
     }
 
@@ -286,29 +287,70 @@ export class CoC7Interceptor {
     static #onPreCreateChatMessage(message, data) {
         if (!CoC7Settings.isSystemInterceptionEnabled()) return;
         const load = data?.flags?.CoC7?.load ?? message?.flags?.CoC7?.load;
-        if (load?.as !== "CoC7ConCheck" || !load.actorUuid) return;
+        if (!load?.as || !load.actorUuid) return;
 
-        const doc = fromUuidSync(load.actorUuid);
-        const actor = doc?.actor ?? doc;
-        if (!actor) return;
+        if (load.as === "CoC7ConCheck") {
+            const doc = fromUuidSync(load.actorUuid);
+            const actor = doc?.actor ?? doc;
+            if (!actor) return;
 
-        const stayAlive = Boolean(load.stayAlive);
-        const threshold = Number(actor.system?.characteristics?.con?.value ?? load.dicePool?.threshold ?? 50);
-        const conLabel = game.i18n.localize("ROE_COC7.Characteristics.CON.Label");
-        const label = stayAlive ? `${conLabel} (${game.i18n.localize("ROE_COC7.Conditions.Dead")})` : conLabel;
+            const stayAlive = Boolean(load.stayAlive);
+            const threshold = Number(actor.system?.characteristics?.con?.value ?? load.dicePool?.threshold ?? 50);
+            const conLabel = game.i18n.localize("ROE_COC7.Characteristics.CON.Label");
+            const label = stayAlive ? `${conLabel} (${game.i18n.localize("ROE_COC7.Conditions.Dead")})` : conLabel;
 
+            UniversalRollOrchestrator.startSystemRoll("skill", {
+                actor,
+                label,
+                targetValue: threshold,
+                difficulty: "regular",
+                canChangeDifficulty: false,
+                canPush: false,
+                isConCheck: true,
+                stayAlive,
+                rollMode: data?.blind ? "blindroll" : undefined
+            });
+            return false;
+        }
+
+        if (load.as === "CoC7SanCheckCard") {
+            this.#handleSanCardCreate(load.actorUuid, {
+                sanReason: load.sanReason ?? "",
+                sanMin: load.sanMin ?? "0",
+                sanMax: load.sanMax ?? "1d6",
+                isBlind: Boolean(data?.blind)
+            });
+            return false;
+        }
+    }
+
+    static #onPreUpdateActor(actor, changed, options, userId) {
+        if (userId !== game.user.id || options?.nreSanityHandled) return;
+        if (!CoC7Settings.isSystemInterceptionEnabled()) return;
+
+        const newSan = changed?.system?.attribs?.san?.value;
+        if (typeof newSan !== "number") return;
+
+        const oldSan = Number(actor.system?.attribs?.san?.value ?? 0);
+        const lost = oldSan - newSan;
+        if (lost < 5 || newSan <= 0) return;
+
+        // Avoid duplicating if daily loss already reached the indefinite threshold (1/5 of daily start).
+        const previousDailyLoss = Number(actor.system?.attribs?.san?.dailyLoss ?? 0);
+        const dailyStartSan = oldSan + previousDailyLoss;
+        const twentyPercentThreshold = Math.floor(dailyStartSan / 5);
+        if (twentyPercentThreshold > 0 && previousDailyLoss + lost >= twentyPercentThreshold) return;
+
+        const intValue = Number(actor.system?.characteristics?.int?.value ?? 50);
         UniversalRollOrchestrator.startSystemRoll("skill", {
             actor,
-            label,
-            targetValue: threshold,
+            label: game.i18n.localize("ROE_COC7.Sanity.TemporaryInsanityIntCheck"),
+            targetValue: intValue,
             difficulty: "regular",
             canChangeDifficulty: false,
             canPush: false,
-            isConCheck: true,
-            stayAlive,
-            rollMode: data?.blind ? "blindroll" : undefined
+            isBoutIntCheck: true
         });
-        return false;
     }
 
     static async #resolveActorRef(ref) {

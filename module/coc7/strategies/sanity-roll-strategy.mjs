@@ -142,7 +142,7 @@ export class SanityRollStrategy extends BasicRollStrategy {
                 "system.attribs.san.value": Math.max(0, currentSan - lost),
                 "system.attribs.san.dailyLoss": previousDailyLoss + lost
             };
-            await actor.update(updates);
+            await actor.update(updates, { nreSanityHandled: true });
         }
 
         const intRoll = state.participants?.find((p) => p.key === "insanityInt");

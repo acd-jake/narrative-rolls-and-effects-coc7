@@ -86,6 +86,9 @@ export class CoC7Adapter {
     getInitialSessionFields(cfg) {
         return {
             canPush: cfg.canPush ?? true,
+            isConCheck: cfg.isConCheck ?? false,
+            stayAlive: cfg.stayAlive ?? false,
+            isBoutIntCheck: cfg.isBoutIntCheck ?? false,
             combinedMode: cfg.combinedMode ?? "and",
             pushFailurePending: false,
             sanityLossSuccess: cfg.sanityLossSuccess ?? "0",

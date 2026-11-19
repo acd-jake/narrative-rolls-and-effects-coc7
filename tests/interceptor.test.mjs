@@ -18,6 +18,16 @@ globalThis.Hooks = {
     callAll: () => {}
 };
 
+globalThis.Roll = class MockRoll {
+    constructor(formula) {
+        this.formula = formula;
+        this.total = 4;
+    }
+    async evaluate() {
+        return this;
+    }
+};
+
 globalThis.document = {
     body: {
         dataset: {},
@@ -28,9 +38,11 @@ globalThis.document = {
 const actorsById = new Map();
 const actorsByUuid = new Map();
 globalThis.fromUuidSync = (uuid) => actorsByUuid.get(uuid) ?? null;
+globalThis.fromUuid = async (uuid) => actorsByUuid.get(uuid) ?? null;
 
 globalThis.game = {
-    user: { isGM: true, targets: { first: () => null } },
+    user: { id: "user-gm", isGM: true, targets: { first: () => null } },
+    actors: actorsById,
     modules: new Map(),
     settings: {
         settings: new Map([[`${COC7_MODULE_ID}.interceptSystemRolls`, {}]]),
@@ -42,7 +54,7 @@ globalThis.game = {
     },
     i18n: {
         localize: (key) => key,
-        format: (key, data) => `${key}:${data?.name ?? ""}`
+        format: (key, data) => `${key}:${data?.name ?? data?.hours ?? ""}`
     }
 };
 
@@ -84,7 +96,6 @@ class MockActor {
         fallbackCalls.push(["actorWeaponRoll", weapon]);
     }
 }
-
 globalThis.CONFIG = {
     Actor: {
         documentClass: MockActor,
@@ -122,8 +133,8 @@ actor.toggleStatusEffect = async (status, { active }) => {
     else actor.statuses.delete(status);
 };
 actor.system = {
-    characteristics: { dex: { value: 65 }, con: { value: 80 } },
-    attribs: { lck: { value: 55 }, san: { value: 60 } }
+    characteristics: { dex: { value: 65 }, con: { value: 80 }, int: { value: 70 } },
+    attribs: { lck: { value: 55 }, san: { value: 60, dailyLoss: 0 } }
 };
 actorsById.set(actor.id, actor);
 actorsByUuid.set(actor.uuid, actor);
@@ -166,15 +177,13 @@ await actor.weaponRoll(meleeWeapon);
 assert.equal(startedRolls[5].type, "combat");
 assert.equal(fallbackCalls.length, 0);
 
-// 4. Intercept automatic CoC7ConCheck chat messages
+// 4. Intercept automatic CoC7ConCheck & CoC7SanCheckCard chat messages
 const preCreateHooks = registeredHooks.get("preCreateChatMessage") ?? [];
 assert.equal(preCreateHooks.length, 1);
 const firePreCreate = (data) => preCreateHooks[0]({}, data);
 
-// Unrelated chat messages pass through untouched
 assert.equal(firePreCreate({ content: "Hello" }), undefined);
 
-// Major wound CON check is suppressed in chat and routed to NRE prompt
 const conResult = firePreCreate({
     blind: true,
     flags: { CoC7: { load: { as: "CoC7ConCheck", actorUuid: "Actor.a1", stayAlive: false } } }
@@ -188,7 +197,6 @@ assert.equal(startedRolls[6].payload.isConCheck, true);
 assert.equal(startedRolls[6].payload.stayAlive, false);
 assert.equal(startedRolls[6].payload.rollMode, "blindroll");
 
-// Dying stayAlive CON check sets stayAlive: true
 const dyingResult = firePreCreate({
     flags: { CoC7: { load: { as: "CoC7ConCheck", actorUuid: "Actor.a1", stayAlive: true } } }
 });
@@ -196,11 +204,38 @@ assert.equal(dyingResult, false);
 assert.equal(startedRolls.length, 8);
 assert.equal(startedRolls[7].payload.stayAlive, true);
 
-// 5. Verify SkillRollStrategy applies unconscious / dead on failed CON check
+const sanCardResult = firePreCreate({
+    flags: { CoC7: { load: { as: "CoC7SanCheckCard", actorUuid: "Actor.a1", sanReason: "Deep One", sanMin: "1", sanMax: "1d6" } } }
+});
+assert.equal(sanCardResult, false);
+await Promise.resolve();
+assert.equal(startedRolls.length, 9);
+assert.equal(startedRolls[8].type, "sanity");
+assert.equal(startedRolls[8].payload.label, "Deep One");
+
+// 5. Intercept manual Sanity loss >= 5 on actor sheet via preUpdateActor
+const preUpdateHooks = registeredHooks.get("preUpdateActor") ?? [];
+assert.equal(preUpdateHooks.length, 1);
+const firePreUpdate = (changed, options = {}, userId = "user-gm") =>
+    preUpdateHooks[0](actor, changed, options, userId);
+
+// Small loss (< 5) or internal NRE update must not trigger an extra INT check
+firePreUpdate({ system: { attribs: { san: { value: 57 } } } });
+firePreUpdate({ system: { attribs: { san: { value: 52 } } } }, { nreSanityHandled: true });
+assert.equal(startedRolls.length, 9);
+
+// Manual drop of 5+ Sanity triggers non-pushable INT bout check
+firePreUpdate({ system: { attribs: { san: { value: 54 } } } });
+assert.equal(startedRolls.length, 10);
+assert.equal(startedRolls[9].type, "skill");
+assert.equal(startedRolls[9].payload.targetValue, 70);
+assert.equal(startedRolls[9].payload.canPush, false);
+assert.equal(startedRolls[9].payload.isBoutIntCheck, true);
+
+// 6. Verify SkillRollStrategy applies unconscious / dead on failed CON check
 const strategy = new SkillRollStrategy();
 const failedParticipant = { key: "p0", actorId: "a1", actorName: "Jessie Williams", hasRolled: true, isSuccess: false };
 
-// Manual consequence mode flags pending consequence first, then applies unconscious
 autoApplyConsequences = false;
 const manualConState = {
     rollType: "skill",
@@ -217,7 +252,6 @@ assert.equal(manualConState.hasPendingConsequences, false);
 assert.equal(actor.statuses.has("unconscious"), true);
 assert.ok(strategy.evaluateResolution(manualConState).outcomeHeadline.includes("ROE_COC7.RollSession.ConCheckUnconscious:Jessie Williams"));
 
-// Auto-apply mode immediately sets dead when stayAlive is true
 autoApplyConsequences = true;
 const autoDyingState = {
     rollType: "skill",
@@ -230,11 +264,25 @@ assert.equal(autoDyingState.consequenceApplied, true);
 assert.equal(actor.statuses.has("dead"), true);
 assert.ok(strategy.evaluateResolution(autoDyingState).outcomeHeadline.includes("ROE_COC7.RollSession.ConCheckDead:Jessie Williams"));
 
-// 6. Fallback to native CoC7 handlers when setting is disabled
+// 7. Verify SkillRollStrategy applies temporaryInsanity on passed bout INT check
+const passedIntParticipant = { key: "p0", actorId: "a1", actorName: "Jessie Williams", hasRolled: true, isSuccess: true };
+const boutIntState = {
+    rollType: "skill",
+    isBoutIntCheck: true,
+    participants: [passedIntParticipant]
+};
+await strategy.onRollApplied(passedIntParticipant, boutIntState);
+assert.equal(boutIntState.consequenceApplied, true);
+assert.equal(boutIntState.tempInsanityHours, 4);
+assert.equal(boutIntState.boutDurationRounds, 4);
+assert.equal(actor.statuses.has("temporaryInsanity"), true);
+assert.ok(strategy.evaluateResolution(boutIntState).outcomeHeadline.includes("ROE_COC7.Sanity.TemporaryInsanitySummary:4"));
+
+// 8. Fallback to native CoC7 handlers when setting is disabled
 interceptEnabled = false;
 await sheet._onRollSkillTest(mockEvent({ itemId: "sk1" }));
 await actor.weaponRoll(meleeWeapon);
-assert.equal(startedRolls.length, 8);
+assert.equal(startedRolls.length, 10);
 assert.equal(fallbackCalls.length, 2);
 
 console.log("CoC7Interceptor checks passed.");

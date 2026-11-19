@@ -521,8 +521,8 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.equal(successResult.resolvedActorName, "INVESTIGATOR");
         assert.equal(successResult.resolvedCombatNarrative, undefined);
         const resultAdapter = new CoC7Adapter();
-        assert.equal(resultAdapter.prepareResolvedChatContext(autoState).resolvedMalfunctionClearText, successResult.resolvedMalfunctionClearText);
-        assert.equal(resultAdapter.preparePromptContext(null, autoState, {}).resolvedMalfunctionClearText, successResult.resolvedMalfunctionClearText);
+        assert.equal((await resultAdapter.prepareResolvedChatContext(autoStatusSession)).resolvedCombatStatus, "ROE_COC7.Ranged.MalfunctionCleared: 4/60");
+        assert.equal((await resultAdapter.preparePromptContext(null, autoStatusSession, {})).resolvedCombatStatus, "ROE_COC7.Ranged.MalfunctionCleared: 4/60");
 
         autoState = CoC7SessionFactory.createRanged({
             attacker: attackerActor, target: defenderActor, targetToken: firstToken, weapon: autoWeapon,

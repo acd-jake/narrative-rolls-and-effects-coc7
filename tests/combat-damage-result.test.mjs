@@ -153,10 +153,12 @@ describe("Combat damage results and impale evaluation", () => {
 
         globalThis.foundry = { dice: { terms: { Die: class { } } } };
         globalThis.Roll = class {
-            constructor(formula) { this.formula = formula; this.terms = []; this.total = 0; }
+            constructor(formula) { this.formula = String(formula).replace(/\s+/g, ""); this.terms = []; this.total = 0; }
             async evaluate({ maximize = false } = {}) {
                 if (this.formula === "1d6") this.total = maximize ? 6 : 3;
                 else if (this.formula === "1d4") this.total = maximize ? 4 : 2;
+                else if (this.formula === "1d6+1d4") this.total = maximize ? 10 : 5;
+                else if (this.formula === "1d6+1d6+1d4") this.total = maximize ? 16 : 8;
                 return this;
             }
         };

@@ -52,7 +52,7 @@ export class CoC7Interceptor {
         try {
             return callback();
         } finally {
-            setTimeout(() => { this.#isHandlingRoll = false; }, 0);
+            this.#isHandlingRoll = false;
         }
     }
 

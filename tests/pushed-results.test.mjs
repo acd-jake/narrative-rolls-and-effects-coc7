@@ -30,7 +30,7 @@ describe("Pushed result display and visibility", () => {
         };
         setCoreApi({
             visibility: { canViewParticipantRoll: (participant) => participant.visible !== false },
-            session: { resolveActor: () => ({ isOwner: true, testUserPermission: () => true }) },
+            session: { resolveActor: () => ({ type: "character", isOwner: true, testUserPermission: () => true }) },
             diceVisualizer: { getDiceVisuals: () => [] }
         });
 

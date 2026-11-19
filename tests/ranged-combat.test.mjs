@@ -696,7 +696,7 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.equal(autoState.participants.filter((entry) => entry.key === "damage").length, 1);
         prompt.session = autoState;
         function verifyDamageDice(config) {
-            if (config.rollType === "other") assert.equal(config.diceFormula, "1d6");
+            if (config.rollType === "other") assert.equal(config.diceFormula, "1d6 + 1d6 + 1d6 + 1d6 + 1d6 + 1d6");
             return [];
         }
         coreApi.diceVisualizer.getDiceVisuals = verifyDamageDice;

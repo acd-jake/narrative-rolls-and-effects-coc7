@@ -155,25 +155,27 @@
         <span><i class="fa-solid fa-burst"></i> {{damageLabel}}</span>
         <strong {{#if damageRolled}}data-inspect-key="damage" {{/if}}>
             {{#if damageRolled}}
-            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
+            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize
+            "ROE.RollSession.HiddenRoll"}}{{/if}}
             {{else}}
-            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>{{/if}}
+            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize
+                "ROE.RollSession.PendingRoll"}}</span>{{/if}}
             {{/if}}
         </strong>
     </div>
 
     {{#if canRollDamage}}
-    {{#if canViewDamage}}{{> roeDiceDisplay dice=damageDice modifierTooltip="Damage"}}{{/if}}
+    {{#if canViewDamage}}{{> roeDiceDisplay dice=damageDice modifierTooltip=damageDiceLabel}}{{/if}}
     <button type="button" class="prompt-action-btn push {{#if isDamageDelegated}}gm-delegated{{/if}}"
         data-action="executeDamageRoll">
         <i class="fa-solid fa-dice"></i> {{localize "ROE_COC7.Combat.RollDamageBtn"}}
     </button>
     {{/if}}
-    {{/if}}
 
     {{#if damagePreviewLabel}}
     <div class="pending-badge">{{damagePreviewTarget}}:
-        {{#if showDamagePreviewHp}}{{localize "ROE_COC7.DamagePreview.Damage" damage=damagePreviewDamage}}; {{localize "ROE_COC7.DamagePreview.RemainingHP" hp=damagePreviewHp}}; {{/if}}{{damagePreviewLabel}}
+        {{#if showDamagePreviewHp}}{{localize "ROE_COC7.DamagePreview.Damage" damage=damagePreviewDamage}}; {{localize
+        "ROE_COC7.DamagePreview.RemainingHP" hp=damagePreviewHp}}; {{/if}}{{damagePreviewLabel}}
     </div>
     {{/if}}
 

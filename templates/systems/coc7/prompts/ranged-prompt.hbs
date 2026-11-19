@@ -29,25 +29,32 @@
 
 {{#if isPhaseAimChoice}}
 <section class="combat-phase-section is-active">
-    <header class="combat-phase-header"><span class="phase-title">{{localize "ROE_COC7.Ranged.AimChoiceTitle"}}</span></header>
+    <header class="combat-phase-header"><span class="phase-title">{{localize "ROE_COC7.Ranged.AimChoiceTitle"}}</span>
+    </header>
     <div class="prompt-phase-summary">{{localize "ROE_COC7.Ranged.AimChoiceHint"}}</div>
     {{#if canChooseRangedAim}}
     <div class="prompt-player-controls">
-        <button type="button" class="prompt-action-btn primary" data-action="chooseRangedAim" data-aim="start">{{localize "ROE_COC7.Ranged.AimButton"}}</button>
-        <button type="button" class="prompt-action-btn secondary" data-action="chooseRangedAim" data-aim="fire">{{localize "ROE_COC7.Ranged.FireWithoutAimButton"}}</button>
+        <button type="button" class="prompt-action-btn primary" data-action="chooseRangedAim"
+            data-aim="start">{{localize "ROE_COC7.Ranged.AimButton"}}</button>
+        <button type="button" class="prompt-action-btn secondary" data-action="chooseRangedAim"
+            data-aim="fire">{{localize "ROE_COC7.Ranged.FireWithoutAimButton"}}</button>
     </div>
     {{/if}}
 </section>
 {{else if isPhaseAiming}}
 <section class="combat-phase-section is-active">
-    <header class="combat-phase-header"><span class="phase-title">{{localize "ROE_COC7.Ranged.AimChoiceTitle"}}</span></header>
-    <div class="prompt-phase-summary">{{#if aimingNeedsGM}}{{localize "ROE_COC7.Ranged.AimWaitGM"}}{{else}}{{localize "ROE_COC7.Ranged.AimWaitRound"}}{{/if}}</div>
+    <header class="combat-phase-header"><span class="phase-title">{{localize "ROE_COC7.Ranged.AimChoiceTitle"}}</span>
+    </header>
+    <div class="prompt-phase-summary">{{#if aimingNeedsGM}}{{localize "ROE_COC7.Ranged.AimWaitGM"}}{{else}}{{localize
+        "ROE_COC7.Ranged.AimWaitRound"}}{{/if}}</div>
     {{#if canFinishRangedAim}}
-    <button type="button" class="prompt-action-btn primary" data-action="finishRangedAim">{{localize "ROE_COC7.Ranged.AimContinueButton"}}</button>
+    <button type="button" class="prompt-action-btn primary" data-action="finishRangedAim">{{localize
+        "ROE_COC7.Ranged.AimContinueButton"}}</button>
     {{/if}}
 </section>
 {{else}}
-<section class="combat-phase-section {{#if isPhaseReaction}}is-active{{else}}is-completed{{/if}} {{#if isPhaseReaction}}{{#unless canActAsTarget}}is-compact-hidden{{/unless}}{{else}}{{#unless isTargetOwner}}is-compact-hidden{{/unless}}{{/if}}">
+<section
+    class="combat-phase-section {{#if isPhaseReaction}}is-active{{else}}is-completed{{/if}} {{#if isPhaseReaction}}{{#unless canActAsTarget}}is-compact-hidden{{/unless}}{{else}}{{#unless isTargetOwner}}is-compact-hidden{{/unless}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseReaction}}fa-person-running{{else}}fa-check-circle{{/if}}"></i>
@@ -79,7 +86,8 @@
 </section>
 
 {{#unless isPhaseReaction}}
-<section class="combat-phase-section {{#if isPhaseAttack}}is-active{{else}}is-completed{{/if}} {{#if isPhaseAttack}}{{#unless isAttackerOwner}}{{#unless isGM}}is-compact-hidden{{/unless}}{{/unless}}{{else}}{{#unless isAttackerOwner}}is-compact-hidden{{/unless}}{{/if}}">
+<section
+    class="combat-phase-section {{#if isPhaseAttack}}is-active{{else}}is-completed{{/if}} {{#if isPhaseAttack}}{{#unless isAttackerOwner}}{{#unless isGM}}is-compact-hidden{{/unless}}{{/unless}}{{else}}{{#unless isAttackerOwner}}is-compact-hidden{{/unless}}{{/if}}">
     <header class="combat-phase-header">
         <span class="phase-title">
             <i class="fa-solid {{#if isPhaseAttack}}fa-crosshairs{{else}}fa-check-circle{{/if}}"></i>
@@ -97,7 +105,8 @@
 
     {{#if isJammed}}
     <div class="prompt-outcome-banner push-failure-warning">
-        <i class="fa-solid fa-triangle-exclamation"></i> {{#if isAutoFire}}{{localize "ROE_COC7.Ranged.WeaponJammed"}}{{else}}{{localize "ROE_COC7.Combat.Malfunction"}}{{/if}}
+        <i class="fa-solid fa-triangle-exclamation"></i> {{#if isAutoFire}}{{localize
+        "ROE_COC7.Ranged.WeaponJammed"}}{{else}}{{localize "ROE_COC7.Combat.Malfunction"}}{{/if}}
     </div>
     {{/if}}
     {{#if hasRangedShots}}
@@ -105,11 +114,12 @@
         {{#each rangedShots}}
         <div class="combined-check-row">
             {{#if isTargetSwitch}}
-            <span><i class="fa-solid fa-arrows-turn-right"></i> {{localize "ROE_COC7.Ranged.TargetSwitched" target=targetName}}</span>
+            <span><i class="fa-solid fa-arrows-turn-right"></i> {{localize "ROE_COC7.Ranged.TargetSwitched"
+                target=targetName}}</span>
             <span>-{{bulletsSpent}} {{localize "ROE_COC7.Ranged.BulletsAbbr"}}</span>
             {{else}}
             <span>#{{index}} ({{targetName}})</span>
-            <strong class="{{successLevel}}" {{#if rollBreakdown}}data-inspect-key="shot_{{index}}"{{/if}}>
+            <strong class="{{successLevel}}" {{#if rollBreakdown}}data-inspect-key="shot_{{index}}" {{/if}}>
                 {{#if malfunction}}
                 {{localize "ROE_COC7.Combat.Malfunction"}} ({{total}})
                 {{else}}
@@ -126,7 +136,8 @@
     <div class="prompt-player-controls {{#if isAttackerDelegated}}gm-delegated-region{{/if}}">
         {{#each damagePreviews}}
         <div class="pending-badge"><strong>{{name}}</strong>:
-            {{#if showHp}}{{localize "ROE_COC7.DamagePreview.Damage" damage=damage}}; {{localize "ROE_COC7.DamagePreview.RemainingHP" hp=remainingHp}}; {{/if}}{{status}}
+            {{#if showHp}}{{localize "ROE_COC7.DamagePreview.Damage" damage=damage}}; {{localize
+            "ROE_COC7.DamagePreview.RemainingHP" hp=remainingHp}}; {{/if}}{{status}}
         </div>
         {{/each}}
         {{#if pendingDamageDecision}}
@@ -135,7 +146,8 @@
             <button type="button" class="prompt-action-btn luck" data-action="decideDamage" data-decision="apply">
                 {{localize "ROE_COC7.Combat.ApplyDamageDecisionBtn"}}
             </button>
-            <button type="button" class="prompt-action-btn secondary" data-action="decideDamage" data-decision="decline">
+            <button type="button" class="prompt-action-btn secondary" data-action="decideDamage"
+                data-decision="decline">
                 {{localize "ROE_COC7.Combat.DeclineDamageDecisionBtn"}}
             </button>
         </div>
@@ -146,6 +158,7 @@
         {{#if pendingShotDamage}}
         <div class="pending-badge">{{localize "ROE_COC7.Ranged.DamageRequired"}}</div>
         {{#if canRollDamage}}
+        {{#if canViewDamage}}{{> roeDiceDisplay dice=damageDice modifierTooltip=damageDiceLabel}}{{/if}}
         <button type="button" class="prompt-action-btn push" data-action="executeDamageRoll">
             <i class="fa-solid fa-dice"></i> {{localize "ROE_COC7.Combat.RollDamageBtn"}}
         </button>
@@ -264,7 +277,7 @@
     {{#each damageEntries}}
     <div class="combined-check-row">
         <span><i class="fa-solid fa-burst"></i> {{label}}</span>
-        <strong {{#if hasRolled}}data-inspect-key="{{key}}"{{/if}}>
+        <strong {{#if hasRolled}}data-inspect-key="{{key}}" {{/if}}>
             {{#if canView}}{{#if hasRolled}}{{total}} ({{diceFormula}}){{else}}{{diceFormula}}{{/if}}
             {{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
         </strong>
@@ -275,17 +288,20 @@
         <span><i class="fa-solid fa-burst"></i> {{damageLabel}}</span>
         <strong {{#if damageRolled}}data-inspect-key="damage" {{/if}}>
             {{#if damageRolled}}
-            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize "ROE.RollSession.HiddenRoll"}}{{/if}}
+            {{#if canViewDamage}}{{damageTotal}} ({{damageFormula}}){{else}}{{localize
+            "ROE.RollSession.HiddenRoll"}}{{/if}}
             {{else}}
-            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize "ROE.RollSession.PendingRoll"}}</span>{{/if}}
+            {{#if canViewDamage}}{{damageFormula}}{{else}}<span class="pending-badge">{{localize
+                "ROE.RollSession.PendingRoll"}}</span>{{/if}}
             {{/if}}
         </strong>
     </div>
     {{/if}}
 
     {{#if canRollDamage}}
-    {{#if canViewDamage}}{{> roeDiceDisplay dice=damageDice modifierTooltip="Damage"}}{{/if}}
-    <button type="button" class="prompt-action-btn push {{#if isDamageDelegated}}gm-delegated{{/if}}" data-action="executeDamageRoll">
+    {{#if canViewDamage}}{{> roeDiceDisplay dice=damageDice modifierTooltip=damageDiceLabel}}{{/if}}
+    <button type="button" class="prompt-action-btn push {{#if isDamageDelegated}}gm-delegated{{/if}}"
+        data-action="executeDamageRoll">
         <i class="fa-solid fa-dice"></i> {{localize "ROE_COC7.Combat.RollDamageBtn"}}
     </button>
     {{/if}}
@@ -293,7 +309,8 @@
 
     {{#each damagePreviews}}
     <div class="pending-badge"><strong>{{name}}</strong>:
-        {{#if showHp}}{{localize "ROE_COC7.DamagePreview.Damage" damage=damage}}; {{localize "ROE_COC7.DamagePreview.RemainingHP" hp=remainingHp}}; {{/if}}{{status}}
+        {{#if showHp}}{{localize "ROE_COC7.DamagePreview.Damage" damage=damage}}; {{localize
+        "ROE_COC7.DamagePreview.RemainingHP" hp=remainingHp}}; {{/if}}{{status}}
     </div>
     {{/each}}
     {{#if pendingDamageDecision}}

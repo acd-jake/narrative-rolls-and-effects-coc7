@@ -90,11 +90,18 @@ export function createRangedPromptApp(core, BasicPromptApp) {
             }));
 
             const attackerDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, effectiveMod);
-            const damageHit = sys.rangedHits?.find((hit) => damageEntry?.shotNumber
-                ? hit.shotNumber === damageEntry.shotNumber : !damageEntry?.targetKey || hit.targetKey === damageEntry.targetKey);
-            const damageDice = canViewDamage
-                ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageHit?.formula ?? damageEntry?.diceFormula ?? sys.damageFormula })
+            const damageHits = Array.isArray(sys.rangedHits) && sys.rangedHits.length > 0
+                ? sys.rangedHits.filter((hit) => damageEntry?.shotNumber
+                    ? hit.shotNumber === damageEntry.shotNumber
+                    : !damageEntry?.targetKey || hit.targetKey === damageEntry.targetKey)
                 : [];
+            const damageFormula = damageHits.length > 0
+                ? damageHits.map((hit) => hit.formula || damageEntry?.diceFormula || sys.damageFormula).join(" + ")
+                : (damageEntry?.diceFormula ?? sys.damageFormula);
+            const damageDice = canViewDamage
+                ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageFormula })
+                : [];
+
             return {
                 ...context,
                 showPlayerWaitingHint: ["aimChoice", "aiming"].includes(phase) ? false : context.showPlayerWaitingHint,
@@ -173,7 +180,7 @@ export function createRangedPromptApp(core, BasicPromptApp) {
                 attackerDice,
                 attackerDiceLabel: this._formatDiceFormulaLabel(attackerDice),
                 damageDice,
-                damageDiceLabel: canViewDamage ? this._formatDiceFormulaLabel(damageDice) : "",
+                damageDiceLabel: canViewDamage ? (this._formatDiceFormulaLabel(damageDice) || damageFormula) : "",
                 attackerRollBtnLabel: isAuto && hasStartedFiring
                     ? game.i18n.localize("ROE_COC7.Ranged.FireNextVolleyBtn")
                     : this.#buildFireButtonLabel(attacker, fireMode, bulletsPerAction, shotsFired),

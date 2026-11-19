@@ -57,8 +57,38 @@ export class DamageRollSubmitter {
 
     static async #evaluateDamage(sys, damageEntry) {
         const winner = sys.participants?.find((p) => p.key === sys.hitWinnerKey);
-        const maximize = winner?.successLevel === "extreme" || winner?.successLevel === "critical";
+        const isExtremeOrCrit = winner?.successLevel === "extreme" || winner?.successLevel === "critical";
+        const winnerActor = winner ? SessionStore.resolveActor(winner) : null;
+        const weapon = this.#resolveWinnerWeapon(winnerActor, winner, sys);
+        const isImpale = isExtremeOrCrit && Boolean(weapon?.system?.properties?.impl);
+
+        if (isImpale) {
+            const baseWeaponFormula = weapon?.system?.range?.normal?.damage || sys.damageFormula || "1d6";
+            const maxBaseRoll = await new Roll(baseWeaponFormula).evaluate({ maximize: true });
+            const extraDiceRoll = await new Roll(baseWeaponFormula).evaluate();
+            const isMelee = sys.combatType === "melee" || winner?.key === "defender";
+            const rawBonus = isMelee ? (sys.damageBonus || "0") : "0";
+            const bonusRoll = rawBonus && rawBonus !== "0"
+                ? await new Roll(rawBonus).evaluate({ maximize: true })
+                : { total: 0, terms: [] };
+
+            const total = Math.max(0, Number(maxBaseRoll.total ?? 0) + Number(extraDiceRoll.total ?? 0) + Number(bonusRoll.total ?? 0));
+            return {
+                formula: damageEntry.diceFormula || `${baseWeaponFormula}+${baseWeaponFormula}`,
+                total,
+                terms: [...(maxBaseRoll.terms ?? []), ...(extraDiceRoll.terms ?? []), ...(bonusRoll.terms ?? [])]
+            };
+        }
+
         const roll = new Roll(damageEntry.diceFormula || "1d6");
-        return roll.evaluate(maximize ? { maximize: true } : {});
+        return roll.evaluate(isExtremeOrCrit ? { maximize: true } : {});
+    }
+
+    static #resolveWinnerWeapon(winnerActor, winner, sys) {
+        if (!winnerActor || !winner) return null;
+        if (winner.key === "defender" && sys.defenderWeaponId && sys.defenderWeaponId !== "unarmed") {
+            return winnerActor.items?.get?.(sys.defenderWeaponId) ?? null;
+        }
+        return winner.itemId ? winnerActor.items?.get?.(winner.itemId) ?? null : null;
     }
 }

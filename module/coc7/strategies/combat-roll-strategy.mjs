@@ -84,8 +84,9 @@ export class CombatRollStrategy extends BaseRollStrategy {
         if (!winner || !winnerActor) return [];
 
         const isExtremeOrCrit = winner.successLevel === "extreme" || winner.successLevel === "critical";
-        const weapon = this.#resolveWinnerWeapon(winnerActor, winner, state);
-        const rawDmgFormula = weapon?.system?.range?.normal?.damage || state.damageFormula || "1d6";
+        const isImpale = isExtremeOrCrit && Boolean(weapon?.system?.properties?.impl);
+        const weaponDmg = weapon?.system?.range?.normal?.damage || state.damageFormula || "1d6";
+        const rawDmgFormula = isImpale ? `${weaponDmg}+${weaponDmg}` : weaponDmg;
         const bonus = CoC7DataMapper.getCombatValue(winnerActor, "damageBonus") || "0";
         const isMelee = state.combatType === "melee" || winner.key === "defender";
         const fullFormula = isMelee && bonus && bonus !== "0" ? `${rawDmgFormula}+${bonus}` : rawDmgFormula;

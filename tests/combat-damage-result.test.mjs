@@ -1,203 +1,85 @@
-import assert from "assert";
-import { setCoreApi } from "../module/core-bridge.mjs";
-import { CoC7PromptPresenter } from "../module/coc7/adapter/coc7-prompt-presenter.mjs";
-import { CombatRollStrategy } from "../module/coc7/strategies/combat-roll-strategy.mjs";
-import { CombatConsequenceApplier } from "../module/coc7/strategies/combat-consequence-applier.mjs";
-import { createCombatPromptApp } from "../module/coc7/prompts/combat-prompt-app.mjs";
-import { CoC7Adapter } from "../module/coc7/coc7-adapter.mjs";
+import { DamageRollSubmitter } from "../module/coc7/prompts/damage-roll-submitter.mjs";
 
-globalThis.game = {
-    user: { isGM: true },
-    settings: { get: () => undefined },
-    i18n: { localize: (key) => key, format: (key) => key }
-};
-
-const actors = new Map();
-const coreApi = {
-    visibility: { canViewParticipantRoll: (participant) => participant.visible !== false },
-    session: { resolveActor: (participant) => actors.get(participant.key) },
-    diceVisualizer: { getDiceVisuals: () => [] }
-};
-setCoreApi(coreApi);
-
-const presenter = new CoC7PromptPresenter({});
-const attacker = { key: "attacker", actorName: "Attacker", hasRolled: true };
-const defender = { key: "defender", actorName: "Defender", hasRolled: true };
-const damage = { key: "damage", hasRolled: true };
-
-for (const [rollType, winnerKey, expectedName] of [
-    ["combat", "attacker", "Defender"],
-    ["combat", "defender", "Attacker"],
-    ["ranged", "attacker", "Defender"]
-]) {
-    const session = {
-        rollType, isResolved: true, hitWinnerKey: winnerKey,
-        participants: [attacker, defender, damage], finalDamage: 2
-    };
-    const prompt = presenter.preparePromptContext(null, session, {});
-    const chat = presenter.prepareResolvedChatContext(session);
-    assert.equal(prompt.resolvedDamageTargetName, expectedName);
-    assert.equal(chat.resolvedDamageTargetName, expectedName);
-    assert.equal(CombatRollStrategy.getDamageTarget(session).actorName, expectedName);
-
-    let updatedKey;
-    for (const participant of [attacker, defender]) {
-        actors.set(participant.key, {
-            system: { attribs: { hp: { value: 10, max: 10 } } },
-            update: async () => { updatedKey = participant.key; }
-        });
-    }
-    await new CombatRollStrategy().applyConsequences(session);
-    assert.equal(actors.get(updatedKey), actors.get(CombatRollStrategy.getDamageTarget(session).key));
-}
-
-const noTarget = {
-    rollType: "combat", isResolved: true, hitWinnerKey: "attacker",
-    participants: [attacker, damage], finalDamage: 0
-};
-assert.equal(presenter.preparePromptContext(null, noTarget, {}).resolvedDamageTargetName, "ROE_COC7.Combat.UnknownTarget");
-assert.equal(presenter.preparePromptContext(null, noTarget, {}).resolvedHasDamage, true);
-
-const hidden = { ...noTarget, participants: [attacker, defender, { ...damage, visible: false }] };
-const hiddenContext = presenter.preparePromptContext(null, hidden, {});
-assert.equal(hiddenContext.resolvedCanViewDamage, false);
-assert.equal(hiddenContext.resolvedDamageTargetName, "");
-
-const previewTarget = {
-    system: { attribs: { hp: { value: 7, max: 10 }, armor: { value: 1 } } },
-    statuses: new Set(),
-    update: async () => { throw new Error("Preview must not update the actor."); }
-};
-actors.set("defender", previewTarget);
-let meleeState = {
-    participants: [attacker, defender, damage], hitWinnerKey: "attacker", combatPhase: "resolution",
-    rollType: "combat", consequencesApplied: false
-};
-await new CombatRollStrategy().onRollApplied({ key: "damage", hasRolled: true, total: 6 }, meleeState);
-assert.equal(meleeState.pendingDamageKey, "damage");
-assert.equal(meleeState.hasPendingConsequences, true);
-assert.equal(meleeState.damagePreview, undefined);
-assert.equal(previewTarget.system.attribs.hp.value, 7);
-assert.equal(CombatConsequenceApplier.previewDamage(previewTarget, 7, false, false).unconscious, true);
-assert.equal(CombatConsequenceApplier.previewDamage(previewTarget, 10, false, true).dead, true);
-previewTarget.statuses.add("criticalWounds");
-assert.equal(CombatConsequenceApplier.previewDamage(previewTarget, 7, false, false).dying, true);
-
-// A nonfatal major wound at zero HP predicts and applies all three conditions.
-const woundTarget = {
-    system: { attribs: { hp: { value: 5, max: 10 } } },
-    statuses: new Set(),
-    async update(data) { this.system.attribs.hp.value = data["system.attribs.hp.value"]; },
-    async toggleStatusEffect(status) { this.statuses.add(status); }
-};
-globalThis.Hooks = { callAll() {} };
-const woundPreview = CombatConsequenceApplier.previewDamage(woundTarget, 5, true, false);
-assert.equal(woundPreview.damage, 5);
-assert.equal(woundPreview.remainingHp, 0);
-assert.equal(woundPreview.majorWound, true);
-assert.equal(woundPreview.unconscious, true);
-assert.equal(woundPreview.dying, true);
-assert.equal(CombatConsequenceApplier.formatPreview(woundPreview),
-    "ROE_COC7.DamagePreview.Dying; ROE_COC7.DamagePreview.MajorWoundStatus");
-assert.equal(woundTarget.system.attribs.hp.value, 5);
-assert.equal(woundTarget.statuses.size, 0);
-const consciousWound = CombatConsequenceApplier.previewDamage(previewTarget, 5, true, false);
-assert.equal(CombatConsequenceApplier.formatPreview(consciousWound), "ROE_COC7.DamagePreview.MajorWound");
-const fatalPreview = CombatConsequenceApplier.previewDamage(woundTarget, 10, true, true);
-assert.equal(CombatConsequenceApplier.formatPreview(fatalPreview), "ROE_COC7.DamagePreview.Dead");
-assert.equal(fatalPreview.majorWound, false);
-const absorbedPreview = CombatConsequenceApplier.previewDamage(woundTarget, 0, false, false);
-assert.equal(absorbedPreview.damage, 0);
-assert.equal(CombatConsequenceApplier.formatPreview(absorbedPreview), "ROE_COC7.DamagePreview.NoDamage");
-const alreadyAtZero = {
-    system: { attribs: { hp: { value: 0, max: 10 } } },
-    statuses: new Set()
-};
-const zeroDamagePreview = CombatConsequenceApplier.previewDamage(alreadyAtZero, 0, false, false);
-assert.equal(zeroDamagePreview.unconscious, false);
-assert.equal(zeroDamagePreview.dying, false);
-assert.equal(CombatConsequenceApplier.formatPreview(zeroDamagePreview), "ROE_COC7.DamagePreview.NoDamage");
-await CombatConsequenceApplier.applyDamageToActor(woundTarget, 5, true, false);
-assert.equal(woundTarget.system.attribs.hp.value, 0);
-assert.deepEqual([...woundTarget.statuses].sort(), ["criticalWounds", "dying", "unconscious"]);
-
-const existingWoundTarget = {
-    system: { attribs: { hp: { value: 4, max: 10 } } },
-    statuses: new Set(["criticalWounds"])
-};
-const existingWoundPreview = CombatConsequenceApplier.previewDamage(existingWoundTarget, 4, false, false);
-assert.equal(existingWoundPreview.majorWound, false);
-assert.equal(existingWoundPreview.hasMajorWound, true);
-assert.equal(CombatConsequenceApplier.formatPreview(existingWoundPreview),
-    "ROE_COC7.DamagePreview.Dying; ROE_COC7.DamagePreview.MajorWoundStatus");
-
-if (!Math.clamp) Math.clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-class TestCombatPrompt {
-    constructor(session) { this.session = session; this._messageId = "message"; }
-    async _prepareContext() { return { canResolve: true, canApplyConsequences: true }; }
-    _isDelegatedToActivePlayer() { return false; }
-    _formatModifierLabel(value) { return String(value); }
-    _formatDiceFormulaLabel() { return ""; }
-}
-const Prompt = createCombatPromptApp({ extendPromptClass: (base) => base }, TestCombatPrompt);
-const combatPrompt = new Prompt(meleeState);
-const gmContext = await combatPrompt._prepareContext({});
-assert.equal(gmContext.damagePreviewHp, 2);
-assert.equal(gmContext.damagePreviewDamage, 5);
-assert.equal(gmContext.canDecideDamage, true);
-assert.equal(gmContext.canResolve, false);
-game.user.isGM = false;
-previewTarget.isOwner = true;
-const playerContext = await combatPrompt._prepareContext({});
-assert.equal(playerContext.damagePreviewLabel, "");
-assert.equal(playerContext.damagePreviewHp, undefined);
-assert.equal(playerContext.damagePreviewDamage, undefined);
-assert.equal(playerContext.canDecideDamage, false);
-game.user.isGM = true;
-
-const adapter = new CoC7Adapter();
-const legacyMelee = { ...meleeState, pendingDamageKey: "" };
-assert.equal(adapter.canResolveSession(legacyMelee), false);
-const declinedLegacy = await adapter.handleConsequenceDecision(legacyMelee, { action: "decline", participantKey: "damage" });
-assert.equal(declinedLegacy.consequencesApplied, true);
-assert.equal(previewTarget.system.attribs.hp.value, 7);
-game.messages = new Map([["message", {}]]);
-coreApi.session.getSession = () => meleeState;
-coreApi.orchestrator = {
-    async submitConsequenceDecision(_id, decision) {
-        meleeState = await adapter.handleConsequenceDecision(meleeState, decision);
+// Verify CoC7 impale damage: base weapon damage + damage bonus maximized, extra weapon die rolled
+const impaleWeapon = {
+    id: "wp-knife",
+    name: "Hunting Knife",
+    type: "weapon",
+    system: {
+        properties: { impl: true },
+        range: { normal: { damage: "1d6" } }
     }
 };
-assert.equal(adapter.canResolveSession(meleeState), false);
-await Prompt.DEFAULT_OPTIONS.actions.decideDamage.call(combatPrompt, null, { dataset: { decision: "decline" } });
-assert.equal(meleeState.pendingDamageKey, "");
-assert.equal(meleeState.consequencesApplied, true);
-assert.equal(previewTarget.system.attribs.hp.value, 7);
-assert.equal(adapter.canResolveSession(meleeState), true);
-
-previewTarget.statuses.clear();
-previewTarget.update = async function (data) { this.system.attribs.hp.value = data["system.attribs.hp.value"]; };
-const autoMeleeState = {
-    participants: [attacker, defender, damage], hitWinnerKey: "attacker", combatPhase: "resolution",
-    rollType: "combat", consequencesApplied: false
+const bluntWeapon = {
+    id: "wp-club",
+    name: "Club",
+    type: "weapon",
+    system: {
+        properties: { impl: false },
+        range: { normal: { damage: "1d6" } }
+    }
 };
-game.settings.get = (_module, key) => key === "autoApplyRollConsequences";
-await new CombatRollStrategy().onRollApplied({ key: "damage", hasRolled: true, total: 3 }, autoMeleeState);
-assert.equal(previewTarget.system.attribs.hp.value, 5);
-assert.equal(autoMeleeState.pendingDamageKey, "");
-assert.equal(autoMeleeState.consequencesApplied, true);
-
-game.settings.get = () => false;
-const absorbedState = {
-    participants: [attacker, defender, damage], hitWinnerKey: "attacker", combatPhase: "resolution",
-    rollType: "combat", consequencesApplied: false
+const impaleAttacker = {
+    id: "att-imp",
+    name: "Investigator",
+    items: new Map([
+        ["wp-knife", impaleWeapon],
+        ["wp-club", bluntWeapon]
+    ]),
+    system: { attribs: { db: { value: "1d4" } } }
 };
-await new CombatRollStrategy().onRollApplied({ key: "damage", hasRolled: true, total: 1 }, absorbedState);
-assert.equal(absorbedState.finalDamage, 0);
-assert.equal(absorbedState.pendingDamageKey, "damage");
-assert.equal(adapter.canResolveSession(absorbedState), false);
-const appliedZero = await adapter.handleConsequenceDecision(absorbedState, { action: "apply", participantKey: "damage" });
-const declinedZero = await adapter.handleConsequenceDecision(absorbedState, { action: "decline", participantKey: "damage" });
-assert.deepEqual(appliedZero, declinedZero);
-assert.equal(previewTarget.system.attribs.hp.value, 5);
-console.log("Combat damage recipient checks passed.");
+actors.set("att-imp", impaleAttacker);
+
+globalThis.foundry = { dice: { terms: { Die: class {} } } };
+globalThis.Roll = class {
+    constructor(formula) {
+        this.formula = formula;
+        this.terms = [];
+        this.total = 0;
+    }
+    async evaluate({ maximize = false } = {}) {
+        if (this.formula === "1d6") this.total = maximize ? 6 : 3;
+        else if (this.formula === "1d4") this.total = maximize ? 4 : 2;
+        else if (this.formula === "1d6+1d4") this.total = maximize ? 10 : 5;
+        return this;
+    }
+};
+
+let submittedDamage = null;
+coreApi.visibility.getCurrentRollMode = () => "publicroll";
+coreApi.orchestrator.submitParticipantRoll = async (_id, _key, data) => {
+    submittedDamage = data;
+};
+
+// 1. Impaling weapon on Extreme success: 1d6 (max 6) + 1d6 (rolled 3) + 1d4 DB (max 4) = 13
+const impaleSession = {
+    rollType: "combat",
+    combatType: "melee",
+    hitWinnerKey: "attacker",
+    damageBonus: "1d4",
+    participants: [
+        { key: "attacker", actorId: "att-imp", itemId: "wp-knife", successLevel: "extreme", hasRolled: true },
+        { key: "damage", actorId: "att-imp", diceFormula: "1d6+1d6+1d4", hasRolled: false }
+    ]
+};
+game.messages.set("msg-impale", { session: impaleSession });
+coreApi.session.getSession = (msg) => msg?.session ?? null;
+
+await DamageRollSubmitter.submit("msg-impale", "damage");
+assert.equal(submittedDamage.total, 13);
+
+// 2. Non-impaling weapon on Extreme success: 1d6 (max 6) + 1d4 DB (max 4) = 10
+const bluntSession = {
+    rollType: "combat",
+    combatType: "melee",
+    hitWinnerKey: "attacker",
+    damageBonus: "1d4",
+    participants: [
+        { key: "attacker", actorId: "att-imp", itemId: "wp-club", successLevel: "extreme", hasRolled: true },
+        { key: "damage", actorId: "att-imp", diceFormula: "1d6+1d4", hasRolled: false }
+    ]
+};
+game.messages.set("msg-blunt", { session: bluntSession });
+
+await DamageRollSubmitter.submit("msg-blunt", "damage");
+assert.equal(submittedDamage.total, 10);

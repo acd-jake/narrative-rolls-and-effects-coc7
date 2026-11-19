@@ -83,8 +83,9 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
                 ? this.#buildDamagePreview(sys, damageTarget) : null;
             const attackerDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, effectiveMod);
             const defenderDice = DiceVisualizer.getDiceVisuals({ rollType: "skill" }, defenderModifier);
+            const damageFormula = damageEntry?.diceFormula ?? sys.damageFormula;
             const damageDice = canViewDamage
-                ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageEntry?.diceFormula ?? sys.damageFormula })
+                ? DiceVisualizer.getDiceVisuals({ rollType: "other", diceFormula: damageFormula })
                 : [];
 
             return {
@@ -126,7 +127,7 @@ export function createCombatPromptApp(core, OpposedPromptApp) {
                 defenderDice,
                 defenderDiceLabel: this._formatDiceFormulaLabel(defenderDice),
                 damageDice,
-                damageDiceLabel: canViewDamage ? this._formatDiceFormulaLabel(damageDice) : "",
+                damageDiceLabel: canViewDamage ? (this._formatDiceFormulaLabel(damageDice) || damageFormula) : "",
                 attackerRollBtnLabel: `${attacker?.label ?? ""} (${attacker?.targetValue ?? 0}%)`,
 
                 attackerResultText: attacker?.hasRolled

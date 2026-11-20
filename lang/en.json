@@ -262,7 +262,8 @@
         "JamAfterHits": "{attacker} lands {hits} hits with {weapon} before the weapon jams after {shots} shots!"
       },
       "RemainingShots": "Remaining: {remaining} / {max}",
-      "ToggleShotsHint": "Show or hide individual shots/volleys"
+      "ToggleShotsHint": "Show or hide individual shots/volleys",
+      "ShotgunSpreadNote": "Shotgun spread: multiple targets hit within the blast radius."
     },
     "Chat": {
       "PushRoll": "Push Roll",

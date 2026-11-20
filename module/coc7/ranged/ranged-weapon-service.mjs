@@ -55,7 +55,7 @@ export class RangedWeaponService {
             fireModes,
             malfunctionThreshold,
             isJammed,
-            isImpaling: Boolean(props.impl),
+            isImpaling: Boolean(props.impl && !props.shotgun),
             isShotgun: Boolean(props.shotgun),
             baseRange: Math.max(0, Number(sys.range?.normal?.value ?? 0) || 0),
             longRange: Math.max(0, Number(sys.range?.long?.value ?? 0) || 0),

@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- Added Call of Cthulhu 7e shotgun spread rules, scaling damage by range tier (`normal`, `long`, `extreme`), disabling impale on shotguns, and hitting secondary targets within the spread radius at long (1 yd) and extreme (2 yds) range.
+
 ## [0.1.0] - 2026-11-19
 
 ### Added

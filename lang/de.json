@@ -262,7 +262,8 @@
         "JamAfterHits": "{attacker} landet {hits} Treffer mit {weapon}, bevor die Waffe nach {shots} Schüssen blockiert!"
       },
       "RemainingShots": "Verbleibend: {remaining} / {max}",
-      "ToggleShotsHint": "Einzelne Schüsse/Salven ein- oder ausklappen"
+      "ToggleShotsHint": "Einzelne Schüsse/Salven ein- oder ausklappen",
+      "ShotgunSpreadNote": "Schrotflinten-Streuung: Mehrere Ziele im Streubereich getroffen."
     },
     "Chat": {
       "PushRoll": "Probe forcieren",

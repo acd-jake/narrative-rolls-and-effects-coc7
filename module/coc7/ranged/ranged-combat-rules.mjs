@@ -126,11 +126,60 @@ export class RangedCombatRules {
         };
     }
 
-    /** Resolves damage formula for the active range tier. */
+    /** Resolves damage formula for the active range tier, including CoC 7e shotgun falloff. */
     static resolveRangeDamageFormula(session, profile) {
-        if (session.rangedRangeTier === "extreme") return profile.extremeDamage || session.damageFormula;
-        if (session.rangedRangeTier === "long") return profile.longDamage || session.damageFormula;
-        return profile.normalDamage || session.damageFormula;
+        const normal = profile.normalDamage || session.damageFormula || "1d6";
+        if (session.rangedRangeTier === "extreme") {
+            if (profile.extremeDamage && profile.extremeDamage !== normal) return profile.extremeDamage;
+            return profile.isShotgun ? this.#scaleShotgunDamage(normal, 4) : (profile.extremeDamage || normal);
+        }
+        if (session.rangedRangeTier === "long") {
+            if (profile.longDamage && profile.longDamage !== normal) return profile.longDamage;
+            return profile.isShotgun ? this.#scaleShotgunDamage(normal, 2) : (profile.longDamage || normal);
+        }
+        return normal;
+    }
+
+    static #scaleShotgunDamage(formula, divisor) {
+        const match = String(formula).trim().match(/^(\d+)d(\d+)(.*)$/i);
+        if (!match) return formula;
+        const scaledDice = Math.max(1, Math.floor(Number(match) / divisor));
+        return `${scaledDice}d${match}${match}`;
+    }
+
+    /** Returns secondary scene tokens caught in a shotgun's spread radius at long (1 yd) or extreme (2 yds) range. */
+    static resolveShotgunSpreadTargets(session, profile, primaryTarget) {
+        if (!profile?.isShotgun) return [];
+        const spreadRadius = session.rangedRangeTier === "extreme" ? 2
+            : session.rangedRangeTier === "long" ? 1 : 0;
+        if (spreadRadius <= 0) return [];
+
+        const tokens = canvas?.tokens?.placeables ?? [];
+        const attackerId = session.participants?.find((p) => p.key === "attacker")?.actorId ?? "";
+        const primaryToken = tokens.find((t) => t.id === session.rangedTargetTokenId)
+            ?? tokens.find((t) => t.actor?.id === primaryTarget?.actorId)
+            ?? null;
+        if (!primaryToken) return [];
+
+        const units = String(canvas?.scene?.grid?.units ?? "").trim().toLowerCase();
+        const isFeet = ["ft", "feet", "foot", "fuss", "fuß"].includes(units);
+        const maxSceneDistance = isFeet ? spreadRadius * 3 : spreadRadius;
+
+        const secondary = [];
+        for (const token of tokens) {
+            if (!token?.actor || token.id === primaryToken.id) continue;
+            if (token.actor.id === attackerId && !session.rangedShotgunFriendlyFire) continue;
+            const rawDist = this.#measureTraverseDistance(primaryToken, token);
+            if (rawDist !== null && rawDist <= maxSceneDistance + 1e-9) {
+                secondary.push({
+                    targetKey: token.id,
+                    targetActorId: token.actor.id,
+                    targetActorUuid: token.actor.uuid ?? "",
+                    targetName: token.name || token.actor.name
+                });
+            }
+        }
+        return secondary;
     }
 
     /** Returns the highest success level achieved across all fired shots/volleys. */

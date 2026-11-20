@@ -78,7 +78,7 @@ export class RangedRollStrategy extends BaseRollStrategy {
         if (hits > 0) {
             state.rangedEndAfterDamage = !canContinue;
             if (!canContinue && mode === "auto") state.autoFireEnded = true;
-            return [this.#buildShotDamageParticipant(state, attacker, actor, shot)];
+            return this.#buildShotDamageParticipants(state, attacker, actor, shot);
         }
         if (canContinue) {
             attacker.hasRolled = false;
@@ -137,13 +137,33 @@ export class RangedRollStrategy extends BaseRollStrategy {
                 shotNumber: shot.index, impale: index < shot.impales, formula
             });
         }
+        if (shot.hits > 0 && profile.isShotgun) {
+            const spreadTargets = RangedCombatRules.resolveShotgunSpreadTargets(state, profile, shot);
+            for (const extra of spreadTargets) {
+                hits.push({
+                    ...extra,
+                    shotNumber: shot.index,
+                    impale: false,
+                    formula
+                });
+            }
+        }
         return hits;
     }
 
-    #buildShotDamageParticipant(state, winner, winnerActor, shot) {
-        const hits = state.rangedHits.filter((hit) => hit.shotNumber === shot.index);
-        const index = state.participants.filter((entry) => entry.key === "damage" || entry.key.startsWith("damage_")).length;
-        return { ...this.#buildTargetDamageParticipant(state, winner, winnerActor, shot.targetKey, hits, index), shotNumber: shot.index };
+    #buildShotDamageParticipants(state, winner, winnerActor, shot) {
+        const shotHits = state.rangedHits.filter((hit) => hit.shotNumber === shot.index);
+        const groups = new Map();
+        for (const hit of shotHits) {
+            const key = hit.targetKey || hit.targetActorUuid || hit.targetActorId;
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(hit);
+        }
+        const baseIndex = state.participants.filter((entry) => entry.key === "damage" || entry.key.startsWith("damage_")).length;
+        return Array.from(groups.entries(), ([targetKey, targetHits], idx) => ({
+            ...this.#buildTargetDamageParticipant(state, winner, winnerActor, targetKey, targetHits, baseIndex + idx),
+            shotNumber: shot.index
+        }));
     }
 
     /** Ends a ranged attack and creates pending damage rolls for its hit targets. */
@@ -226,8 +246,10 @@ export class RangedRollStrategy extends BaseRollStrategy {
         const isCurrentBatch = Array.isArray(damageParticipant.rangedHitResults);
         const hitResults = isCurrentBatch ? damageParticipant.rangedHitResults
             : Array.isArray(state.rangedHitResults) && state.rangedHitResults.length > 0 ? state.rangedHitResults
-            : [{ targetActorId: defaultActor?.id ?? "", targetActorUuid: defaultActor?.uuid ?? "",
-                rawDamage: Number(damageParticipant.total ?? 0), impale: false }];
+                : [{
+                    targetActorId: defaultActor?.id ?? "", targetActorUuid: defaultActor?.uuid ?? "",
+                    rawDamage: Number(damageParticipant.total ?? 0), impale: false
+                }];
 
         const summary = RangedCombatRules.evaluateMultiHitDamage(hitResults, defaultActor);
         state.rawDamage = (isCurrentBatch ? Number(state.rawDamage ?? 0) : 0) + summary.rawDamage;
@@ -257,10 +279,13 @@ export class RangedRollStrategy extends BaseRollStrategy {
         state.pendingDamageKey = "";
         state.pendingRangedDamageByActor = null;
         state.hasPendingConsequences = false;
-        if (state.rangedEndAfterDamage) {
+        const hasMorePendingDamage = state.participants.some((entry) =>
+            (entry.key === "damage" || entry.key.startsWith("damage_")) && !entry.hasRolled
+        );
+        if (state.rangedEndAfterDamage && !hasMorePendingDamage) {
             const followUps = await this.finishAttack(state);
             state.participants.push(...followUps);
-        } else if (state.combatPhase === "attack") {
+        } else if (state.combatPhase === "attack" && !hasMorePendingDamage) {
             state.participants.find((entry) => entry.key === "attacker").hasRolled = false;
         }
         this.#flagPendingCoverConsequence(state);

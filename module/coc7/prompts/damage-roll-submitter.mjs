@@ -18,7 +18,7 @@ export class DamageRollSubmitter {
             let lastBreakdown = null;
 
             const hits = damageEntry.shotNumber
-                ? sys.rangedHits.filter((hit) => hit.shotNumber === damageEntry.shotNumber)
+                ? sys.rangedHits.filter((hit) => hit.shotNumber === damageEntry.shotNumber && (!damageEntry.targetKey || hit.targetKey === damageEntry.targetKey))
                 : damageEntry.targetKey
                     ? sys.rangedHits.filter((hit) => hit.targetKey === damageEntry.targetKey) : sys.rangedHits;
             for (const hit of hits) {

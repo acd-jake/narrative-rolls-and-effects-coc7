@@ -96,7 +96,7 @@ export class RangedWeaponService {
         }
         return null;
     }
-    /** Infers range tier and CoC 7e ranged tactical flags from Foundry tokens and actors. */
+    /** Infers range tier, shotgun band, and CoC 7e ranged tactical flags from Foundry tokens and actors. */
     static detectRangedContext(attacker, defender, weapon, { attackerToken = null, targetToken = null } = {}) {
         const profile = this.getWeaponCombatProfile(weapon);
         const distance = this.measureTokenDistance(attackerToken ?? attacker, targetToken ?? defender);
@@ -120,7 +120,7 @@ export class RangedWeaponService {
             if (profile.isShotgun) {
                 shotgunRangeBand = distance <= profile.baseRange ? "normal"
                     : distance <= longLimit ? "long"
-                        : distance <= extremeLimit ? "extreme" : "outOfRange";
+                    : distance <= extremeLimit ? "extreme" : "outOfRange";
             } else if (distance > profile.baseRange) {
                 rangeTier = distance <= longLimit ? "long" : "extreme";
             }
@@ -134,21 +134,11 @@ export class RangedWeaponService {
         const resolvedTargetToken = targetToken ?? canvas?.tokens?.placeables?.find((t) => t.actor?.id === defender?.id) ?? null;
         const inMelee = this.findMeleeAllies(attacker, resolvedTargetToken).length > 0;
         if (inMelee) pointBlank = false;
-        if (resolvedTargetToken && canvas?.tokens?.placeables?.length) {
-            inMelee = canvas.tokens.placeables.some((other) => {
-                if (!other?.actor || other.id === resolvedTargetToken.id) return false;
-                if (other.actor.id === attacker?.id) return false;
-                if (other.document?.disposition !== resolvedTargetToken.document?.disposition) {
-                    const d = this.measureTokenDistance(other, resolvedTargetToken);
-                    return d !== null && d <= 2;
-                }
-                return false;
-            });
-        }
 
         return {
             distance,
             rangeTier,
+            shotgunRangeBand,
             tacticalFlags: {
                 pointBlank,
                 aiming: false,
@@ -157,8 +147,7 @@ export class RangedWeaponService {
                 inMelee,
                 proneTarget,
                 smallTarget,
-                largeTarget,
-                shotgunRangeBand
+                largeTarget
             }
         };
     }

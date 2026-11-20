@@ -12,12 +12,10 @@ import { CoC7CombatResultPresenter } from "../module/coc7/adapter/coc7-combat-re
 import { CoC7Settings } from "../module/coc7/coc7-settings.mjs";
 import { RangedDamageState } from "../module/coc7/ranged/ranged-damage-state.mjs";
 import { CoC7Adapter } from "../module/coc7/coc7-adapter.mjs";
+import { RangedOverlayGeometry } from "../module/coc7/ranged/ranged-overlay-geometry.mjs";
 
 describe("Ranged combat rules and full-auto volleys", () => {
     it("evaluates weapon profiles, modifiers, multi-hit damage, and full-auto volleys", async () => {
-        if (!Math.clamp) Math.clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-        // ... bestehender Test-Code bis zum Dateiende ...
-
         if (!Math.clamp) Math.clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
         const actors = new Map();
@@ -87,6 +85,7 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.equal(RangedWeaponService.getWeaponCombatProfile(revolver, 60).isJammed, true);
         await RangedWeaponService.setWeaponMalfunction(revolver, false);
         assert.equal(RangedWeaponService.getWeaponCombatProfile(revolver, 60).isJammed, false);
+
         // 2. Modifier & difficulty progression for multiple shots and full-auto volleys
         const attackerActor = { id: "a1", name: "Investigator", system: { characteristics: { dex: { value: 60 } }, attribs: { hp: { value: 12, max: 12 } } } };
         const defenderActor = { id: "d1", name: "Cultist", system: { attribs: { hp: { value: 10, max: 10 }, armor: { value: 2 }, build: { value: 0 } } } };
@@ -158,7 +157,6 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.equal(detected.tacticalFlags.inMelee, true);
 
         console.log("Ranged combat rules checks passed.");
-
         // Full-auto volleys require damage before another volley can be fired.
         const secondTarget = { id: "d2", name: "Guard", system: { attribs: { hp: { value: 10, max: 10 }, armor: { value: 1 } } } };
         actors.set(secondTarget.id, secondTarget);
@@ -319,7 +317,6 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.equal(depletedState.combatPhase, "attack");
         depletedState = await strategy.decideDamageConsequences(depletedState, "decline");
         assert.equal(depletedState.combatPhase, "resolution");
-
         canvas.scene.grid.units = "ft";
         secondToken.center.x = 10;
         assert.equal(RangedCombatRules.measureTraverse(firstToken, secondToken).penalty, 1);
@@ -330,7 +327,6 @@ describe("Ranged combat rules and full-auto volleys", () => {
         canvas.grid.measureDistance = () => 10;
         assert.equal(RangedCombatRules.measureTraverse(firstToken, secondToken).penalty, 1);
         canvas.grid.measurePath = ([a, b]) => ({ distance: Math.abs(a.x - b.x) });
-
         const nestedAmmoWeapon = {
             system: { data: { ammo: 3 }, properties: { auto: true } },
             update: async function (data) { this.system.data.ammo = data["system.data.ammo"]; }
@@ -339,7 +335,6 @@ describe("Ranged combat rules and full-auto volleys", () => {
         await RangedWeaponService.consumeWeaponAmmo(nestedAmmoWeapon, 3);
         assert.equal(RangedWeaponService.getWeaponCombatProfile(nestedAmmoWeapon, 30).ammo, 0);
         assert.equal(RangedWeaponService.getWeaponCombatProfile(nestedAmmoWeapon, 30).tracksAmmo, true);
-
         // Exercise the actual prompt handlers and the cease-fire session patch.
         if (!String.prototype.capitalize) String.prototype.capitalize = function () { return this.charAt(0).toUpperCase() + this.slice(1); };
         class TestPrompt {
@@ -483,7 +478,6 @@ describe("Ranged combat rules and full-auto volleys", () => {
         const queuedState = { ...autoState, combatPhase: "resolution", participants: [...autoState.participants, queuedDamage] };
         assert.equal(patcher.validateSubmittedRoll(queuedState, queuedDamage, { modifierDice: 0 }), false);
         assert.equal((await new Prompt(queuedState)._prepareContext({})).canRollDamage, false);
-
         const malfunctionNotifications = [];
         const previousFormat = game.i18n.format;
         const previousUserId = game.user.id;
@@ -658,7 +652,6 @@ describe("Ranged combat rules and full-auto volleys", () => {
         };
         assert.equal((await new Prompt(uuidOnlyState)._prepareContext({})).damagePreviews[0].remainingHp, 4);
         assert.equal(RangedDamageState.entries({ d1: { damage: 3 } })[0].actorId, "d1");
-
         // A missing synthetic target must not fall back to its world actor or crash the prompt.
         const missingUuid = "Scene.missing.Token.token.Actor.d1";
         const unavailableState = {
@@ -828,7 +821,6 @@ describe("Ranged combat rules and full-auto volleys", () => {
         await strategy.applyConsequences(autoState);
         assert.equal(manualUpdates, 2);
         assert.equal(autoState.rangedDamageByActor.d1.damage, 12);
-
         // Damage decisions remain separate after switching to another target.
         manualUpdates = 0;
         defenderActor.system.attribs.hp.value = 10;
@@ -859,7 +851,6 @@ describe("Ranged combat rules and full-auto volleys", () => {
         await strategy.applyConsequences(autoState);
         assert.equal(defenderActor.system.attribs.hp.value, 6);
         assert.equal(secondTarget.system.attribs.hp.value, 5);
-
         // Automatic consequence application occurs before the next volley and is not repeated at cease fire.
         autoApply = true;
         let hpUpdates = 0;
@@ -891,7 +882,6 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.equal(defenderActor.statuses.has("unconscious"), true);
         assert.equal(defenderActor.statuses.has("dead"), false);
         assert.equal(autoState.hasPendingConsequences, false);
-
         // Automatic damage applies each volley exactly once, including the final volley.
         hpUpdates = 0;
         defenderActor.system.attribs.hp.value = 100;
@@ -918,22 +908,16 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.equal(autoState.consequencesApplied, true);
         await strategy.applyConsequences(autoState);
         assert.equal(hpUpdates, 2);
-
-                // 5. Point-blank (DEX/5 ft), firing into melee (disables point-blank & hits ally on fumble), and shotgun spread
-        const { RangedOverlayGeometry } = await import("../module/coc7/ranged/ranged-overlay-geometry.mjs");
+        // 5. Point-blank (DEX/5 ft), firing into melee (disables point-blank & hits ally on fumble), and shotgun spread
         canvas.scene = { grid: { units: "m", distance: 1 } };
         canvas.dimensions = { size: 100 };
-
         const shooterToken = { id: "tShooter", actor: attackerActor, center: { x: 0, y: 0 }, document: { disposition: 1 } };
         const enemyToken = { id: "tEnemy", actor: defenderActor, center: { x: 200, y: 0 }, document: { disposition: -1 } };
         const allyActor = { id: "ally1", name: "Ally", system: { attribs: { hp: { value: 10, max: 10 }, armor: { value: 0 } } } };
         const allyToken = { id: "tAllyMelee", actor: allyActor, center: { x: 200, y: 100 }, document: { disposition: 1 } };
         actors.set("ally1", allyActor);
-
         canvas.tokens.placeables = [shooterToken, enemyToken, allyToken];
         canvas.grid.measurePath = ([a, b]) => ({ distance: Math.hypot(b.x - a.x, b.y - a.y) / 100 });
-
-        // DEX 60 -> 12 ft -> 4 m point-blank threshold, disabled because ally is within 2 m of target
         assert.equal(RangedOverlayGeometry.getPointBlankDistance(shooterToken), 4);
         const meleeContext = RangedWeaponService.detectRangedContext(attackerActor, defenderActor, revolver, {
             attackerToken: shooterToken,
@@ -941,8 +925,6 @@ describe("Ranged combat rules and full-auto volleys", () => {
         });
         assert.equal(meleeContext.tacticalFlags.inMelee, true);
         assert.equal(meleeContext.tacticalFlags.pointBlank, false);
-
-        // Fumble while firing into melee hits the engaged ally
         let meleeFumbleState = CoC7SessionFactory.createRanged({
             attacker: attackerActor,
             target: defenderActor,
@@ -953,15 +935,13 @@ describe("Ranged combat rules and full-auto volleys", () => {
             tacticalFlags: meleeContext.tacticalFlags
         });
         meleeFumbleState.combatPhase = "attack";
-        meleeFumbleState.participants.hasRolled = true;
-        Object.assign(meleeFumbleState.participants, { hasRolled: true, total: 100, successLevel: "fumble" });
-        const ffFollowUps = await strategy.onRollApplied(meleeFumbleState.participants, meleeFumbleState);
+        meleeFumbleState.participants[1].hasRolled = true;
+        Object.assign(meleeFumbleState.participants[0], { hasRolled: true, total: 100, successLevel: "fumble" });
+        const ffFollowUps = await strategy.onRollApplied(meleeFumbleState.participants[0], meleeFumbleState);
         assert.equal(meleeFumbleState.rangedHits.length, 1);
-        assert.equal(meleeFumbleState.rangedHits.targetActorId, "ally1");
-        assert.equal(meleeFumbleState.rangedShots.isFriendlyFire, true);
+        assert.equal(meleeFumbleState.rangedHits[0].targetActorId, "ally1");
+        assert.equal(meleeFumbleState.rangedShots[0].isFriendlyFire, true);
         assert.equal(ffFollowUps.length, 1);
-
-        // Shotgun range bands (10 m = 4d6, 20 m = 2d6, 50 m = 1d6), no impale, and spread targets
         const shotgun = {
             id: "sg1",
             name: "Shotgun",
@@ -976,12 +956,11 @@ describe("Ranged combat rules and full-auto volleys", () => {
                     extreme: { value: 50, damage: "1d6" }
                 }
             },
-            update: async () => {}
+            update: async () => { }
         };
         const sgProfile = RangedWeaponService.getWeaponCombatProfile(shotgun, 60);
         assert.equal(sgProfile.isShotgun, true);
         assert.equal(sgProfile.isImpaling, false);
-
         enemyToken.center = { x: 1500, y: 0 };
         allyToken.center = { x: 1500, y: 80 };
         const sgLongContext = RangedWeaponService.detectRangedContext(attackerActor, defenderActor, shotgun, {
@@ -990,7 +969,6 @@ describe("Ranged combat rules and full-auto volleys", () => {
         });
         assert.equal(sgLongContext.rangeTier, "normal");
         assert.equal(sgLongContext.shotgunRangeBand, "long");
-
         const sgSession = CoC7SessionFactory.createRanged({
             attacker: attackerActor,
             target: defenderActor,
@@ -1005,8 +983,7 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.equal(RangedCombatRules.resolveRangeDamageFormula(sgSession, sgProfile), "2d6");
         const spreadHits = RangedCombatRules.resolveShotgunSpreadTargets(sgSession, sgProfile, { actorId: "d1" });
         assert.equal(spreadHits.length, 1);
-        assert.equal(spreadHits.targetActorId, "ally1");
-
+        assert.equal(spreadHits[0].targetActorId, "ally1");
         console.log("Full-auto volley checks passed.");
     });
 });

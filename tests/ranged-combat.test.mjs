@@ -931,12 +931,12 @@ describe("Ranged combat rules and full-auto volleys", () => {
             targetToken: enemyToken,
             weapon: revolver,
             attackSkillLabel: "Handguns",
-            attackTargetValue: 60,
+            attackTargetValue: 40,
             tacticalFlags: meleeContext.tacticalFlags
         });
         meleeFumbleState.combatPhase = "attack";
         meleeFumbleState.participants[1].hasRolled = true;
-        Object.assign(meleeFumbleState.participants[0], { hasRolled: true, total: 100, successLevel: "fumble" });
+        Object.assign(meleeFumbleState.participants[0], { hasRolled: true, total: 97, successLevel: "fumble" });
         const ffFollowUps = await strategy.onRollApplied(meleeFumbleState.participants[0], meleeFumbleState);
         assert.equal(meleeFumbleState.rangedHits.length, 1);
         assert.equal(meleeFumbleState.rangedHits[0].targetActorId, "ally1");

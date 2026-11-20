@@ -131,8 +131,9 @@ export class RangedWeaponService {
         const smallTarget = Number.isFinite(build) && build <= -2;
         const largeTarget = Number.isFinite(build) && build >= 4;
 
-        let inMelee = false;
         const resolvedTargetToken = targetToken ?? canvas?.tokens?.placeables?.find((t) => t.actor?.id === defender?.id) ?? null;
+        const inMelee = this.findMeleeAllies(attacker, resolvedTargetToken).length > 0;
+        if (inMelee) pointBlank = false;
         if (resolvedTargetToken && canvas?.tokens?.placeables?.length) {
             inMelee = canvas.tokens.placeables.some((other) => {
                 if (!other?.actor || other.id === resolvedTargetToken.id) return false;

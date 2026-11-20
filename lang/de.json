@@ -263,7 +263,19 @@
       },
       "RemainingShots": "Verbleibend: {remaining} / {max}",
       "ToggleShotsHint": "Einzelne Schüsse/Salven ein- oder ausklappen",
-      "ShotgunSpreadNote": "Schrotflinten-Streuung: Mehrere Ziele im Streubereich getroffen."
+      "ShotgunSpreadNote": "Schrotflinten-Streuung: Mehrere Ziele im Streubereich getroffen.",
+      "Overlay": {
+        "CursorDistance": "Entfernung: {distance} ({zone})",
+        "ZonePointBlank": "Kernschuss bis {max}",
+        "ZoneNormalRange": "Basisreichweite bis {max}",
+        "ZoneLongRange": "Lange Reichweite bis {max} - Schwierig",
+        "ZoneExtremeRange": "Extreme Reichweite bis {max} - Extrem",
+        "ZoneShotgunNormal": "Nahbereich bis {max} - {damage}",
+        "ZoneShotgunLong": "Mittlere Streuung bis {max} - {damage}",
+        "ZoneShotgunExtreme": "Weite Streuung bis {max} - {damage}",
+        "ZoneOutOfRange": "Außer Reichweite"
+      },
+      "FriendlyFireHit": "Querschläger im Nahkampf! Verbündeter {target} getroffen!"
     },
     "Chat": {
       "PushRoll": "Probe forcieren",

@@ -122,6 +122,14 @@ export class CoC7SessionPatcher {
         if (defender.tookCover && !coverTargets.some((entry) => entry.tokenId === session.rangedTargetTokenId)) {
             coverTargets.push({ ...defender, tokenId: session.rangedTargetTokenId });
         }
+        const attackerActor = SessionStore.resolveActor(session.participants.find((entry) => entry.key === "attacker"));
+        const weapon = attackerActor?.items?.get?.(session.weaponId);
+        const detected = RangedWeaponService.detectRangedContext(attackerActor, next.actor, weapon, { targetToken: next });
+        const updatedFlags = {
+            ...session.tacticalFlags,
+            inMelee: Boolean(detected?.tacticalFlags?.inMelee),
+            pointBlank: Boolean(detected?.tacticalFlags?.pointBlank)
+        };
         const updated = {
             ...SessionStore.buildParticipant("defender", next.actor, defender.label, 0),
             hasRolled: true, tookCover: coverTargets.some((entry) => entry.tokenId === next.id)
@@ -129,7 +137,12 @@ export class CoC7SessionPatcher {
         return {
             ...session,
             participants: session.participants.map((participant) => participant.key === "defender" ? updated : participant),
-            rangedTargetTokenId: next.id, traverseDistance: traverse.distance, traversePenaltyDice: traverse.penalty,
+            rangedTargetTokenId: next.id,
+            rangedDistance: detected?.distance ?? session.rangedDistance,
+            rangedShotgunBand: detected?.shotgunRangeBand ?? session.rangedShotgunBand ?? "normal",
+            tacticalFlags: updatedFlags,
+            traverseDistance: traverse.distance,
+            traversePenaltyDice: traverse.penalty,
             rangedCoverTargets: coverTargets
         };
     }

@@ -68,14 +68,32 @@ export class RangedRollStrategy extends BaseRollStrategy {
             isHit, successLevel: attacker.successLevel, fireMode: mode,
             bulletsNeeded: roundsFired, isImpalingWeapon: profile.isImpaling
         });
+        let effectiveHits = hits;
+        let effectiveImpales = impales;
+        let friendlyFireTarget = null;
+
+        if (!isHit && !malfunction && state.tacticalFlags?.inMelee && attacker.successLevel === "fumble") {
+            friendlyFireTarget = this.#resolveFriendlyFireTarget(state, actor, target);
+            if (friendlyFireTarget) {
+                effectiveHits = 1;
+                effectiveImpales = 0;
+            }
+        }
         const remainingAmmo = await RangedWeaponService.consumeWeaponAmmo(weapon, roundsFired);
         if (malfunction) await RangedWeaponService.setWeaponMalfunction(weapon, true);
-        const shot = this.#recordShot(state, attacker, target, profile, { roundsFired, hits, impales, isHit, malfunction });
+        const shot = this.#recordShot(state, attacker, friendlyFireTarget ?? target, profile, {
+            roundsFired,
+            hits: effectiveHits,
+            impales: effectiveImpales,
+            isHit: isHit || Boolean(friendlyFireTarget),
+            malfunction,
+            isFriendlyFire: Boolean(friendlyFireTarget)
+        });
         state.remainingAmmo = remainingAmmo;
         state.weaponProfile = { ...profile, ammo: remainingAmmo, isJammed: malfunction };
         state.rangedMalfunction = malfunction;
         const canContinue = this.#canContinue(state, profile, remainingAmmo, malfunction);
-        if (hits > 0) {
+        if (effectiveHits > 0) {
             state.rangedEndAfterDamage = !canContinue;
             if (!canContinue && mode === "auto") state.autoFireEnded = true;
             return this.#buildShotDamageParticipants(state, attacker, actor, shot);
@@ -98,7 +116,8 @@ export class RangedRollStrategy extends BaseRollStrategy {
     #recordShot(state, attacker, target, profile, result) {
         const number = Number(state.rangedShotsFired ?? 0) + 1;
         const mode = state.rangedFireMode || "single";
-        const targetKey = state.rangedTargetTokenId || target?.actorUuid || target?.actorId || "";
+        const targetKey = result.isFriendlyFire ? target.tokenId : (state.rangedTargetTokenId || target?.actorUuid || target?.actorId || "");
+        
         const shot = {
             index: number, fireMode: mode, targetKey, targetActorId: target?.actorId ?? "",
             targetActorUuid: target?.actorUuid ?? "", targetName: target?.actorName ?? "",
@@ -263,6 +282,22 @@ export class RangedRollStrategy extends BaseRollStrategy {
         state.rangedDamageDecisionStarted = true;
         state.hasPendingConsequences = true;
         state.consequencesApplied = false;
+    }
+
+    #resolveFriendlyFireTarget(state, attackerActor, targetParticipant) {
+        const tokens = canvas?.tokens?.placeables ?? [];
+        const targetToken = (state.rangedTargetTokenId ? tokens.find((t) => t.id === state.rangedTargetTokenId) : null)
+            ?? (targetParticipant ? tokens.find((t) => t.actor?.id === targetParticipant.actorId) : null);
+        const allies = RangedWeaponService.findMeleeAllies(attackerActor, targetToken);
+        if (!allies.length) return null;
+
+        const chosen = allies[Math.floor(Math.random() * allies.length)];
+        return {
+            tokenId: chosen.id,
+            actorId: chosen.actor.id,
+            actorUuid: chosen.actor.uuid ?? "",
+            actorName: chosen.name || chosen.actor.name
+        };
     }
 
     /** Applies or discards one pending damage roll and resumes the ranged attack. */

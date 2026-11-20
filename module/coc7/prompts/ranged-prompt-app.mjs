@@ -9,6 +9,7 @@ import { RangedDamageState } from "../ranged/ranged-damage-state.mjs";
 import { CoC7Settings } from "../coc7-settings.mjs";
 import { CombatConsequenceApplier } from "../strategies/combat-consequence-applier.mjs";
 import { CombatDamageDecision } from "../strategies/combat-damage-decision.mjs";
+import { RangedTacticalOverlay } from "../ranged/ranged-tactical-overlay.mjs";
 
 const PHASE_ORDER = ["aimChoice", "aiming", "reaction", "attack", "resolution"];
 const PENDING_PARTICIPANT_BY_PHASE = { aimChoice: "attacker", aiming: "attacker", reaction: "defender", attack: "attacker", resolution: "damage" };
@@ -216,12 +217,33 @@ export function createRangedPromptApp(core, BasicPromptApp) {
         /** Starts an automatic pending damage roll for the client that made the attack. */
         _onRender(context, options) {
             super._onRender(context, options);
+            RangedTacticalOverlay.focus(this._messageId, this.session);
+            this.#bindTacticalOverlayFocus();
+
             if (CombatDamageDecision.pendingKey(this.session)) return;
             const damage = this.session?.participants?.find((entry) => entry.shotNumber && !entry.hasRolled);
             if (!damage || damage.rollerUserId !== game.user.id || !CoC7Settings.shouldAutoRollRangedDamage()) return;
             if (this.#automaticDamageKey === damage.key) return;
             this.#automaticDamageKey = damage.key;
             this.#rollAutomaticDamage(damage.key);
+        }
+
+        /** @override */
+        async close(options = {}) {
+            RangedTacticalOverlay.clear(this._messageId);
+            return super.close(options);
+        }
+
+        #bindTacticalOverlayFocus() {
+            const el = this.element;
+            if (!el || el.dataset.tacticalOverlayBound) return;
+            el.dataset.tacticalOverlayBound = "true";
+
+            el.addEventListener("pointerdown", () => RangedTacticalOverlay.focus(this._messageId, this.session));
+            el.addEventListener("focusin", () => RangedTacticalOverlay.focus(this._messageId, this.session));
+            el.querySelector("select[name='rangedTarget']")?.addEventListener("change", (ev) => {
+                RangedTacticalOverlay.focus(this._messageId, this.session, ev.target.value);
+            });
         }
 
         async #rollAutomaticDamage(key) {

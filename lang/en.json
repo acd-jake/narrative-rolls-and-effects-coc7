@@ -263,7 +263,19 @@
       },
       "RemainingShots": "Remaining: {remaining} / {max}",
       "ToggleShotsHint": "Show or hide individual shots/volleys",
-      "ShotgunSpreadNote": "Shotgun spread: multiple targets hit within the blast radius."
+      "ShotgunSpreadNote": "Shotgun spread: multiple targets hit within the blast radius.",
+      "Overlay": {
+        "CursorDistance": "Distance: {distance} ({zone})",
+        "ZonePointBlank": "Point-Blank up to {max}",
+        "ZoneNormalRange": "Base Range up to {max}",
+        "ZoneLongRange": "Long Range up to {max} - Hard",
+        "ZoneExtremeRange": "Extreme Range up to {max} - Extreme",
+        "ZoneShotgunNormal": "Close Range up to {max} - {damage}",
+        "ZoneShotgunLong": "Medium Spread up to {max} - {damage}",
+        "ZoneShotgunExtreme": "Long Spread up to {max} - {damage}",
+        "ZoneOutOfRange": "Out of Range"
+      },
+      "FriendlyFireHit": "Friendly fire in melee! Ally {target} hit!"
     },
     "Chat": {
       "PushRoll": "Push Roll",

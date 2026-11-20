@@ -918,6 +918,95 @@ describe("Ranged combat rules and full-auto volleys", () => {
         assert.equal(autoState.consequencesApplied, true);
         await strategy.applyConsequences(autoState);
         assert.equal(hpUpdates, 2);
+
+                // 5. Point-blank (DEX/5 ft), firing into melee (disables point-blank & hits ally on fumble), and shotgun spread
+        const { RangedOverlayGeometry } = await import("../module/coc7/ranged/ranged-overlay-geometry.mjs");
+        canvas.scene = { grid: { units: "m", distance: 1 } };
+        canvas.dimensions = { size: 100 };
+
+        const shooterToken = { id: "tShooter", actor: attackerActor, center: { x: 0, y: 0 }, document: { disposition: 1 } };
+        const enemyToken = { id: "tEnemy", actor: defenderActor, center: { x: 200, y: 0 }, document: { disposition: -1 } };
+        const allyActor = { id: "ally1", name: "Ally", system: { attribs: { hp: { value: 10, max: 10 }, armor: { value: 0 } } } };
+        const allyToken = { id: "tAllyMelee", actor: allyActor, center: { x: 200, y: 100 }, document: { disposition: 1 } };
+        actors.set("ally1", allyActor);
+
+        canvas.tokens.placeables = [shooterToken, enemyToken, allyToken];
+        canvas.grid.measurePath = ([a, b]) => ({ distance: Math.hypot(b.x - a.x, b.y - a.y) / 100 });
+
+        // DEX 60 -> 12 ft -> 4 m point-blank threshold, disabled because ally is within 2 m of target
+        assert.equal(RangedOverlayGeometry.getPointBlankDistance(shooterToken), 4);
+        const meleeContext = RangedWeaponService.detectRangedContext(attackerActor, defenderActor, revolver, {
+            attackerToken: shooterToken,
+            targetToken: enemyToken
+        });
+        assert.equal(meleeContext.tacticalFlags.inMelee, true);
+        assert.equal(meleeContext.tacticalFlags.pointBlank, false);
+
+        // Fumble while firing into melee hits the engaged ally
+        let meleeFumbleState = CoC7SessionFactory.createRanged({
+            attacker: attackerActor,
+            target: defenderActor,
+            targetToken: enemyToken,
+            weapon: revolver,
+            attackSkillLabel: "Handguns",
+            attackTargetValue: 60,
+            tacticalFlags: meleeContext.tacticalFlags
+        });
+        meleeFumbleState.combatPhase = "attack";
+        meleeFumbleState.participants.hasRolled = true;
+        Object.assign(meleeFumbleState.participants, { hasRolled: true, total: 100, successLevel: "fumble" });
+        const ffFollowUps = await strategy.onRollApplied(meleeFumbleState.participants, meleeFumbleState);
+        assert.equal(meleeFumbleState.rangedHits.length, 1);
+        assert.equal(meleeFumbleState.rangedHits.targetActorId, "ally1");
+        assert.equal(meleeFumbleState.rangedShots.isFriendlyFire, true);
+        assert.equal(ffFollowUps.length, 1);
+
+        // Shotgun range bands (10 m = 4d6, 20 m = 2d6, 50 m = 1d6), no impale, and spread targets
+        const shotgun = {
+            id: "sg1",
+            name: "Shotgun",
+            system: {
+                ammo: 2,
+                bullets: 2,
+                malfunction: 100,
+                properties: { rngd: true, impl: true, shotgun: true },
+                range: {
+                    normal: { value: 10, damage: "4d6" },
+                    long: { value: 20, damage: "2d6" },
+                    extreme: { value: 50, damage: "1d6" }
+                }
+            },
+            update: async () => {}
+        };
+        const sgProfile = RangedWeaponService.getWeaponCombatProfile(shotgun, 60);
+        assert.equal(sgProfile.isShotgun, true);
+        assert.equal(sgProfile.isImpaling, false);
+
+        enemyToken.center = { x: 1500, y: 0 };
+        allyToken.center = { x: 1500, y: 80 };
+        const sgLongContext = RangedWeaponService.detectRangedContext(attackerActor, defenderActor, shotgun, {
+            attackerToken: shooterToken,
+            targetToken: enemyToken
+        });
+        assert.equal(sgLongContext.rangeTier, "normal");
+        assert.equal(sgLongContext.shotgunRangeBand, "long");
+
+        const sgSession = CoC7SessionFactory.createRanged({
+            attacker: attackerActor,
+            target: defenderActor,
+            targetToken: enemyToken,
+            weapon: shotgun,
+            attackSkillLabel: "Shotguns",
+            attackTargetValue: 60,
+            weaponProfile: sgProfile,
+            rangeTier: sgLongContext.rangeTier,
+            shotgunRangeBand: sgLongContext.shotgunRangeBand
+        });
+        assert.equal(RangedCombatRules.resolveRangeDamageFormula(sgSession, sgProfile), "2d6");
+        const spreadHits = RangedCombatRules.resolveShotgunSpreadTargets(sgSession, sgProfile, { actorId: "d1" });
+        assert.equal(spreadHits.length, 1);
+        assert.equal(spreadHits.targetActorId, "ally1");
+
         console.log("Full-auto volley checks passed.");
     });
 });

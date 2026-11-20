@@ -122,6 +122,8 @@
             <strong class="{{successLevel}}" {{#if rollBreakdown}}data-inspect-key="shot_{{index}}" {{/if}}>
                 {{#if malfunction}}
                 {{localize "ROE_COC7.Combat.Malfunction"}} ({{total}})
+                {{else if isFriendlyFire}}
+                <span class="is-pushed-failure">{{localize "ROE_COC7.Ranged.FriendlyFireHit" target=targetName}}</span>
                 {{else}}
                 {{total}} ({{levelLabel}}){{#if hits}} – {{hits}}× {{localize "ROE_COC7.Ranged.Badges.Hit"}}{{/if}}
                 {{/if}}

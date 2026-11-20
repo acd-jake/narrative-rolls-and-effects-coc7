@@ -8,6 +8,16 @@
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.85);
 }
 
+.roe-overlay[data-nre-system="CoC7"].roll-prompt-window.is-focused {
+    z-index: 110 !important;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.92), 0 0 0 1px var(--roe-gold), 0 0 18px rgba(197, 160, 89, 0.38);
+    filter: brightness(1.04);
+}
+
+.roe-overlay[data-nre-system="CoC7"].roll-prompt-window:not(.is-focused) {
+    opacity: 0.92;
+}
+
 .roe-overlay[data-nre-system="CoC7"] .roe-roll-prompt-frame {
     position: relative;
     min-width: 340px;

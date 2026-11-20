@@ -126,14 +126,17 @@ export class RangedCombatRules {
         };
     }
 
-    /** Resolves damage formula for the active range tier, including CoC 7e shotgun falloff. */
+    /** Resolves damage formula for the active range band using weapon data. */
     static resolveRangeDamageFormula(session, profile) {
+        const band = profile?.isShotgun
+            ? (session.rangedShotgunBand || session.rangedRangeTier || "normal")
+            : (session.rangedRangeTier || "normal");
         const normal = profile.normalDamage || session.damageFormula || "1d6";
-        if (session.rangedRangeTier === "extreme") {
+        if (band === "extreme") {
             if (profile.extremeDamage && profile.extremeDamage !== normal) return profile.extremeDamage;
             return profile.isShotgun ? this.#scaleShotgunDamage(normal, 4) : (profile.extremeDamage || normal);
         }
-        if (session.rangedRangeTier === "long") {
+        if (band === "long") {
             if (profile.longDamage && profile.longDamage !== normal) return profile.longDamage;
             return profile.isShotgun ? this.#scaleShotgunDamage(normal, 2) : (profile.longDamage || normal);
         }
@@ -171,6 +174,13 @@ export class RangedCombatRules {
             if (token.actor.id === attackerId && !session.rangedShotgunFriendlyFire) continue;
             const rawDist = this.#measureTraverseDistance(primaryToken, token);
             if (rawDist !== null && rawDist <= maxSceneDistance + 1e-9) {
+                const blockedByWall = CONFIG?.Canvas?.polygonBackends?.sight?.testCollision?.(
+                    primaryToken.center,
+                    token.center,
+                    { type: "sight", mode: "any" }
+                );
+                if (blockedByWall) continue;
+
                 secondary.push({
                     targetKey: token.id,
                     targetActorId: token.actor.id,

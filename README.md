@@ -25,6 +25,7 @@ Install and enable both Narrative Rolls and Effects and this companion module. T
 - Aiming and full-auto ranged combat with Keeper-controlled damage consequences
 - Keeper-managed consequences for pushed rolls, including insanity-aware defaults and player-facing foreshadowing
 - Automatic prompts for eligible major-wound Constitution checks, Sanity checks, and bouts of madness
+- Call of Cthulhu 7e shotgun range bands and spread rules, firing-into-melee penalties with friendly-fire fumbles, and an Alt-toggled tactical range overlay on the canvas
 
 ## Aiming
 
@@ -52,6 +53,8 @@ When automatic consequence application is enabled, damage is applied immediately
 Each client can choose automatic or manual ranged damage rolls; the Keeper can
 enforce either choice for the whole world. Major wounds may require a separate
 consciousness check, which the preview does not roll.
+
+When a ranged prompt is focused, holding **Alt** displays a wall-clipped tactical overlay on the canvas showing point-blank range (`DEX / 5` ft), weapon range bands (or shotgun damage bands), full-auto traverse rings, and a cursor badge highlighting the hovered range zone. Shotguns scale damage by range band without increasing check difficulty, cannot impale, and can strike unobstructed targets within the spread radius at medium and long range. Firing into melee imposes a penalty die, disables point-blank bonuses, and strikes an engaged ally on a fumble.
 
 ## Pushed-roll consequences
 

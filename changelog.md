@@ -7,7 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
-- Added Call of Cthulhu 7e shotgun spread rules, scaling damage by range tier (`normal`, `long`, `extreme`), disabling impale on shotguns, and hitting secondary targets within the spread radius at long (1 yd) and extreme (2 yds) range.
+- Added Call of Cthulhu 7e shotgun spread rules, scaling damage by range band (`normal`, `long`, `extreme`), disabling impale on shotguns, and hitting unobstructed secondary targets within the spread radius at long (1 yd) and extreme (2 yds) range.
+- Added an Alt-toggled tactical canvas overlay for active ranged prompts with wall-clipped range zones, line of fire, point-blank range (`DEX / 5` ft), full-auto traverse rings, and a single cursor distance badge highlighting the hovered zone.
+
+### Changed
+- Evaluated Call of Cthulhu 7e firing-into-melee rules faithfully by disabling point-blank bonuses when shooting into melee and hitting a random engaged ally on a fumble.
+- Displayed grouped dice icons for all melee and ranged damage rolls, including damage bonuses, impaling extra dice, and multi-hit formulas.
+
+### Fixed
+- Evaluated impaling melee damage according to Call of Cthulhu 7e rules (maximizing base weapon damage and positive damage bonus while rolling the extra impaling weapon die).
 
 ## [0.1.0] - 2026-11-19
 

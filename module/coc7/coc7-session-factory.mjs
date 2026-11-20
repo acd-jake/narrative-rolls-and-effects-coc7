@@ -148,6 +148,7 @@ export class CoC7SessionFactory {
         weaponProfile = null,
         targetToken = null,
         rangeTier = "normal",
+        shotgunRangeBand = "normal",
         distance = null,
         tacticalFlags = null
     }) {
@@ -170,6 +171,7 @@ export class CoC7SessionFactory {
             damageBonus: "0",
             defenderReaction: "none",
             rangedRangeTier: rangeTier,
+            rangedShotgunBand: shotgunRangeBand ?? "normal",
             rangedDistance: distance,
             tacticalFlags: {
                 ...(tacticalFlags ?? {

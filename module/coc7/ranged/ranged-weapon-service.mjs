@@ -101,20 +101,28 @@ export class RangedWeaponService {
         const profile = this.getWeaponCombatProfile(weapon);
         const distance = this.measureTokenDistance(attackerToken ?? attacker, targetToken ?? defender);
         const dex = Number(attacker?.system?.characteristics?.dex?.value ?? 50);
-        const pointBlankThreshold = Math.max(1, Math.floor(dex / 5));
+        const pointBlankFeet = Math.max(1, Math.floor(dex / 5));
+        const gridUnits = String(canvas?.scene?.grid?.units ?? "").trim().toLowerCase();
+        const isFeetScene = ["ft", "feet", "foot", "fuss", "fuß"].includes(gridUnits);
+        const pointBlankThreshold = isFeetScene
+            ? pointBlankFeet
+            : Math.max(1, Math.round((pointBlankFeet / 3) * 10) / 10);
 
         let rangeTier = "normal";
+        let shotgunRangeBand = "normal";
         let pointBlank = false;
         if (distance !== null && profile.baseRange > 0) {
+            const longLimit = profile.longRange || profile.baseRange * 2;
+            const extremeLimit = profile.extremeRange || longLimit * 2;
             if (distance <= pointBlankThreshold) {
                 pointBlank = true;
-                rangeTier = "normal";
-            } else if (distance <= profile.baseRange) {
-                rangeTier = "normal";
-            } else if (distance <= (profile.longRange || profile.baseRange * 2)) {
-                rangeTier = "long";
-            } else {
-                rangeTier = "extreme";
+            }
+            if (profile.isShotgun) {
+                shotgunRangeBand = distance <= profile.baseRange ? "normal"
+                    : distance <= longLimit ? "long"
+                        : distance <= extremeLimit ? "extreme" : "outOfRange";
+            } else if (distance > profile.baseRange) {
+                rangeTier = distance <= longLimit ? "long" : "extreme";
             }
         }
 
@@ -148,7 +156,8 @@ export class RangedWeaponService {
                 inMelee,
                 proneTarget,
                 smallTarget,
-                largeTarget
+                largeTarget,
+                shotgunRangeBand
             }
         };
     }

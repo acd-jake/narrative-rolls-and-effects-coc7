@@ -68,10 +68,10 @@ export class RangedRollStrategy extends BaseRollStrategy {
             isHit, successLevel: attacker.successLevel, fireMode: mode,
             bulletsNeeded: roundsFired, isImpalingWeapon: profile.isImpaling
         });
+
         let effectiveHits = hits;
         let effectiveImpales = impales;
         let friendlyFireTarget = null;
-
         if (!isHit && !malfunction && state.tacticalFlags?.inMelee && attacker.successLevel === "fumble") {
             friendlyFireTarget = this.#resolveFriendlyFireTarget(state, actor, target);
             if (friendlyFireTarget) {
@@ -79,6 +79,7 @@ export class RangedRollStrategy extends BaseRollStrategy {
                 effectiveImpales = 0;
             }
         }
+
         const remainingAmmo = await RangedWeaponService.consumeWeaponAmmo(weapon, roundsFired);
         if (malfunction) await RangedWeaponService.setWeaponMalfunction(weapon, true);
         const shot = this.#recordShot(state, attacker, friendlyFireTarget ?? target, profile, {
@@ -116,13 +117,15 @@ export class RangedRollStrategy extends BaseRollStrategy {
     #recordShot(state, attacker, target, profile, result) {
         const number = Number(state.rangedShotsFired ?? 0) + 1;
         const mode = state.rangedFireMode || "single";
-        const targetKey = result.isFriendlyFire ? target.tokenId : (state.rangedTargetTokenId || target?.actorUuid || target?.actorId || "");
-        
+        const targetKey = result.isFriendlyFire
+            ? target.tokenId
+            : (state.rangedTargetTokenId || target?.actorUuid || target?.actorId || "");
         const shot = {
             index: number, fireMode: mode, targetKey, targetActorId: target?.actorId ?? "",
             targetActorUuid: target?.actorUuid ?? "", targetName: target?.actorName ?? "",
             total: attacker.total, successLevel: attacker.successLevel, isHit: result.isHit,
-            malfunction: result.malfunction, bulletsSpent: result.roundsFired, hits: result.hits,
+            malfunction: result.malfunction, isFriendlyFire: Boolean(result.isFriendlyFire),
+            bulletsSpent: result.roundsFired, hits: result.hits,
             impales: result.impales, modifierDice: attacker.rollBreakdown?.modifierDice ?? 0,
             rollBreakdown: attacker.rollBreakdown
         };
@@ -144,6 +147,22 @@ export class RangedRollStrategy extends BaseRollStrategy {
         state.traversePenaltyDice = 0;
         state.traverseDistance = 0;
         return shot;
+    }
+
+    #resolveFriendlyFireTarget(state, attackerActor, targetParticipant) {
+        const tokens = canvas?.tokens?.placeables ?? [];
+        const targetToken = (state.rangedTargetTokenId ? tokens.find((t) => t.id === state.rangedTargetTokenId) : null)
+            ?? (targetParticipant ? tokens.find((t) => t.actor?.id === targetParticipant.actorId) : null);
+        const allies = RangedWeaponService.findMeleeAllies(attackerActor, targetToken);
+        if (!allies.length) return null;
+
+        const chosen = allies[Math.floor(Math.random() * allies.length)];
+        return {
+            tokenId: chosen.id,
+            actorId: chosen.actor.id,
+            actorUuid: chosen.actor.uuid ?? "",
+            actorName: chosen.name || chosen.actor.name
+        };
     }
 
     #buildVolleyHits(state, shot, profile) {

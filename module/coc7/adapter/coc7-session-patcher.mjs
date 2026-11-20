@@ -1,6 +1,7 @@
 import { SessionStore } from "../../core-bridge.mjs";
 import { CoC7DataMapper } from "../coc7-data-mapper.mjs";
 import { RangedCombatRules } from "../ranged/ranged-combat-rules.mjs";
+import { RangedWeaponService } from "../ranged/ranged-weapon-service.mjs";
 import { RangedRollStrategy } from "../strategies/ranged-roll-strategy.mjs";
 import { CombatDamageDecision } from "../strategies/combat-damage-decision.mjs";
 import { COC7_MODULE_ID } from "../coc7-settings.mjs";

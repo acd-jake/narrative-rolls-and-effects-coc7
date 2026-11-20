@@ -96,6 +96,23 @@ export class RangedWeaponService {
         }
         return null;
     }
+
+    /** Returns scene tokens of allies engaged in melee with the target token (within 2 yds/m). */
+    static findMeleeAllies(attacker, targetToken) {
+        if (!targetToken || !canvas?.tokens?.placeables?.length) return [];
+        const units = String(canvas?.scene?.grid?.units ?? "").trim().toLowerCase();
+        const isFeet = ["ft", "feet", "foot", "fuss", "fuß"].includes(units);
+        const meleeReach = isFeet ? 6 : 2;
+
+        return canvas.tokens.placeables.filter((other) => {
+            if (!other?.actor || other.id === targetToken.id) return false;
+            if (other.actor.id === attacker?.id) return false;
+            if (other.document?.disposition === targetToken.document?.disposition) return false;
+            const d = this.measureTokenDistance(other, targetToken);
+            return d !== null && d <= meleeReach;
+        });
+    }
+
     /** Infers range tier, shotgun band, and CoC 7e ranged tactical flags from Foundry tokens and actors. */
     static detectRangedContext(attacker, defender, weapon, { attackerToken = null, targetToken = null } = {}) {
         const profile = this.getWeaponCombatProfile(weapon);
@@ -120,7 +137,7 @@ export class RangedWeaponService {
             if (profile.isShotgun) {
                 shotgunRangeBand = distance <= profile.baseRange ? "normal"
                     : distance <= longLimit ? "long"
-                    : distance <= extremeLimit ? "extreme" : "outOfRange";
+                        : distance <= extremeLimit ? "extreme" : "outOfRange";
             } else if (distance > profile.baseRange) {
                 rangeTier = distance <= longLimit ? "long" : "extreme";
             }

@@ -175,7 +175,7 @@ export class RangedCombatRules {
             if (token.actor.id === attackerId && !session.rangedShotgunFriendlyFire) continue;
             const rawDist = this.#measureTraverseDistance(primaryToken, token);
             if (rawDist !== null && rawDist <= maxSceneDistance + 1e-9) {
-                const blockedByWall = CONFIG?.Canvas?.polygonBackends?.sight?.testCollision?.(
+                const blockedByWall = globalThis.CONFIG?.Canvas?.polygonBackends?.sight?.testCollision?.(
                     primaryToken.center,
                     token.center,
                     { type: "sight", mode: "any" }

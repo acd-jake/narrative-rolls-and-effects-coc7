@@ -153,8 +153,9 @@ export class RangedCombatRules {
     /** Returns secondary scene tokens caught in a shotgun's spread radius at long (1 yd) or extreme (2 yds) range. */
     static resolveShotgunSpreadTargets(session, profile, primaryTarget) {
         if (!profile?.isShotgun) return [];
-        const spreadRadius = session.rangedRangeTier === "extreme" ? 2
-            : session.rangedRangeTier === "long" ? 1 : 0;
+        const band = session.rangedShotgunBand || session.rangedRangeTier || "normal";
+        const spreadRadius = band === "extreme" ? 2
+            : band === "long" ? 1 : 0;
         if (spreadRadius <= 0) return [];
 
         const tokens = canvas?.tokens?.placeables ?? [];

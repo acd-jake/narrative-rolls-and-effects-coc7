@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to Semantic Versioning.
 
-## [Unreleased]
+## [0.2.0] - 2026-11-20
 
 ### Added
 - Added Call of Cthulhu 7e shotgun spread rules, scaling damage by range band (`normal`, `long`, `extreme`), disabling impale on shotguns, and hitting unobstructed secondary targets within the spread radius at long (1 yd) and extreme (2 yds) range.
@@ -12,10 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 - Evaluated Call of Cthulhu 7e firing-into-melee rules faithfully by disabling point-blank bonuses when shooting into melee and hitting a random engaged ally on a fumble.
-- Displayed grouped dice icons for all melee and ranged damage rolls, including damage bonuses, impaling extra dice, and multi-hit formulas.
 
 ### Fixed
-- Evaluated impaling melee damage according to Call of Cthulhu 7e rules (maximizing base weapon damage and positive damage bonus while rolling the extra impaling weapon die).
+- Fixed automatically scaled shotgun damage formulas when no range-specific formula is provided.
 
 ## [0.1.0] - 2026-11-19
 
@@ -38,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Provide German and English default pushed-roll consequences (both sane and insane) across all standard pushable CoC7 skills and specializations.
 
 ### Changed
+- Displayed grouped dice icons for melee and ranged damage rolls, including damage bonuses, impaling extra dice, and multi-hit formulas.
 - Resolve malfunction-clearing attempts immediately and show their outcome in the prompt and chat card.
 - Show the Keeper damage after armor and all resulting conditions in damage previews.
 - The Keeper decides each combat damage roll before further ranged fire; previews are Keeper-only.
@@ -57,6 +57,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Intercept automatic CoC7 Constitution checks triggered by major wounds or dying (`CoC7ConCheck`) into roll prompts and apply the resulting unconscious or dead condition on failure.
 
 ### Fixed
+- Evaluated impaling melee damage according to Call of Cthulhu 7e rules (maximizing base weapon damage and positive damage bonus while rolling the extra impaling weapon die).
 - Apply a major wound when a nonfatal hit also reduces the target to zero HP.
 - Prevent ranged damage previews from failing when Foundry expands saved actor UUID keys.
 - Prevented accumulated ranged hits from being treated as a single lethal hit.

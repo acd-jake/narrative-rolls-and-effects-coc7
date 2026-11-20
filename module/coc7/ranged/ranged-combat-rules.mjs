@@ -146,8 +146,8 @@ export class RangedCombatRules {
     static #scaleShotgunDamage(formula, divisor) {
         const match = String(formula).trim().match(/^(\d+)d(\d+)(.*)$/i);
         if (!match) return formula;
-        const scaledDice = Math.max(1, Math.floor(Number(match) / divisor));
-        return `${scaledDice}d${match}${match}`;
+        const scaledDice = Math.max(1, Math.floor(Number(match[1]) / divisor));
+        return `${scaledDice}d${match[2]}${match[3]}`;
     }
 
     /** Returns secondary scene tokens caught in a shotgun's spread radius at long (1 yd) or extreme (2 yds) range. */

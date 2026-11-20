@@ -15,6 +15,15 @@ import { CoC7Adapter } from "../module/coc7/coc7-adapter.mjs";
 import { RangedOverlayGeometry } from "../module/coc7/ranged/ranged-overlay-geometry.mjs";
 
 describe("Ranged combat rules and full-auto volleys", () => {
+    it("scales shotgun damage when range-specific formulas are missing", () => {
+        const profile = { isShotgun: true, normalDamage: "4d6+2" };
+        assert.equal(RangedCombatRules.resolveRangeDamageFormula({ rangedShotgunBand: "long" }, profile), "2d6+2");
+        assert.equal(RangedCombatRules.resolveRangeDamageFormula({ rangedShotgunBand: "extreme" }, profile), "1d6+2");
+        assert.equal(RangedCombatRules.resolveRangeDamageFormula({ rangedShotgunBand: "long" }, {
+            ...profile, longDamage: "3d6"
+        }), "3d6");
+    });
+
     it("evaluates weapon profiles, modifiers, multi-hit damage, and full-auto volleys", async () => {
         if (!Math.clamp) Math.clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 

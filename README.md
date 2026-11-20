@@ -54,7 +54,7 @@ Each client can choose automatic or manual ranged damage rolls; the Keeper can
 enforce either choice for the whole world. Major wounds may require a separate
 consciousness check, which the preview does not roll.
 
-When a ranged prompt is focused, holding **Alt** displays a wall-clipped tactical overlay on the canvas showing point-blank range (`DEX / 5` ft), weapon range bands (or shotgun damage bands), full-auto traverse rings, and a cursor badge highlighting the hovered range zone. Shotguns scale damage by range band without increasing check difficulty, cannot impale, and can strike unobstructed targets within the spread radius at medium and long range. Firing into melee imposes a penalty die, disables point-blank bonuses, and strikes an engaged ally on a fumble.
+When a ranged prompt is focused, holding **Alt** displays a wall-clipped tactical overlay on the canvas showing point-blank range (`DEX / 5` ft), weapon range bands (or shotgun damage bands), full-auto traverse rings, and a cursor badge highlighting the hovered range zone. Shotguns scale damage by range band without increasing check difficulty, cannot impale, and can strike unobstructed targets within the spread radius in the `long` and `extreme` shotgun bands. If no distinct damage formula is provided for a band, the module scales the normal-range dice. Firing into melee imposes a penalty die, disables point-blank bonuses, and strikes an engaged ally on a fumble.
 
 ## Pushed-roll consequences
 

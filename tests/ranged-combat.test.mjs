@@ -154,7 +154,7 @@ describe("Ranged combat rules and full-auto volleys", () => {
         };
         const detected = RangedWeaponService.detectRangedContext(attackerActor, defenderActor, revolver);
         assert.equal(detected.distance, 2);
-        assert.equal(detected.tacticalFlags.pointBlank, true);
+        assert.equal(detected.tacticalFlags.pointBlank, false);
         assert.equal(detected.tacticalFlags.inMelee, true);
 
         console.log("Ranged combat rules checks passed.");

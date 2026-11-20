@@ -303,22 +303,6 @@ export class RangedRollStrategy extends BaseRollStrategy {
         state.consequencesApplied = false;
     }
 
-    #resolveFriendlyFireTarget(state, attackerActor, targetParticipant) {
-        const tokens = canvas?.tokens?.placeables ?? [];
-        const targetToken = (state.rangedTargetTokenId ? tokens.find((t) => t.id === state.rangedTargetTokenId) : null)
-            ?? (targetParticipant ? tokens.find((t) => t.actor?.id === targetParticipant.actorId) : null);
-        const allies = RangedWeaponService.findMeleeAllies(attackerActor, targetToken);
-        if (!allies.length) return null;
-
-        const chosen = allies[Math.floor(Math.random() * allies.length)];
-        return {
-            tokenId: chosen.id,
-            actorId: chosen.actor.id,
-            actorUuid: chosen.actor.uuid ?? "",
-            actorName: chosen.name || chosen.actor.name
-        };
-    }
-
     /** Applies or discards one pending damage roll and resumes the ranged attack. */
     async decideDamageConsequences(session, action) {
         const state = { ...session, participants: session.participants.map((participant) => ({ ...participant })) };
